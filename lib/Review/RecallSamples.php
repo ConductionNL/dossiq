@@ -26,11 +26,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\RecallSamplesInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Draws a simple random sample from the documents a review set aside or has not
@@ -41,8 +37,6 @@ use Throwable;
  */
 class RecallSamples implements RecallSamplesInterface {
 
-	use SearchesObjects;
-
 	/**
 	 * The app config key of the recall sample schema.
 	 */
@@ -52,6 +46,13 @@ class RecallSamples implements RecallSamplesInterface {
 	 * The confidence of a bound when the case declared no stopping rule.
 	 */
 	public const DEFAULT_CONFIDENCE = 0.95;
+
+	/**
+	 * Where the case's samples are read and written.
+	 *
+	 * @var RecallSampleStore
+	 */
+	private readonly RecallSampleStore $store;
 
 	/**
 	 * Constructor.
@@ -67,9 +68,11 @@ class RecallSamples implements RecallSamplesInterface {
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly SettingsServiceInterface $settingsService,
+		SettingsServiceInterface $settingsService,
 		private readonly DocumentRelevance $reviews,
 		private readonly WooCaseDocumentsInterface $caseDocuments,
 		private readonly ReviewBatches $batches,
@@ -77,8 +80,9 @@ class RecallSamples implements RecallSamplesInterface {
 		private readonly StoppingRules $rules,
 		private readonly RecallEstimator $estimator,
 		private readonly StoppingRuleMet $met,
-		private readonly LoggerInterface $logger,
+		LoggerInterface $logger,
 	) {
+		$this->store = new RecallSampleStore(settingsService: $settingsService, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -99,10 +103,10 @@ class RecallSamples implements RecallSamplesInterface {
 	public function draw(string $caseId, int $size, string $assignee, string $userId, ?int $seed = null): array {
 		$this->assertAssigneeChosen(assignee: $assignee);
 		$row = $this->drawnSample(caseId: $caseId, request: ['size' => $size, 'seed' => $seed, 'userId' => $userId]);
-		$sample = $this->save(sample: $row);
+		$sample = $this->store->save(sample: $row);
 		$sample['batch'] = $this->sampleBatchId(sampleId: self::idOf(row: $sample), row: $row + ['assignee' => $assignee]);
 
-		return $this->save(sample: $sample);
+		return $this->store->save(sample: $sample);
 	}//end draw()
 
 	/**
@@ -237,7 +241,7 @@ class RecallSamples implements RecallSamplesInterface {
 		$sample = $this->find(caseId: $caseId, sampleId: $sampleId);
 		$judgement = ['documentRef' => $documentRef, 'inScope' => $inScope, 'caseId' => $caseId, 'userId' => $userId];
 
-		return $this->withProgress(sample: $this->save(sample: $this->withJudgement(sample: $sample, judgement: $judgement)));
+		return $this->withProgress(sample: $this->store->save(sample: $this->withJudgement(sample: $sample, judgement: $judgement)));
 	}//end judge()
 
 	/**
@@ -333,7 +337,7 @@ class RecallSamples implements RecallSamplesInterface {
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
 	 */
 	public function forCase(string $caseId): array {
-		$samples = array_map(fn (array $sample): array => $this->withProgress(sample: $sample), $this->rows(caseId: $caseId));
+		$samples = array_map(fn (array $sample): array => $this->withProgress(sample: $sample), $this->store->rows(caseId: $caseId));
 		usort(
 			$samples,
 			static fn (array $left, array $right): int => strcmp((string)($right['drawnAt'] ?? ''), (string)($left['drawnAt'] ?? ''))
@@ -457,7 +461,7 @@ class RecallSamples implements RecallSamplesInterface {
 	 * @throws RefusedException When the sample is not one of this case.
 	 */
 	private function find(string $caseId, string $sampleId): array {
-		foreach ($this->rows(caseId: $caseId) as $sample) {
+		foreach ($this->store->rows(caseId: $caseId) as $sample) {
 			if (self::idOf(row: $sample) === $sampleId) {
 				return $sample;
 			}
@@ -471,30 +475,6 @@ class RecallSamples implements RecallSamplesInterface {
 	}//end find()
 
 	/**
-	 * The case's stored samples.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return list<array<string, mixed>> The samples.
-	 */
-	private function rows(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		if ($objectService === null || $schema === '' || $caseId === '') {
-			return [];
-		}
-
-		return array_values(
-			$this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $this->settingsService->getConfigValue('register'),
-				schema: $schema,
-				filters: ['case' => $caseId, '_limit' => 100],
-			)
-		);
-	}//end rows()
-
-	/**
 	 * The id of a stored row.
 	 *
 	 * @param array<string, mixed> $row The row.
@@ -505,75 +485,4 @@ class RecallSamples implements RecallSamplesInterface {
 		return (string)($row['id'] ?? ($row['uuid'] ?? ''));
 	}//end idOf()
 
-	/**
-	 * Store the sample.
-	 *
-	 * @param array<string, mixed> $sample The sample.
-	 *
-	 * @return array<string, mixed> The stored sample.
-	 *
-	 * @throws RefusedException When it cannot be stored.
-	 */
-	private function save(array $sample): array {
-		$objectService = $this->settingsService->getObjectService();
-		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
-		$uuid = self::idOf(row: $sample);
-		if ($uuid === '') {
-			$uuid = null;
-		}
-
-		unset($sample['@self'], $sample['id'], $sample['uuid'], $sample['progress']);
-		if ($objectService === null || $schema === '') {
-			throw $this->unstored(previous: null);
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $sample,
-				options: new ObjectSaveOptions(
-					target: new ObjectFindTarget(
-							register: $this->settingsService->getConfigValue('register'),
-							schema: $schema
-						),
-					uuid: $uuid
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq: a Recall sample could not be stored', ['exception' => $e->getMessage()]);
-			throw $this->unstored(previous: $e);
-		}
-
-		return $this->savedRow(saved: $saved);
-	}//end save()
-
-	/**
-	 * The stored sample as an array.
-	 *
-	 * @param mixed $saved What the ObjectService answered.
-	 *
-	 * @return array<string, mixed> The stored sample.
-	 */
-	private function savedRow(mixed $saved): array {
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			return (array)$saved->jsonSerialize();
-		}
-
-		return (array)$saved;
-	}//end savedRow()
-
-	/**
-	 * The refusal when the sample cannot be stored.
-	 *
-	 * @param Throwable|null $previous The cause.
-	 *
-	 * @return RefusedException The refusal.
-	 */
-	private function unstored(?Throwable $previous): RefusedException {
-		return new RefusedException(
-			rule: 'review-recall-sample-unavailable',
-			sentence: 'The Recall sample cannot be stored, so nothing was drawn or judged.',
-			status: RefusedException::STATUS_INDETERMINATE,
-			previous: $previous,
-		);
-	}//end unstored()
 }//end class
