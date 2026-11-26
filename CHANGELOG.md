@@ -4,6 +4,10 @@ All notable changes to Dossiq are documented in this file.
 
 ## [Unreleased]
 
+### Deprecated
+
+- `enforcement-intervention-from-the-case` 2.2: `POST /api/lhs/recommend` and `POST /api/lhs/override` are deprecated and are removed in the next release. Use `POST /api/decision-advice/recommend` and `POST /api/decision-advice/override` (with `GET /api/decision-advice/case/{caseId}/form` for the inputs a case type's decision table asks). The old routes keep answering exactly as before for this one release; they are not forwarded, because the generic routes take the table's declared inputs instead of `severity`/`behaviour`/`actorType`, answer a `decisionAdvice` object instead of an `lhsRecommendation` row, and have no manager check on an escalation. No dossiq screen calls the old routes any more.
+
 ### Changed
 
 - UPGRADE NOTE, `a-request-form-opens-the-case-at-once` (decision 236): a case that comes in through a Nextcloud Forms form now gets an acknowledgement of receipt by default. Before this release it got none. After the upgrade every case type bound to a form starts mailing the sender, unless the case type switches it off. To switch it off, open the case type, go to the acknowledgement of receipt and leave `forms` out of the intake channels that owe one. A case type that already keeps its own channel list is not changed: add `forms` there to send one. The mail goes to the address the form's mapping puts on the case. A form that asks for no e-mail address leaves an acknowledgement that cannot be sent, and the case shows it as not sent. A draft is acknowledged when it is sent, never when it is saved.

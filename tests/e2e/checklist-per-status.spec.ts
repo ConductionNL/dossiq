@@ -336,16 +336,15 @@ function stageReason(page: Page, statusId: string) {
 }
 
 /**
- * The clickable element of one stage. CnTimelineStages puts the role and the
- * handler on the list item; the testid is on the label inside it.
+ * The clickable element of one stage. The case page draws its stages as bars
+ * (CnStagesWidget `bars`): a stage the case can move to is a `<button>` label
+ * carrying the stage testid and, when refused, `aria-disabled="true"`.
  *
  * @param page     The Playwright page.
  * @param statusId The statusType uuid the move leads to.
  */
 function stageControl(page: Page, statusId: string) {
-	return page.locator('.cn-timeline-stages__stage').filter({
-		has: page.getByTestId(`cn-stages-widget-stage-${statusId}`),
-	})
+	return page.getByTestId(`cn-stages-widget-stage-${statusId}`)
 }
 
 /**

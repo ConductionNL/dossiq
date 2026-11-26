@@ -22,7 +22,7 @@
  * keeps the props it is given so the forwarding can be read back.
  *
  * @spec openspec/specs/case-types/spec.md
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+ * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
  */
 import { shallowMount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'

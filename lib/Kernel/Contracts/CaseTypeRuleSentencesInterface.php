@@ -43,7 +43,7 @@ interface CaseTypeRuleSentencesInterface {
 	 * @return array{rules: array<int, array{id: string, name: string, enabled: bool, state: string, moment: string, title: string, line: string}>}|null
 	 *         The rows, or null when the case type cannot be read.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
+	 * @spec openspec/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules
 	 */
 	public function rulesFor(string $caseTypeId): ?array;
 }//end interface

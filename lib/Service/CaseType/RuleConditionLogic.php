@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ namespace OCA\Dossiq\Service\CaseType;
  * `{ name, value }` entries. Both are read, so a rule does not have to know
  * which of the two a field is.
  *
- * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+ * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
  */
 class RuleConditionLogic {
 
@@ -72,7 +72,7 @@ class RuleConditionLogic {
 	 *
 	 * @return array<string, mixed> The JSONLogic expression.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function forRule(string $caseTypeId, array $conditions): array {
 		$parts = [['==' => [['var' => 'json.caseType'], $caseTypeId]]];
@@ -95,7 +95,7 @@ class RuleConditionLogic {
 	 *
 	 * @return array<string, mixed>|bool The expression.
 	 *
-	 * @spec openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
+	 * @spec openspec/specs/case-types/spec.md#requirement-rules-are-evaluated-by-the-engines-that-own-the-actions
 	 */
 	public function forCondition(array $condition): array|bool {
 		$kind = (string)($condition['kind'] ?? '');

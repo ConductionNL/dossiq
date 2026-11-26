@@ -5,7 +5,7 @@
  * Board DqSociaalDomein: the plan card and De melding find the family plan by
  * the plan's own caseId; the case holds no plan reference.
  *
- * @spec openspec/changes/family-plan-by-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-finds-its-family-plan-by-the-plans-case
+ * @spec openspec/changes/archive/2026-11-26-family-plan-by-case/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-finds-its-family-plan-by-the-plans-case
  */
 
 import fs from 'fs'

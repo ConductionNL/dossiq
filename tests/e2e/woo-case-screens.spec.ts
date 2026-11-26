@@ -51,8 +51,9 @@ import {
 	seedDocument,
 	showObject,
 	tryDeleteObject,
+	uploadFixtureFile,
 } from './helpers/fixtures.ts'
-import { clickHeaderAction, journeyBudget, openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
+import { caseActOption, caseActReason, clickHeaderAction, journeyBudget, openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
 
 /** The Woo request case type the app seeds (WooRequestIntake::CASE_TYPE_ID). */
 const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
@@ -104,6 +105,11 @@ function recordWrites(page: Page): string[] {
 	page.on('request', (request) => {
 		const url = new URL(request.url())
 		if (request.method() === 'GET' || /\/apps\/(dossiq|openregister)\/api\//.test(url.pathname) === false) {
+			return
+		}
+		// OpenRegister's own beacons on any object page (who is looking, what
+		// was read) are not a write of the case; no action offers them.
+		if (/\/objects\/[^/]+\/[^/]+\/[^/]+\/(presence|read-state)$/.test(url.pathname) === true) {
 			return
 		}
 		writes.push(`${request.method()} ${url.pathname}`)
@@ -185,8 +191,12 @@ test.describe('A Woo case from assessment to publication, on the case page', () 
 		const documents: string[] = []
 		for (let n = 1; n <= count; n++) {
 			const title = `${RUN_PREFIX} ${label} stuk ${n}`
+			// A public document is published with its bytes; a document
+			// without a readable file refuses the publish
+			// (`documents_unreadable`), so each one carries a real file.
 			const document = await seedDocument(api, token, {
 				title,
+				fileId: await uploadFixtureFile(api, token, `${title.replace(/[^\w-]+/g, '-')}.pdf`),
 				provenance: { source: 'files', custodian: 'Wethouder Ruimte', searchedBy: ADMIN },
 			})
 			const ref = objectId(document)
@@ -280,14 +290,15 @@ test.describe('A Woo case from assessment to publication, on the case page', () 
 		// 2. Extend once, with a reason; the requester has no reachable channel.
 		await clickHeaderAction(page, 'cn-action-case-lifecycle-menu')
 		await expect(page.getByTestId('case-acts-list')).toBeVisible({ timeout: 25_000 })
-		const extend = page.getByTestId('case-act-button-extend')
+		const extend = caseActOption(page, 'extend')
 		await expect(extend).toBeEnabled({ timeout: 25_000 })
 		await extend.click()
 		const acts = page.getByTestId('case-acts-dialog')
 		await acts.getByTestId('case-act-reason-input').fill('Zienswijzen van derden')
 		await page.getByTestId('case-acts-confirm').click()
 		await expect(acts).toHaveCount(0, { timeout: 25_000 })
-		await expect(page.getByText(/The term is extended\. The requester was not told/)).toBeVisible(PAGE_LOAD)
+		// The toast says it, and the screen-reader announcement repeats it.
+		await expect(page.getByText(/The term is extended\. The requester was not told/).filter({ visible: true }).first()).toBeVisible(PAGE_LOAD)
 
 		if (Number.isFinite(beforeEnd)) {
 			await expect
@@ -304,13 +315,17 @@ test.describe('A Woo case from assessment to publication, on the case page', () 
 		// Extend term is greyed out from then on, with the limit sentence.
 		await clickHeaderAction(page, 'cn-action-case-lifecycle-menu')
 		await expect(page.getByTestId('case-acts-list')).toBeVisible({ timeout: 25_000 })
-		await expect(page.getByTestId('case-act-button-extend')).toBeDisabled()
-		await expect(page.getByTestId('case-act-reason-extend')).toContainText(
+		await expect(caseActOption(page, 'extend')).toBeDisabled()
+		await expect(caseActReason(page, 'extend')).toContainText(
 			'already extended as often as its case type allows',
 		)
 		await page.getByTestId('case-acts-cancel').click()
 		await expect(page.getByTestId('case-acts-dialog')).toHaveCount(0, { timeout: 15_000 })
-		const lifecycle = await (await request.get(`/index.php/apps/dossiq/api/case/${caseId}/lifecycle`)).json()
+		const lifecycleRead = await request.get(`/index.php/apps/dossiq/api/case/${caseId}/lifecycle`, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
+		expect(lifecycleRead.ok(), `lifecycle -> ${lifecycleRead.status()}`).toBeTruthy()
+		const lifecycle = await lifecycleRead.json()
 		expect(lifecycle.maxExtensions).toBe(1)
 		expect(lifecycle.canExtend).toBe(false)
 

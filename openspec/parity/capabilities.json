@@ -14391,7 +14391,7 @@
 					"openspec/specs/dmn-decision-tables :: FIRST hit policy returns the first matching rule in order",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/dmn-decision-tables :: A decision table's answer is written to the case (REQ-CRS-16)"
 				],
-				"plan": "openspec/changes/case-type-conditional-rules"
+				"plan": "openspec/changes/archive/2026-11-25-case-type-conditional-rules"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri 'rule|condition' over lib/Service finds only permission checks; case types carry no configuration (src/views/ConfigurationView.vue:229) | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -20241,7 +20241,7 @@
 					"openspec/specs/status-transition-engine :: The rules of a case type are listed and tried in the editor (REQ-SDC-05)",
 					"openspec/changes/capability-rows-say-the-whole-capability/specs/status-transition-engine :: An administrator writes a rule's conditions and actions (REQ-CRS-38)"
 				],
-				"plan": "openspec/changes/case-type-conditional-rules"
+				"plan": "openspec/changes/archive/2026-11-25-case-type-conditional-rules"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types are code list rows (src/views/ConfigurationView.vue:230); lib/Service holds no rule or condition engine; document workflows (lib/Service/WorkflowService.php) are fixed review or approval steps | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -20605,7 +20605,7 @@
 				],
 				"plan": [
 					"openspec/changes/example-set-installs-as-written",
-					"openspec/changes/example-set-pieter-reads-the-household",
+					"openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household",
 					"openspec/changes/package-examples",
 					"openspec/changes/starter-content-and-templates",
 					"openspec/changes/zuiddrecht-example-set",
@@ -22390,8 +22390,8 @@
 				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md",
 				"plan": [
 					"openspec/changes/social-domain-consent-and-safeguards",
-					"openspec/changes/example-set-pieter-reads-the-household",
-					"openspec/changes/family-plan-by-case",
+					"openspec/changes/archive/2026-11-26-example-set-pieter-reads-the-household",
+					"openspec/changes/archive/2026-11-26-family-plan-by-case",
 					"openspec/changes/investigation-steps-in-the-case-type",
 					"openspec/changes/archive/2026-11-25-report-card-handler-name",
 					"openspec/changes/social-history-people-and-files",

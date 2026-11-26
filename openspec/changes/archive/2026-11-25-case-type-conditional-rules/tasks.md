@@ -23,7 +23,13 @@ the engine task carries as its `key`.
 - [x] requireDocument with conditions besides the status: the conditions travel with the requirement as JSONLogic and
       the guard evaluates them with OpenRegister's flow expressions (unevaluable reads as required)
 - [x] Test (unit: plan, flow shape, the filter evaluated with OpenRegister's JSONLogic, replace-on-publish)
-- [ ] Test (integration on a live instance)
+- [x] Test (integration on a live instance)
+      (live 25 Nov 2026, sandbox NC 34.0.6 + MariaDB + OpenRegister main 987938d4 with openregister#11215: a new
+      Omgevingsvergunning version carrying the rule "bouwkosten > 100000 → add task Welstandsadvies vragen" published
+      with no rule warnings and projected one flow, indexed as `object.updated dossiq/case`; a case with bouwkosten
+      250000 got the task "Welstandsadvies vragen" on its first save; a case with bouwkosten 40000 ran the flow and its
+      filter passed 0 items, so no task. Without openregister#11215 the flow saves but its trigger is never indexed on
+      NC 34, so nothing fires)
 
 ### Task 3: The Rules tab reads and writes rules
 - **spec_ref**: `openspec/changes/case-type-conditional-rules/specs/case-types/spec.md#requirement-the-rules-tab-reads-and-writes-the-case-types-rules`
@@ -56,4 +62,7 @@ the engine task carries as its `key`.
 - [x] Implement (a task added by a rule carries `dossiq:once:rule:<case type>:<rule>:<case>` as its engine key; a taken
       key adds nothing, an unanswerable lookup fails the step rather than risk a second task)
 - [x] Test (unit)
-- [ ] Test (integration: saved twice, one task)
+- [x] Test (integration: saved twice, one task)
+      (live 25 Nov 2026, same instance: three saves of the matching case gave three flow runs; the first added task
+      `dossiq:once:rule:<case type>:welstandsadvies:<case>`, the second and third answered `skipped: already added`;
+      the case holds exactly one task)
