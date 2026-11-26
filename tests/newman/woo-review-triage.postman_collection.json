@@ -1,0 +1,2750 @@
+{
+	"info": {
+		"name": "woo-review-triage — the request is the authorisation container of its review records",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "woo-review-triage tasks 6.1 and 6.2 (REQ-WRT-006). Folder `schemas` reads the seven review records back (documentReview, reviewBatch, triageRule, wooSearchPlan, wooExclusion, wooCollectionQuery, wooDeliveredSet) and asserts authorization.scope is private, no group reads them for all users, and no hierarchy key is declared. Folder `scoped` sets up two Woo cases and a reviewer in a batch of one, then lists documentReview, triageRule and reviewBatch through the OpenRegister API as that reviewer: only the own batch's review and batch are listed, no rule, nothing of the other case; the handler is the control. Setup provisions three accounts (handler, reviewer, colleague with the other batches), two throwaway Woo cases of the seeded Woo case type and three in-scope documents; teardown removes them.\n\n@newman exclude Runs on the live pass through tests/newman/run-all.sh (decision 139): it provisions accounts and needs the seeded Woo case type and OpenRegister's private scope and per-object grants, which the CI newman job (enable-newman false, newman-collection-path 'data') does not set up. See the comment on enable-newman in .github/workflows/code-quality.yml."
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// The runner passes base_url as the dossiq app root; OpenRegister and OCS live at the host.",
+					"const base = pm.variables.get('base_url') || 'http://localhost:8080/index.php/apps/dossiq';",
+					"pm.collectionVariables.set('host', base.replace(/\\/index\\.php\\/apps\\/dossiq\\/?$/, ''));",
+					"if (!pm.collectionVariables.get('run')) {",
+					"    const stamp = String(Date.now()).slice(-7);",
+					"    pm.collectionVariables.set('run', 'WRT-' + stamp);",
+					"    pm.collectionVariables.set('today', new Date().toISOString().slice(0, 10));",
+					"    for (const role of ['handler', 'reviewer', 'colleague']) {",
+					"        pm.collectionVariables.set(role + '_uid', 'wrt-' + role + '-' + stamp);",
+					"    }",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "woo_case_type",
+			"value": "3c0f5a00-0000-4000-a000-00000000a001",
+			"description": "The Woo request case type the app seeds (WooRequestIntake::CASE_TYPE_ID)."
+		},
+		{
+			"key": "user_pass",
+			"value": "Wrt-Review-Triage-2026!",
+			"description": "The provisioned accounts' password; must satisfy the instance's password policy."
+		},
+		{
+			"key": "host",
+			"value": ""
+		},
+		{
+			"key": "run",
+			"value": ""
+		},
+		{
+			"key": "today",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "setup",
+			"item": [
+				{
+					"name": "group dossiq-medewerkers exists",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/groups?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "groupid",
+									"value": "dossiq-medewerkers",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200, 102]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "group dossiq-coordinators exists",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/groups?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "groupid",
+									"value": "dossiq-coordinators",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200, 102]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "account: handler",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "userid",
+									"value": "{{handler_uid}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "text"
+								},
+								{
+									"key": "displayName",
+									"value": "{{handler_uid}}",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200, 102]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "handler is staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users/{{handler_uid}}/groups?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "groupid",
+									"value": "dossiq-medewerkers",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "account: reviewer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "userid",
+									"value": "{{reviewer_uid}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "text"
+								},
+								{
+									"key": "displayName",
+									"value": "{{reviewer_uid}}",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200, 102]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "reviewer is staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users/{{reviewer_uid}}/groups?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "groupid",
+									"value": "dossiq-medewerkers",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "account: colleague",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "userid",
+									"value": "{{colleague_uid}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "text"
+								},
+								{
+									"key": "displayName",
+									"value": "{{colleague_uid}}",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200, 102]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "colleague is staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users/{{colleague_uid}}/groups?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "groupid",
+									"value": "dossiq-medewerkers",
+									"type": "text"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const status = Number((pm.response.json().ocs || {meta: {}}).meta.statuscode);",
+									"pm.test('OCS answers created or already there', () => pm.expect(status, pm.response.text()).to.be.oneOf([100, 200]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobjecttype",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"description\": \"{{run}} Document\",\n \"informatieobjectcategorie\": \"incoming\",\n \"vertrouwelijkheidaanduiding\": \"openbaar\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the document type is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the document type has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('document_type_id', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 1",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobject",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"title\": \"{{run}} Stuk 1\",\n \"fileName\": \"{{run}}-stuk-1.pdf\",\n \"vertrouwelijkheidaanduiding\": \"openbaar\",\n \"informatieobjecttype\": \"{{document_type_id}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('document 1 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('document 1 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('document_1', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 2",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobject",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"title\": \"{{run}} Stuk 2\",\n \"fileName\": \"{{run}}-stuk-2.pdf\",\n \"vertrouwelijkheidaanduiding\": \"openbaar\",\n \"informatieobjecttype\": \"{{document_type_id}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('document 2 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('document 2 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('document_2', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 3",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobject",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"title\": \"{{run}} Stuk 3\",\n \"fileName\": \"{{run}}-stuk-3.pdf\",\n \"vertrouwelijkheidaanduiding\": \"openbaar\",\n \"informatieobjecttype\": \"{{document_type_id}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('document 3 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('document 3 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('document_3', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Woo case, handled by the handler",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"title\": \"{{run}} Woo-verzoek afgeschermd\",\n \"identifier\": \"{{run}}\",\n \"caseType\": \"{{woo_case_type}}\",\n \"assignee\": \"{{handler_uid}}\",\n \"impact\": \"medium\",\n \"urgency\": \"medium\",\n \"intakeChannel\": \"manual\",\n \"startDate\": \"{{today}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the Woo case is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the Woo case has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('case_id', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "second Woo case, handled by the handler",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"title\": \"{{run}} Woo-verzoek tweede\",\n \"identifier\": \"{{run}}\",\n \"caseType\": \"{{woo_case_type}}\",\n \"assignee\": \"{{handler_uid}}\",\n \"impact\": \"medium\",\n \"urgency\": \"medium\",\n \"intakeChannel\": \"manual\",\n \"startDate\": \"{{today}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the second Woo case is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the second Woo case has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('case_b', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 1 on the case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/zaakinformatieobject",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"case\": \"{{case_id}}\",\n \"informatieobject\": \"{{document_1}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the link of document 1 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the link of document 1 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('link_1', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 1 in scope",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"case\": \"{{case_id}}\",\n \"documentRef\": \"{{document_1}}\",\n \"relevance\": \"in-scope\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the scope mark of document 1 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the scope mark of document 1 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('review_1', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 2 on the case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/zaakinformatieobject",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"case\": \"{{case_id}}\",\n \"informatieobject\": \"{{document_2}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the link of document 2 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the link of document 2 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('link_2', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 2 in scope",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"case\": \"{{case_id}}\",\n \"documentRef\": \"{{document_2}}\",\n \"relevance\": \"in-scope\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the scope mark of document 2 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the scope mark of document 2 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('review_2', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 3 on the second case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/zaakinformatieobject",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"case\": \"{{case_b}}\",\n \"informatieobject\": \"{{document_3}}\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the link of document 2 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the link of document 2 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('link_3', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 3 in scope",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"case\": \"{{case_b}}\",\n \"documentRef\": \"{{document_3}}\",\n \"relevance\": \"in-scope\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the scope mark of document 2 is created', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the scope mark of document 2 has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('review_3', made);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the reviewer reads the case through a share",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case/{{case_id}}/shares",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"type\": \"user\",\n \"shareWith\": \"{{reviewer_uid}}\",\n \"permissions\": 1\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('the case is shared', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the colleague reads the case through a share",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case/{{case_id}}/shares",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"type\": \"user\",\n \"shareWith\": \"{{colleague_uid}}\",\n \"permissions\": 1\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('the case is shared', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the colleague reads the second case through a share",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case/{{case_b}}/shares",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"type\": \"user\",\n \"shareWith\": \"{{colleague_uid}}\",\n \"permissions\": 1\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('the case is shared', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the reviewer holds a batch of one: document 2",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/api/cases/{{case_id}}/review/batches",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"name\": \"Tweede lezing\",\n \"assignee\": \"{{reviewer_uid}}\",\n \"documents\": [\n  \"{{document_2}}\"\n ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the batch is stored', () => pm.expect(pm.response.code, pm.response.text()).to.equal(201));",
+									"const made = pm.response.json();",
+									"pm.collectionVariables.set('batch_id', idOf(made.batch));",
+									"// REQ-CRA-002: the batch reconciles the case's private records before it answers.",
+									"pm.test('the case is reconciled', () => pm.expect((made.access || {}).status).to.equal('reconciled'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the colleague holds a batch of document 1",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/api/cases/{{case_id}}/review/batches",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"name\": \"Eerste lezing\",\n \"assignee\": \"{{colleague_uid}}\",\n \"documents\": [\n  \"{{document_1}}\"\n ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the batch is stored', () => pm.expect(pm.response.code, pm.response.text()).to.equal(201));",
+									"const made = pm.response.json();",
+									"pm.collectionVariables.set('batch_colleague', idOf(made.batch));",
+									"// REQ-CRA-002: the batch reconciles the case's private records before it answers.",
+									"pm.test('the case is reconciled', () => pm.expect((made.access || {}).status).to.equal('reconciled'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the colleague holds a batch of document 3 on the second case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/api/cases/{{case_b}}/review/batches",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"name\": \"Tweede lezing\",\n \"assignee\": \"{{colleague_uid}}\",\n \"documents\": [\n  \"{{document_3}}\"\n ]\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the batch is stored', () => pm.expect(pm.response.code, pm.response.text()).to.equal(201));",
+									"const made = pm.response.json();",
+									"pm.collectionVariables.set('batch_b', idOf(made.batch));",
+									"// REQ-CRA-002: the batch reconciles the case's private records before it answers.",
+									"pm.test('the case is reconciled', () => pm.expect((made.access || {}).status).to.equal('reconciled'));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the handler adds a triage rule to the case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{base_url}}/api/cases/{{case_id}}/review/triage/rules",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{handler_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n \"name\": \"{{run}} Nieuwsbrieven\",\n \"effect\": \"out\",\n \"conditions\": {\n  \"senderDomain\": \"nieuwsbrief.example\"\n }\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the rule is stored', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 201]));",
+									"const made = idOf(unwrap(pm.response.json()));",
+									"pm.test('the rule has an id', () => pm.expect(made).to.not.equal(''));",
+									"pm.collectionVariables.set('rule_id', made);"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "schemas",
+			"item": [
+				{
+					"name": "the seven Woo records are private and declare no hierarchy (REQ-WRT-006)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/schemas?_limit=10000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = pm.response.json();",
+									"const rows = Array.isArray(body) ? body : (body.results || []);",
+									"const hierarchyKeys = (value) => (value && typeof value === 'object') ? Object.keys(value).filter((key) => key.includes('hierarchy')).concat(...Object.values(value).map(hierarchyKeys)) : [];",
+									"for (const slug of [\"documentReview\", \"reviewBatch\", \"triageRule\", \"wooSearchPlan\", \"wooExclusion\", \"wooCollectionQuery\", \"wooDeliveredSet\"]) {",
+									"    const schema = rows.find((row) => row.slug === slug);",
+									"    pm.test(slug + ' is installed', () => pm.expect(schema, slug).to.be.an('object'));",
+									"    pm.test(slug + ': authorization.scope is private', () => pm.expect(((schema || {}).authorization || {}).scope).to.equal('private'));",
+									"    pm.test(slug + ': no group reads it for all users', () => pm.expect(((schema || {}).authorization || {}).read || []).to.not.include('authenticated'));",
+									"    pm.test(slug + ': declares no hierarchy', () => pm.expect(hierarchyKeys(schema || {})).to.eql([]));",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "scoped",
+			"item": [
+				{
+					"name": "the reviewer lists only the reviews of their own batch (REQ-WRT-006)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview?case={{case_id}}&_limit=1000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{reviewer_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the list answers or refuses', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 403]));",
+									"const body = pm.response.code === 200 ? pm.response.json() : [];",
+									"const rows = (Array.isArray(body) ? body : (body.results || [])).map(idOf);",
+									"pm.test('review_2 is listed', () => pm.expect(rows).to.include(pm.collectionVariables.get('review_2')));",
+									"pm.test('review_1 is not listed', () => pm.expect(rows).to.not.include(pm.collectionVariables.get('review_1')));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the reviewer lists no review of the other case (REQ-WRT-006)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview?case={{case_b}}&_limit=1000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{reviewer_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the list answers or refuses', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 403]));",
+									"const body = pm.response.code === 200 ? pm.response.json() : [];",
+									"const rows = (Array.isArray(body) ? body : (body.results || [])).map(idOf);",
+									"pm.test('review_3 is not listed', () => pm.expect(rows).to.not.include(pm.collectionVariables.get('review_3')));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the reviewer lists no triage rule (REQ-WRT-006)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/triageRule?case={{case_id}}&_limit=1000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{reviewer_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the list answers or refuses', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 403]));",
+									"const body = pm.response.code === 200 ? pm.response.json() : [];",
+									"const rows = (Array.isArray(body) ? body : (body.results || [])).map(idOf);",
+									"pm.test('rule_id is not listed', () => pm.expect(rows).to.not.include(pm.collectionVariables.get('rule_id')));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "the reviewer lists only their own batch (REQ-WRT-006)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/reviewBatch?case={{case_id}}&_limit=1000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{reviewer_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the list answers or refuses', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 403]));",
+									"const body = pm.response.code === 200 ? pm.response.json() : [];",
+									"const rows = (Array.isArray(body) ? body : (body.results || [])).map(idOf);",
+									"pm.test('batch_id is listed', () => pm.expect(rows).to.include(pm.collectionVariables.get('batch_id')));",
+									"pm.test('batch_colleague is not listed', () => pm.expect(rows).to.not.include(pm.collectionVariables.get('batch_colleague')));",
+									"pm.test('batch_b is not listed', () => pm.expect(rows).to.not.include(pm.collectionVariables.get('batch_b')));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "control: the handler lists every review of the case",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview?case={{case_id}}&_limit=1000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{handler_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the list answers or refuses', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 403]));",
+									"const body = pm.response.code === 200 ? pm.response.json() : [];",
+									"const rows = (Array.isArray(body) ? body : (body.results || [])).map(idOf);",
+									"pm.test('review_1 is listed', () => pm.expect(rows).to.include(pm.collectionVariables.get('review_1')));",
+									"pm.test('review_2 is listed', () => pm.expect(rows).to.include(pm.collectionVariables.get('review_2')));",
+									"pm.test('review_3 is not listed', () => pm.expect(rows).to.not.include(pm.collectionVariables.get('review_3')));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "control: the handler lists the rule",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/triageRule?case={{case_id}}&_limit=1000",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{handler_uid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{user_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+									"const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : (b && b.results && !Array.isArray(b.results) ? b.results : (b && b.object) || b);",
+									"pm.test('the list answers or refuses', () => pm.expect(pm.response.code, pm.response.text()).to.be.oneOf([200, 403]));",
+									"const body = pm.response.code === 200 ? pm.response.json() : [];",
+									"const rows = (Array.isArray(body) ? body : (body.results || [])).map(idOf);",
+									"pm.test('rule_id is listed', () => pm.expect(rows).to.include(pm.collectionVariables.get('rule_id')));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "teardown",
+			"item": [
+				{
+					"name": "rule",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/triageRule/{{rule_id}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "batch",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/reviewBatch/{{batch_id}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "batch of the colleague",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/reviewBatch/{{batch_colleague}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "batch on the second case",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/reviewBatch/{{batch_b}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "scope mark 1",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview/{{review_1}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "scope mark 2",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview/{{review_2}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "scope mark 3",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/documentReview/{{review_3}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "link 1",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/zaakinformatieobject/{{link_1}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "link 2",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/zaakinformatieobject/{{link_2}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "link 3",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/zaakinformatieobject/{{link_3}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "case",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case/{{case_id}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "second case",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/case/{{case_b}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 1",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobject/{{document_1}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 2",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobject/{{document_2}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document 3",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobject/{{document_3}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "document type",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/index.php/apps/openregister/api/objects/dossiq/informatieobjecttype/{{document_type_id}}",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('removed or already gone', () => pm.expect(pm.response.code).to.be.oneOf([200, 204, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "account: handler",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users/{{handler_uid}}?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('the account is removed', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "account: reviewer",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users/{{reviewer_uid}}?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('the account is removed', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "account: colleague",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "OCS-APIRequest",
+								"value": "true"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host}}/ocs/v2.php/cloud/users/{{colleague_uid}}?format=json",
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{admin_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{admin_pass}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('the account is removed', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
