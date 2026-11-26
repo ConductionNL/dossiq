@@ -172,7 +172,7 @@ does not start before that change is merged. Do not declare `x-openregister-hier
 record. OpenRegister refuses a parent that references another schema
 (`HierarchyAnnotationValidator`, `hierarchy.foreign-reference`) and the schema then fails to import.
 
-- [x] 6.1 Give the seven schemas of REQ-WRT-006 (those this change adds, and `wooSearchPlan`,
+- [ ] 6.1 Give the seven schemas of REQ-WRT-006 (those this change adds, and `wooSearchPlan`,
   `wooExclusion`, `wooCollectionQuery` and `wooDeliveredSet` from earlier changes) the private
   authorization block of REQ-WRT-006, with no `x-openregister-hierarchy` key, and bump the register
   version (REQ-WRT-006).
@@ -200,7 +200,7 @@ record. OpenRegister refuses a parent that references another schema
     hierarchy key. All seven carry the private block on `development` (`86-woo-corpus.json`, `86-woo-delivered-set.json`,
     `87-document-review.json`). The collection carries `@newman exclude` like `woo-request-scoped-access`: it runs on the
     live pass through `tests/newman/run-all.sh`.
-- [x] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
+- [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
   after the create, in the same request, from every route that creates one of the seven: the gather
   add, the search plan save, the query record, the exclusion route, the rule create, the batch
   create and `OutcomePublisher::publish()`. The repair step of 1.1 does not call it. The
