@@ -138,7 +138,7 @@ class HouseholdCasesTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/family-plan-by-case/tasks.md
+	 * @spec openspec/changes/archive/2026-11-26-family-plan-by-case/tasks.md
 	 */
 	public function testACaseFindsThePlanThatNamesIt(): void {
 		$this->objects->seed(
