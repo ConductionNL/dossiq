@@ -2157,6 +2157,9 @@
 					"bid-score": {
 						"group": "Case"
 					},
+					"award-propose": {
+						"group": "Case"
+					},
 					"interim-report-record": {
 						"group": "Case"
 					},
@@ -7285,6 +7288,7 @@
 					"tender-answer-publish",
 					"bid-register",
 					"bid-score",
+					"award-propose",
 					"interim-report-record",
 					"interim-report-assess",
 					"grant-settle",

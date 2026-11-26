@@ -65,7 +65,7 @@ class TenderRecordsSchemasTest extends TestCase {
 	 * The states each lifecycle has, as the specs list them.
 	 */
 	private const STATES = [
-		'bid' => ['received', 'admissible', 'inadmissible', 'excluded', 'evaluated', 'withdrawn'],
+		'bid' => ['received', 'admissible', 'inadmissible', 'excluded', 'evaluated', 'proposed-award', 'withdrawn'],
 		'tenderQuestion' => ['received', 'under-review', 'answered', 'published', 'rejected'],
 		'evaluation' => ['draft', 'submitted', 'calibrated', 'finalised', 'withdrawn'],
 	];
@@ -122,6 +122,18 @@ class TenderRecordsSchemasTest extends TestCase {
 
 		$late = $this->real->schemas['bid']['configuration']['x-openregister-lifecycle']['transitions']['declareInadmissible'];
 		$this->assertSame([['received'], 'inadmissible'], [$late['from'], $late['to']]);
+
+		// The proposed award is a bid state, one per lot (tenders-run-on-the-tender-case-type 3.2): a scored bid is
+		// proposed, and released back to evaluated when another bid of its lot is proposed.
+		$transitions = $this->real->schemas['bid']['configuration']['x-openregister-lifecycle']['transitions'];
+		$this->assertSame(
+			expected: [['admissible', 'evaluated'], 'proposed-award'],
+			actual: [$transitions['proposeAward']['from'], $transitions['proposeAward']['to']]
+		);
+		$this->assertSame(
+			expected: [['proposed-award'], 'evaluated'],
+			actual: [$transitions['releaseAward']['from'], $transitions['releaseAward']['to']]
+		);
 	}//end testTheStatesFollowADeclaredLifecycle()
 
 	/**

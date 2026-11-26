@@ -134,6 +134,8 @@ class ScoringSheet implements ScoringSheetInterface {
 				'price' => $this->value->numberOf(value: ($submission['priceAmount'] ?? null)),
 				'total' => $this->value->numberOf(value: ($evaluations[$id]['weightedTotal'] ?? null)),
 				'scores' => (array)($evaluations[$id]['criterionScores'] ?? []),
+				'state' => (string)($submission['state'] ?? ''),
+				'lot' => (string)($submission['lot'] ?? ''),
 			];
 		}
 
