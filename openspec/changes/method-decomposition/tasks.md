@@ -1851,3 +1851,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         OpenRegister refusals, the 500 for a genuine fault and the 422), unchanged but for one `@covers` line. Own test:
         `tests/Unit/Controller/ChecklistRunFailureTest` (3, with the log level and wording of each answer, which the
         controller suite does not assert); dropping the custom-validation arm turns 2 tests red (checked).
+  - [x] 8cy `Controller/PayoutCallbackController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading a
+        signed callback's fields and parsing its actual payment date through the one date write path (a malformed date
+        or body a 400 with the reason, never today) moved to `Controller/PayoutCallbackFields::read()` (body moved
+        unchanged). The controller keeps the signature check, the hand-off to the payout service and the unknown-reference
+        answer. Its constructor takes `PayoutCallbackFields` in place of `CaseDateNormaliserInterface`; the container
+        autowires it, and only the two tests build the controller by hand. `OneDateWritePathTest` lists the new file
+        under the controller's write path. Coupling 14 to 13; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `PayoutCallbackControllerTest` and `PayoutCallbackGoldenTest`
+        (11), building the controller over the same reader and dates through `PayoutCallbackFields`, and
+        `OneDateWritePathTest`. Own test: `tests/Unit/Controller/PayoutCallbackFieldsTest` (3); parsing an absent date
+        turns it red (checked).

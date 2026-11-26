@@ -31,8 +31,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use InvalidArgumentException;
-use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
 use OCA\Dossiq\Kernel\Contracts\PayoutReaderInterface;
 use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SignedPayoutCallbackInterface;
@@ -60,16 +58,18 @@ class PayoutCallbackController extends Controller {
 	 * @param IRequest $request Request.
 	 * @param PayoutServiceInterface $service Updates the payout row.
 	 * @param SignedPayoutCallbackInterface $callback Checks the signature and reads the body.
-	 * @param CaseDateNormaliserInterface $dates The one date write path.
+	 * @param PayoutCallbackFields $fields Reads the body and parses its payment date through the one date write path.
 	 * @param LoggerInterface $logger Logger.
 	 * @param PayoutReaderInterface|null $reader Knows the payouts only finance holds, which have no row to update.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PayoutServiceInterface $service,
 		private readonly SignedPayoutCallbackInterface $callback,
-		private readonly CaseDateNormaliserInterface $dates,
+		private readonly PayoutCallbackFields $fields,
 		private readonly LoggerInterface $logger,
 		private readonly ?PayoutReaderInterface $reader = null,
 	) {
@@ -100,13 +100,15 @@ class PayoutCallbackController extends Controller {
 	 * @param string $rawBody The raw request body.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function handle(string $rawBody): JSONResponse {
 		if ($this->callback->isSigned(rawBody: $rawBody, request: $this->request) === false) {
 			return $this->unsigned();
 		}
 
-		$fields = $this->fieldsOf(rawBody: $rawBody);
+		$fields = $this->fields->read(rawBody: $rawBody);
 		if ($fields instanceof JSONResponse) {
 			return $fields;
 		}
@@ -139,30 +141,6 @@ class PayoutCallbackController extends Controller {
 		// Inline 401: the signature check IS the auth of this public page.
 		return new JSONResponse(['message' => 'Invalid or missing signature'], 401);
 	}//end unsigned()
-
-	/**
-	 * The callback's fields with its payment date parsed, or the 400 answer.
-	 *
-	 * @param string $rawBody The raw request body.
-	 *
-	 * @return array<string, mixed>|JSONResponse The fields plus `paymentDate` (null when absent).
-	 *
-	 * @spec openspec/specs/payout/spec.md
-	 */
-	private function fieldsOf(string $rawBody): array|JSONResponse {
-		try {
-			$fields = $this->callback->read(rawBody: $rawBody);
-			$fields['paymentDate'] = null;
-			if ($fields['actualPaymentDate'] !== '') {
-				$fields['paymentDate'] = $this->dates->parse($fields['actualPaymentDate'], 'actualPaymentDate');
-			}
-		} catch (InvalidArgumentException $e) {
-			// A malformed date used to be replaced by today, booking the payment on the wrong day.
-			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		}
-
-		return $fields;
-	}//end fieldsOf()
 
 	/**
 	 * The answer for a reference the payout rows do not know.

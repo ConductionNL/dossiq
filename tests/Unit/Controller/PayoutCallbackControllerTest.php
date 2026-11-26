@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PayoutCallbackController;
+use OCA\Dossiq\Controller\PayoutCallbackFields;
 use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutService;
@@ -45,6 +46,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Controller\PayoutCallbackController
+ * @covers \OCA\Dossiq\Controller\PayoutCallbackFields
  * @covers \OCA\Dossiq\Service\Money\SignedPayoutCallback
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Money\PayoutReader
@@ -97,12 +99,14 @@ class PayoutCallbackControllerTest extends TestCase {
 			static fn (string $name): string => ($headers[$name] ?? '')
 		);
 
+		$callback = new SignedPayoutCallback(appConfig: $this->appConfig);
+
 		return new class(
 			appName: 'dossiq',
 			request: $request,
 			service: $this->service,
-			callback: new SignedPayoutCallback(appConfig: $this->appConfig),
-			dates: $this->caseDates(),
+			callback: $callback,
+			fields: new PayoutCallbackFields(callback: $callback, dates: $this->caseDates()),
 			logger: $this->logger,
 			body: $body,
 			reader: $reader,
@@ -112,7 +116,7 @@ class PayoutCallbackControllerTest extends TestCase {
 			 * @param IRequest $request Request.
 			 * @param PayoutService $service Service.
 			 * @param SignedPayoutCallback $callback Callback reader.
-			 * @param \OCA\Dossiq\Service\CaseDateNormaliser $dates Dates.
+			 * @param PayoutCallbackFields $fields The body's fields with the payment date parsed.
 			 * @param LoggerInterface $logger Logger.
 			 * @param string $body The raw body this request carries.
 			 */
@@ -121,12 +125,20 @@ class PayoutCallbackControllerTest extends TestCase {
 				IRequest $request,
 				PayoutService $service,
 				SignedPayoutCallback $callback,
-				\OCA\Dossiq\Service\CaseDateNormaliser $dates,
+				PayoutCallbackFields $fields,
 				LoggerInterface $logger,
 				private readonly string $body,
 				?PayoutReader $reader = null,
 			) {
-				parent::__construct($appName, $request, $service, $callback, $dates, $logger, $reader);
+				parent::__construct(
+					appName: $appName,
+					request: $request,
+					service: $service,
+					callback: $callback,
+					fields: $fields,
+					logger: $logger,
+					reader: $reader
+				);
 			}
 
 			/**

@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use DateTimeImmutable;
 use LogicException;
 use OCA\Dossiq\Controller\PayoutCallbackController;
+use OCA\Dossiq\Controller\PayoutCallbackFields;
 use OCA\Dossiq\Service\Money\PayoutReader;
 use OCA\Dossiq\Service\Money\PayoutService;
 use OCA\Dossiq\Service\Money\SignedPayoutCallback;
@@ -46,6 +47,7 @@ use RuntimeException;
  * Golden test for PayoutCallbackController's callback handling.
  *
  * @covers \OCA\Dossiq\Controller\PayoutCallbackController
+ * @covers \OCA\Dossiq\Controller\PayoutCallbackFields
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Money\SignedPayoutCallback
  */
@@ -125,7 +127,7 @@ class PayoutCallbackGoldenTest extends TestCase {
 			request: $this->createMock(IRequest::class),
 			service: $this->serviceFor(world: $world),
 			callback: $callback,
-			dates: $this->caseDates(),
+			fields: new PayoutCallbackFields(callback: $callback, dates: $this->caseDates()),
 			logger: $this->recordingLogger(),
 			reader: $reader,
 		);
