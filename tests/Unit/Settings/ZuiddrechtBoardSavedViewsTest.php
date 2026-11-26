@@ -157,7 +157,7 @@ class ZuiddrechtBoardSavedViewsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#requirement-a-saved-case-view-can-be-shared-with-a-team-req-csl-share-01
+	 * @spec openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists/spec.md#requirement-a-saved-case-view-can-be-shared-with-a-team-req-csl-share-01
 	 */
 	public function testMarleenSharesTheVergunningenWeekView(): void {
 		$views = $this->views();
