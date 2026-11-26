@@ -623,7 +623,6 @@ test.describe('Case detail — the Parties tab', () => {
 			timeout: 30_000,
 		})
 
-		const strip = page.locator('.cn-tabs-widget')
 		await openCaseTab(page, /^(Parties|Betrokkenen)\b/)
 
 		const roles = page.locator('[data-testid="cn-object-parties"]')
