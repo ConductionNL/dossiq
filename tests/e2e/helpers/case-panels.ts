@@ -63,7 +63,12 @@ export const CASE_PANELS = {
 	// call does not type-check. Pointing it at Files keeps the suite
 	// compiling; the spec belongs with whoever retired the list.
 	documents: { tab: /^(Files|Bestanden)\b/, section: null },
-	parties: { tab: /^(People|Betrokkenen)\b/, section: 'cn-section-case-roles' },
+	// The Parties tab (it was People); its party list is the `case-party-roles`
+	// section, the library `parties` widget over the case's parties.
+	parties: {
+		tab: /^(Parties|Betrokkenen)\b/,
+		section: 'cn-section-case-party-roles',
+	},
 	communication: {
 		tab: /^Contact\b/,
 		section: 'cn-section-case-communication',
