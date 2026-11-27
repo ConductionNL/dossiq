@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Zaakdossier\CaseFileCollector;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Woo\WooCollection;
+use OCA\Dossiq\Service\Documents\CallerReadable;
 use OCA\Dossiq\Woo\WooGatherAdd;
 use OCA\Dossiq\Woo\WooSources;
 use OCP\Files\File;
@@ -118,11 +119,10 @@ class WooGatherAddAnswerGoldenTest extends TestCase {
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => '['.$text.']');
 
 		return new WooGatherAdd(
-			$this->rootFolder,
+			new CallerReadable(rootFolder: $this->rootFolder, accessGuard: $this->accessGuard),
 			$this->store,
 			$this->collector,
 			$this->sources,
-			$this->accessGuard,
 			$l10n,
 			$this->logger,
 			$this->collection

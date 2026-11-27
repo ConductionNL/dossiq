@@ -55,6 +55,7 @@ use OCA\Dossiq\Review\ReviewConfiguration;
 use OCA\Dossiq\Review\ReviewWrites;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCollection;
+use OCA\Dossiq\Service\Documents\CallerReadable;
 use OCA\Dossiq\Woo\WooGatherAdd;
 use OCA\Dossiq\Woo\WooSearchPlans;
 use OCA\Dossiq\Woo\WooSources;
@@ -323,11 +324,10 @@ class WooGatherAddTest extends TestCase {
 		);
 
 		return new WooGatherAdd(
-			rootFolder: $rootFolder,
+			readable: new CallerReadable(rootFolder: $rootFolder, accessGuard: $guard),
 			store: $store,
 			collector: new CaseFileCollector(store: $store, projection: $projection, mailHeaders: $this->mailHeaders(), mailThreads: $this->mailThreads(store: $store)),
 			sources: $sources,
-			accessGuard: $guard,
 			l10n: $l10n,
 			logger: $this->createMock(LoggerInterface::class),
 			collection: $collection,
