@@ -1944,3 +1944,28 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         overdue notice's app, user, object, subject and parameters; a notice that cannot be sent is logged and the
         warning stands), beside `OneDateWritePathTest`, `StatutoryTermParityTest` and the `WOOAssessmentController`
         suites. Own test: `tests/Unit/Service/Notification/DeadlineWarningNoticeTest` (3).
+  - [x] 8dh `CaseTypeCopyService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The value a copy step works on,
+        `CaseType/CaseTypeCopyTarget`, already held the object service, the register and the schema; it now makes the
+        save and the find there itself (`save()`, `find()`), so the service no longer builds OpenRegister's three option
+        objects. The calls are the same, and a refusal is not caught in the target: it still reaches each step's own
+        catch and log line. Coupling 14 to 11; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `CaseTypeCopyServiceTest` (the copy, the version, the children that
+        could not be carried) and `CaseTypeCopyValuesTest`. Own tests: two added to `CaseTypeCopyValuesTest` (a save and a
+        find in the target's own register and schema; a refusal reaches the caller).
+  - [x] 8di `Review/ReviewBatches` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Writing a batch into the
+        batch schema (identifiers stripped, created or replaced by its uuid, answered as an array; a register that will
+        not take it refused as `review-batch-unavailable` with the cause, and logged) moved to `Review/ReviewBatchStore`
+        (`save()`, with `writeBatch()`; bodies and the log line moved unchanged, the trait's refusal spelled out as the
+        same `RefusedException`, `UNSTORED` now a public constant both read). The service builds the store in its
+        constructor, so its constructor and the container are unchanged. Coupling 14 to 13; phpmd: zero findings on
+        both files under both rulesets.
+        Characterisation, green before and after: `ReviewBatchesTest` (including the register that cannot write),
+        `BatchSelectionTest`, `DocumentReviewControllerTest`, `RecallControllerTest` and `ReviewContractRegistrarTest`.
+        Own test: `tests/Unit/Review/ReviewBatchStoreTest` (2).
+  - [x] 8dj `Repair/MigrateWorkflowDefinitions` (1, unsuppressed: CouplingBetweenObjects 14 against 13). As in 8dh: the
+        step's value `Workflow/BackfillTarget` already held the object service, the register and the schemas, and now
+        makes the save itself (`save(schema, object, uuid)`), so the step no longer builds OpenRegister's option objects
+        for its three writes (the template, the case type pin, the open case pin). The calls are the same and a refusal
+        still reaches each write's own catch. Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `MigrateWorkflowDefinitionsGoldenTest` and
+        `MigrateWorkflowDefinitionsLabelsTest`. Own test: `tests/Unit/Service/Workflow/BackfillTargetTest` (3).
