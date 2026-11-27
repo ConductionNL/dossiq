@@ -2245,6 +2245,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the controller, before or after. Characterisation, green before and after: `CaseSharingControllerFederationTest`,
         `CaseTransferActingUserTest`, `CaseFederationShareGateGoldenTest`, `FederatedShareCreateGoldenTest` and
         `FederatedShareNeedsConsentTest`. Own test: `tests/Unit/Controller/Support/FederatedTokenCallsTest` (2).
+  - [x] 8em `Woo/WooGatherAdd` (1, unsuppressed: CouplingBetweenObjects 15 against 13). What the caller may read, asked as
+        the caller (a Nextcloud file by its id through their own user folder, handed over only when it is a readable file;
+        whether they may read a given case, never for an empty id), moved to the generic
+        `Service/Documents/CallerReadable` (`file()`, `mayReadCase()`; bodies moved unchanged), outside the procedure-named
+        tree. What a pick becomes on the case, its provenance, the exclusions and the answer per pick stay. It takes the
+        readable in place of the root folder and the access guard, so its constructor goes from nine parameters to eight;
+        the container autowires it. Coupling 15 to 13 (readable 4); phpmd: zero findings on both files.
+        Characterisation, green before and after: `WooGatherAddTest` and `WooGatherAddAnswerGoldenTest` (31). Own test:
+        `tests/Unit/Service/Documents/CallerReadableTest` (2).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

@@ -43,13 +43,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseFileCollectorInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRecordStoreInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
 use OCA\Dossiq\Kernel\Contracts\WooGatherAddInterface;
-use OCP\Files\File;
-use OCP\Files\IRootFolder;
+use OCA\Dossiq\Service\Documents\CallerReadable;
 use OCP\IL10N;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
@@ -65,22 +63,22 @@ class WooGatherAdd implements WooGatherAddInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param IRootFolder               $rootFolder  The caller's own files.
+	 * @param CallerReadable            $readable    What the caller may read: their own file, another case.
 	 * @param DocumentRecordStoreInterface       $store       Records and joins in OpenRegister.
 	 * @param CaseFileCollectorInterface         $collector   Writes copied bytes as a document on the case, with provenance.
 	 * @param WooSources                $sources     Fetches an integriq hit.
-	 * @param CaseAccessGuardInterface           $accessGuard Whether the caller may read the case a linked document is on.
 	 * @param IL10N                     $l10n        The refusal sentences.
 	 * @param LoggerInterface           $logger      Logs a pick that failed for a reason the caller cannot fix.
 	 * @param WooCollection             $collection  Records a duplicate or unreadable pick as an exclusion.
 	 * @param ReviewWritesInterface|null $reviews    Opens an unmarked review for each added document.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly IRootFolder $rootFolder,
+		private readonly CallerReadable $readable,
 		private readonly DocumentRecordStoreInterface $store,
 		private readonly CaseFileCollectorInterface $collector,
 		private readonly WooSources $sources,
-		private readonly CaseAccessGuardInterface $accessGuard,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly WooCollection $collection,
@@ -243,6 +241,8 @@ class WooGatherAdd implements WooGatherAddInterface {
 	 * @return string The document record uuid.
 	 *
 	 * @throws WooPickRefused When the caller cannot read the file.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function addFile(WooPickRun $run): string {
 		$fileId = (int)$run->key();
@@ -250,31 +250,13 @@ class WooGatherAdd implements WooGatherAddInterface {
 			throw new WooPickRefused('not-readable');
 		}
 
-		$file = $this->userFile(user: $run->user, fileId: $fileId);
-		if ($file === null || $file->isReadable() === false) {
+		$file = $this->readable->file(user: $run->user, fileId: $fileId);
+		if ($file === null) {
 			throw new WooPickRefused('not-readable');
 		}
 
 		return $this->store(run: $run, file: new WooPickedFile(fileName: $file->getName(), content: $file->getContent()));
 	}//end addFile()
-
-	/**
-	 * The first file under this id in the caller's own folder.
-	 *
-	 * @param IUser $user   The caller.
-	 * @param int   $fileId The file id.
-	 *
-	 * @return File|null The file, or null when the caller's folder holds none.
-	 */
-	private function userFile(IUser $user, int $fileId): ?File {
-		foreach ($this->rootFolder->getUserFolder($user->getUID())->getById($fileId) as $node) {
-			if ($node instanceof File) {
-				return $node;
-			}
-		}
-
-		return null;
-	}//end userFile()
 
 	/**
 	 * Fetch an integriq hit and store it in the case folder.
@@ -335,6 +317,8 @@ class WooGatherAdd implements WooGatherAddInterface {
 	 * @return void
 	 *
 	 * @throws WooPickRefused `already-on-case` or `not-readable`.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function assertLinkable(WooPickRun $run, string $documentId): void {
 		$readable = false;
@@ -344,7 +328,7 @@ class WooGatherAdd implements WooGatherAddInterface {
 				throw new WooPickRefused('already-on-case');
 			}
 
-			if ($this->mayReadCase(user: $run->user, otherCase: $otherCase) === true) {
+			if ($this->readable->mayReadCase(user: $run->user, caseId: $otherCase) === true) {
 				$readable = true;
 			}
 		}
@@ -353,18 +337,6 @@ class WooGatherAdd implements WooGatherAddInterface {
 			throw new WooPickRefused('not-readable');
 		}
 	}//end assertLinkable()
-
-	/**
-	 * Whether the caller may read the other case a document is on.
-	 *
-	 * @param IUser  $user      The caller.
-	 * @param string $otherCase The other case uuid, '' when the join names none.
-	 *
-	 * @return bool
-	 */
-	private function mayReadCase(IUser $user, string $otherCase): bool {
-		return $otherCase !== '' && $this->accessGuard->hasCaseReadAccess(caseId: $otherCase, user: $user) === true;
-	}//end mayReadCase()
 
 	/**
 	 * Store bytes in the case folder as a document with its provenance, unless the case holds them already.
