@@ -217,6 +217,7 @@ class OpenCatalogiShapesFileServiceDouble {
  *
  * @uses   \OCA\Dossiq\AppInfo\Application
  * @uses   \OCA\Dossiq\Service\SettingsService
+ * @uses   \OCA\Dossiq\Service\Publication\PublicationTarget
  */
 class OpenCatalogiApiClientShapesTest extends TestCase {
 

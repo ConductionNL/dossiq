@@ -1969,7 +1969,43 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         still reaches each write's own catch. Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
         Characterisation, green before and after: `MigrateWorkflowDefinitionsGoldenTest` and
         `MigrateWorkflowDefinitionsLabelsTest`. Own test: `tests/Unit/Service/Workflow/BackfillTargetTest` (3).
-  - [x] 8dk `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
+  - [x] 8dk `Publication/OpenCatalogiApiClient` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The value
+        `Publication/PublicationTarget` holds the register and schema; it now builds OpenRegister's find and save
+        options for them (`findOptions()`, `saveOptions(uuid)`), so the client no longer builds the three option objects.
+        Same options, same calls, same catches and log lines. Coupling 15 to 12; phpmd: zero findings on both files
+        under both rulesets.
+        Characterisation, green before and after: `OpenCatalogiApiClientTest`, `OpenCatalogiApiClientShapesTest`,
+        `CatalogTransportTest`, `OutcomePublisherTest` and the Woo publication suites. Own test: one added to
+        `PublicationTargetTest` (the options name the register, the schema and the uuid).
+  - [x] 8dl `Controller/BrcController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Deleting a besluit
+        (brc-009: find it, run its destroy rules, sync-delete its OIOs in DRC, delete it; a store failure, a missing
+        besluit and a refusing rule each answered before anything is deleted) moved to `Service/Zgw/BrcDecisionDeletion`
+        (`delete()`, with `validateAndDeleteDecision()`; bodies moved unchanged, the request passed in for the besluit's
+        URL). The controller keeps the route, the mapping lookup and the delete notification, and builds the deletion in
+        its constructor beside its other helpers, so its constructor is unchanged. Its now unused `DECISION_RESOURCE`
+        constant moved with the code. Coupling 14 to 10; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `BrcControllerTest` (the deleted besluit with its mirrors, the refused
+        delete, the missing resource), `BrcNrcWriteGateGoldenTest`, `ZgwRateLimitTest` and `ZgwAuthMiddlewareTest`.
+        Own test: `tests/Unit/Service/Zgw/BrcDecisionDeletionTest` (3).
+  - [x] 8dm `Bezwaar/BezwaarAuditTrail` (1, unsuppressed: CouplingBetweenObjects 15 against 13). `BezwaarEntryCommand`,
+        which holds the record's register, schema and uuid, now names the deletion of that record (`recordDeletion()`)
+        for the write-or-undo path; and an entry is stamped with `date(DATE_ATOM)` instead of a `DateTimeImmutable`
+        formatted as ATOM: the same string in the same time zone. Coupling 15 to 12; phpmd: no new findings (the
+        StaticAccess on `ObjectAuditEvents` in `writeEvent()` was there on development).
+        Characterisation: `testAnEntryIsStampedWithAnAtomTimestamp` added to `BezwaarAuditTrailTest` and run green on
+        the old code first (in a development worktree), beside `BezwaarAuditWriteOrUndoTest`,
+        `BezwaarRecordThenApplyGoldenTest` and the other Bezwaar suites. Own test:
+        `tests/Unit/Service/Bezwaar/BezwaarEntryCommandTest` (1).
+  - [x] 8dn `Recycle/CaseDestructionService` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The permanent
+        delete of a destroyed case from its register and case schema moved to `Service/Recycle/CasePurge::delete()`
+        (body unchanged), and the record's `destroyedAt` is `date(DATE_ATOM)`, the same stamp as before. The audit
+        record stays in the service: moving it would carry its development StaticAccess finding into a new file. The
+        service builds the purge in its constructor, so its constructor is unchanged. Coupling 15 to 13; phpmd: no new
+        findings.
+        Characterisation: the `destroyedAt` format pinned in `CaseDestructionTest::testTheRecordNamesWhoDecided` and run
+        green on the old code first, beside the rest of `CaseDestructionTest` and `CaseRecycleControllerTest`. Own test:
+        `tests/Unit/Service/Recycle/CasePurgeTest` (2).
+  - [x] 8do `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
         of a payout (the payable amount of a calculation, definitive before cumulative; saving a payout row; the row a
         finance callback names by its reference; the refusal when either schema is not configured, and one sentence
         with the cause per failing read or write) moved to `Money/PayoutStore` (`payableAmount()`, `save()`,
@@ -1981,7 +2017,7 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `AmountObjectionServiceTest`,
         `AmountObjectionServiceFailuresTest` and `MigratePayoutRowsToFinanceEdgesTest`.
         Own test: `tests/Unit/Service/Money/PayoutStoreTest` (8).
-  - [x] 8dl `CaseEmailService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Recording a mail that went out
+  - [x] 8dp `CaseEmailService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Recording a mail that went out
         about a case (the message stored as a case document, then its public timeline line with the recipient, the
         subject, the document, the delivery and the sender), which dossiq's own send and an OpenRegister flow step's
         mail both pass through, moved to `Email/SentCaseMailRecorder` (`record()`; `recordSent()` and `recordMailOut()`

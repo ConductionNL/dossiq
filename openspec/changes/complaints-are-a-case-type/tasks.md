@@ -23,6 +23,7 @@
 
 - [ ] 4.1 `tests/e2e/complaint-case-type.spec.ts`: both scenarios of REQ-CMP-CT-01 (the second after 2.3).
   - 25 Nov 2026 live: the first scenario is green (after the spec sends the request token on the terms read); the second stays skipped until 2.3.
+  - 26 Nov 2026 live (NC 34 + MariaDB + OpenRegister main): the second scenario is written and green (hearing planned from the case page with both parties, listed by `GET /api/cases/{id}/sessions`, and on the History tab as a `sessie` entry), after two app fixes: `session.chairperson` holds the chairing user's id (it declared a role uuid and refused every plan) and a planned session is recorded on the case timeline. The first scenario's term assertions pass; its last step is red: `/cases?savedView=default:complaints` opened on All cases without the complaint filter, so the new complaint was not on screen. Not triaged further.
 - [ ] 4.2 Live pass against board DqKlachten.
   - 25 Nov 2026 live, complaint 2026-4874 (Zuiddrecht set) against the board. Matches: stepper (Ontvangen, Bevestigd, Hoorgesprek, Oordeel, Antwoordbrief, Afgehandeld), Gegevens card (Klager, Onderwerp, Gaat over, Ontvangen, Afdeling, Categorie), Hoorgesprek card (Wanneer, Waar, Verslag, Soort, Aanwezig). Differs:
     - the what-now card reads "Stap 2: in behandeling ... Daarna: naar stap 3, besluit" while the stepper stands on Hoorgesprek (step 3); the board reads "Stap 3: hoorgesprek ... Daarna: naar stap 4, oordeel" with the complaint's own checklist;

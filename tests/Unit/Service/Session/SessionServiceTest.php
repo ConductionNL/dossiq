@@ -31,6 +31,9 @@ namespace OCA\Dossiq\Tests\Unit\Service\Session;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
+use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
+use OCA\Dossiq\Service\Session\SessionFollowUps;
 use OCA\Dossiq\Service\Session\SessionMeeting;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
@@ -46,6 +49,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Session\SessionService
  * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
+ * @uses   \OCA\Dossiq\Service\Session\SessionFollowUps
  * @uses   \OCA\Dossiq\Service\Session\SessionMeeting
  * @uses   \OCA\Dossiq\Service\Session\StoredSession
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
@@ -203,7 +207,9 @@ class SessionServiceTest extends TestCase {
 			settingsService: $this->settings,
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
-			meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(originalClassName: LoggerInterface::class))
+			followUps: new SessionFollowUps(
+				meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(originalClassName: LoggerInterface::class))
+			)
 		);
 
 		$saved = $service->schedule(
@@ -222,6 +228,45 @@ class SessionServiceTest extends TestCase {
 	}//end testAPlannedSessionOpensAsAMeetingAndKeepsItsId()
 
 	/**
+	 * A planned session is recorded on the case's history, with its declared label and date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md
+	 */
+	public function testAPlannedSessionIsRecordedOnTheCaseHistory(): void {
+		$timeline = $this->createMock(originalClassName: CaseTimelineInterface::class);
+		$recorded = [];
+		$timeline->method('record')->willReturnCallback(
+			static function (string $caseId, string $kind, string $message, array $fields = []) use (&$recorded): string {
+				$recorded[] = [$caseId, $kind, $fields['act'] ?? null, $fields['sessionKey'] ?? null, $fields['sessionId'] ?? null, $message];
+				return 'entry-1';
+			}
+		);
+		$service = new SessionService(
+			settingsService: $this->settings,
+			timeFactory: $this->clock,
+			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
+			followUps: new SessionFollowUps(timeline: $timeline)
+		);
+
+		$saved = $service->schedule(
+			caseId: self::CASE_ID,
+			sessionKey: 'hearing',
+			scheduledDate: '2026-10-20T10:00:00+00:00',
+			chairpersonId: self::CHAIR,
+			invitees: [['role' => 'applicant']]
+		);
+
+		self::assertCount(expectedCount: 1, haystack: $recorded);
+		self::assertSame(
+			expected: [self::CASE_ID, TimelineKindsInterface::SESSION, 'planned', 'hearing', $saved['id']],
+			actual: array_slice($recorded[0], 0, 5)
+		);
+		self::assertStringContainsString(needle: '2026-10-20 10:00', haystack: $recorded[0][5]);
+	}//end testAPlannedSessionIsRecordedOnTheCaseHistory()
+
+	/**
 	 * When the decision app holds no meeting, the session is planned without one.
 	 *
 	 * @return void
@@ -233,9 +278,11 @@ class SessionServiceTest extends TestCase {
 			settingsService: $this->settings,
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
-			meetings: new SessionMeeting(
-				eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
-				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			followUps: new SessionFollowUps(
+				meetings: new SessionMeeting(
+					eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				)
 			)
 		);
 

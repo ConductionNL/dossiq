@@ -3071,7 +3071,8 @@
 								"document": "Documents",
 								"bericht": "Messages",
 								"taak": "Tasks",
-								"toewijzing": "Assignment"
+								"toewijzing": "Assignment",
+								"sessie": "Session"
 							},
 							"kindIcons": {
 								"document": "FileDocumentOutline",

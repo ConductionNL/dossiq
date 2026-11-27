@@ -150,6 +150,7 @@ final class BrcStore {
  * @covers \OCA\Dossiq\Controller\ZgwController
  * @covers \OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync
  * @covers \OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler
+ * @covers \OCA\Dossiq\Service\Zgw\BrcDecisionDeletion
  * @uses \OCA\Dossiq\Service\Zgw\StoreFailureAnswer
  * @uses \OCA\Dossiq\Service\Zgw\ZgwSearchScope
  * @uses \OCA\Dossiq\Support\NormalisesObjectRows

@@ -44,4 +44,22 @@ class PublicationTargetTest extends TestCase {
 		$this->assertSame(expected: 'publication', actual: $value->register);
 		$this->assertSame(expected: 'document', actual: $value->schema);
 	}//end testPropertiesReadBack()
+
+	/**
+	 * The find and save options name this register and schema, and the save carries the uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testTheOptionsNameThisRegisterAndSchema(): void {
+		$target = new PublicationTarget(register: 'publication', schema: 'document');
+
+		$find = $target->findOptions();
+		$this->assertSame(expected: ['publication', 'document'], actual: [$find->register, $find->schema]);
+
+		$update = $target->saveOptions(uuid: 'pub-1');
+		$this->assertSame(expected: ['publication', 'document', 'pub-1'], actual: [$update->target->register, $update->target->schema, $update->uuid]);
+		$this->assertNull(actual: $target->saveOptions(uuid: null)->uuid);
+	}//end testTheOptionsNameThisRegisterAndSchema()
 }//end class

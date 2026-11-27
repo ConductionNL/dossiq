@@ -47,6 +47,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Controller\ZgwController
  * @uses \OCA\Dossiq\Service\Zgw\BrcCrossRegisterSync
  * @uses \OCA\Dossiq\Service\Zgw\BrcDocumentLinkHandler
+ * @uses \OCA\Dossiq\Service\Zgw\BrcDecisionDeletion
  */
 class BrcNrcWriteGateGoldenTest extends TestCase {
 	/**

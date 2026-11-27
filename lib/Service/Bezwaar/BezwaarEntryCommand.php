@@ -27,6 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+
 /**
  * The entry BezwaarAuditTrail writes for one act.
  *
@@ -55,4 +58,18 @@ final class BezwaarEntryCommand {
 		public readonly string $tag,
 	) {
 	}//end __construct()
+
+	/**
+	 * The deletion of the record this entry describes, in its register and schema.
+	 *
+	 * @return ObjectDeletion
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function recordDeletion(): ObjectDeletion {
+		return new ObjectDeletion(
+			uuid: $this->objectUuid,
+			target: new ObjectFindTarget(register: $this->register, schema: $this->schema)
+		);
+	}//end recordDeletion()
 }//end class

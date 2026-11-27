@@ -63,9 +63,6 @@ namespace OCA\Dossiq\Service\Publication;
 
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
@@ -434,6 +431,7 @@ class OpenCatalogiApiClient {
 	 * @throws RuntimeException 'opencatalogi_api_error' when the object cannot be read.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function readObjectData(PublicationTarget $target, string $id): array {
 		$objectService = $this->requireObjectService();
@@ -441,7 +439,7 @@ class OpenCatalogiApiClient {
 		try {
 			$stored = $objectService->findSilent(
 				id: $id,
-				options: new ObjectFindOptions(register: $target->register, schema: $target->schema)
+				options: $target->findOptions()
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
@@ -489,6 +487,8 @@ class OpenCatalogiApiClient {
 	 * @return mixed The saved entity.
 	 *
 	 * @throws RuntimeException 'opencatalogi_api_error' on any write failure.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveOrFail(PublicationTarget $target, array $object, ?string $uuid): mixed {
 		$objectService = $this->requireObjectService();
@@ -498,7 +498,7 @@ class OpenCatalogiApiClient {
 		try {
 			$saved = $objectService->saveObject(
 				object: $object,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $uuid)
+				options: $target->saveOptions(uuid: $uuid)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
