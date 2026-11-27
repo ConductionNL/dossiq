@@ -19,18 +19,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
-use OCA\Dossiq\Kernel\Contracts\ApplicantPortalActsInterface;
 use OCA\Dossiq\Kernel\Contracts\CitizenManifestInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalContributionProviderInterface;
 use OCA\Dossiq\Kernel\Contracts\PortalSubmissionLedgerInterface;
-use OCA\Dossiq\Kernel\Contracts\PortalWooAnswerInterface;
-use OCA\Dossiq\Kernel\Contracts\ResidentQuestionTaskInterface;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Binds the Kernel contracts the Portal component implements, so callers in
- * other components get the same shared instance through the contract.
+ * other components get the same shared instance through the contract. What a
+ * resident does on their own case is bound by
+ * {@see PortalResidentActsContractRegistrar}, which this one calls.
  *
  * @category Portal
  * @package  OCA\Dossiq\Portal
@@ -48,15 +47,13 @@ class PortalContractRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec exclude Composition root wiring, no functional requirement.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		$context->registerServiceAlias(ApplicantPortalActsInterface::class, ApplicantPortalActs::class);
 		$context->registerServiceAlias(CitizenManifestInterface::class, CitizenManifest::class);
 		$context->registerServiceAlias(PortalAssertionVerifierInterface::class, PortalAssertionVerifier::class);
 		$context->registerServiceAlias(PortalContributionProviderInterface::class, PortalContributionProvider::class);
 		$context->registerServiceAlias(PortalSubmissionLedgerInterface::class, PortalSubmissionLedger::class);
-		$context->registerServiceAlias(PortalWooAnswerInterface::class, PortalWooAnswer::class);
-		$context->registerServiceAlias(ResidentQuestionTaskInterface::class, ResidentQuestionTask::class);
+		(new PortalResidentActsContractRegistrar())->register(context: $context);
 	}//end register()
 }//end class

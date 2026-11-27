@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DsoController;
+use OCA\Dossiq\Controller\Support\DsoCaseWrites;
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
 use OCA\Dossiq\Service\Dso\DsoObjectRepository;
@@ -197,11 +198,8 @@ class DsoCaseMutationsGoldenTest extends TestCase {
 		return new DsoController(
 			'dossiq',
 			$request,
-			$cases,
-			$decisions,
-			$samenwerk,
 			$repository,
-			$notifier,
+			new DsoCaseWrites($repository, $cases, $samenwerk, $decisions, $notifier),
 			$session,
 			$logger
 		);

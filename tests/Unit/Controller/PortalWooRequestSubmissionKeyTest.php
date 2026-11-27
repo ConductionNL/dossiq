@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PortalWooRequestController;
+use OCA\Dossiq\Controller\Support\SubmissionMadeOnce;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
 use OCA\Dossiq\Portal\PortalSubmissionLedger;
 use OCA\Dossiq\Tests\Unit\Portal\InMemoryMemcache;
@@ -98,10 +99,12 @@ class PortalWooRequestSubmissionKeyTest extends TestCase {
 			appName: 'dossiq',
 			request: $request,
 			verifier: new PortalAssertionVerifier(config: null, secretOverride: 'a-dedicated-portaliq-secret-0123'),
-			intake: $this->intake,
+			submissions: new SubmissionMadeOnce(
+				intake: $this->intake,
+				ledger: new PortalSubmissionLedger(cacheFactory: $factory),
+			),
 			throttler: $this->createMock(IThrottler::class),
 			logger: $this->createMock(LoggerInterface::class),
-			ledger: new PortalSubmissionLedger(cacheFactory: $factory),
 		);
 	}//end send()
 

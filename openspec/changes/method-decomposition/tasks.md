@@ -2188,6 +2188,32 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the action ids and their answers are unchanged. Coupling 14 to 12; phpmd: zero findings on both files under both
         rulesets. Characterisation, green before and after: `SetupControllerStatusTest`, `SetupControllerReadinessTest`
         and `SetupWizardStepsTest` (61 tests). Own test: `tests/Unit/Controller/Support/RegisterInstallTest` (4).
+  - [x] 8eg `Controller/DsoController` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The guarded writes on a
+        DSO case and its samenwerkverzoek (the object the caller may change looked up and authorised, then the status
+        transition with its optional besluitdatum and notes, the beschikking, the samenwerking started or answered, and the
+        doorsturen event) moved to `Controller/Support/DsoCaseWrites` (`mutableCase()`, `mutableSamenwerk()`, `transition()`,
+        `beschikking()`, `startSamenwerking()`, `answerSamenwerking()`, `forward()`; bodies moved unchanged). The controller
+        keeps the session check, the input refusals, the dashboard and the mapping of outcomes onto responses. It takes the
+        writes in place of the case, beschikking and samenwerking services and the notifier; the container autowires it.
+        Coupling 15 to 12 (writes 7); phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `DsoControllerTest`, `DsoControllerContractTest` and
+        `DsoCaseMutationsGoldenTest` (its golden files unchanged), built over the same doubles through `DsoCaseWrites`. Own
+        test: `tests/Unit/Controller/Support/DsoCaseWritesTest` (4).
+  - [x] 8eh `Controller/PortalWooRequestController` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Making a
+        portal submission once (the relayed key, the replay of a first send's answer or the 409 while it is being made, the
+        case opened through the intake with its answer kept, and the key let go when the intake threw) moved to
+        `Controller/Support/SubmissionMadeOnce` (`key()`, `replay()`, `open()`; bodies moved unchanged, a refusal is thrown on
+        after the key is let go and the controller words it as before). The controller keeps the assertion check, the fields
+        it forwards and the wording of a refusal. It takes the submissions in place of the intake and the ledger; the
+        container autowires it. Coupling 15 to 13 (submissions 6); phpmd: zero findings on both files.
+        Characterisation, green before and after: `PortalWooRequestControllerTest`, `PortalWooRequestSubmissionKeyTest` and
+        `PortalWooRequestDutchAnswersTest`. Own test: `tests/Unit/Controller/Support/SubmissionMadeOnceTest` (3).
+  - [x] 8ei `Portal/PortalContractRegistrar` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The contracts for
+        what a resident does on their own case (an act on the case, the answer to the organisation's question, that question
+        as a task) moved to `Portal/PortalResidentActsContractRegistrar`, which the registrar calls after its own four. Same
+        aliases, same order, and `Application` is unchanged. Coupling 15 to 10 (resident acts 7); phpmd: zero findings.
+        Own test, pinning every alias in order and that each target implements its contract:
+        `tests/Unit/Portal/PortalContractRegistrarTest` (3).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
