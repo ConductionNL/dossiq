@@ -14,11 +14,10 @@
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://conduction.nl
  *
- * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
- *
- * @link https://conduction.nl
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  * @spec openspec/changes/method-decomposition/tasks.md

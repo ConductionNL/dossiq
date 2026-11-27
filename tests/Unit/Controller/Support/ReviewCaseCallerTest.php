@@ -38,7 +38,6 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for ReviewCaseCaller.
  *
  * @covers \OCA\Dossiq\Controller\Support\ReviewCaseCaller
- * @covers \OCA\Dossiq\Controller\Support\AnswersNoCaseAccess
  */
 final class ReviewCaseCallerTest extends TestCase {
 

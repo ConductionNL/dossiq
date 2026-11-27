@@ -15,11 +15,10 @@
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ * @link      https://conduction.nl
  *
- * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
- *
- * @link https://conduction.nl
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
  * @spec openspec/changes/method-decomposition/tasks.md
@@ -43,7 +42,6 @@ use OCP\IUserSession;
  * @spec openspec/changes/method-decomposition/tasks.md
  */
 final class ReviewCaseCaller {
-	use AnswersNoCaseAccess;
 
 	/**
 	 * Constructor.
@@ -104,4 +102,18 @@ final class ReviewCaseCaller {
 
 		return $user;
 	}//end requireWriter()
+
+	/**
+	 * The translated refusal of a user without access to the case.
+	 *
+	 * @return JSONResponse The 403.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function noAccess(): JSONResponse {
+		return new JSONResponse(
+			['error' => 'no-case-access', 'message' => $this->l10n->t('You do not have access to this case')],
+			Http::STATUS_FORBIDDEN
+		);
+	}//end noAccess()
 }//end class
