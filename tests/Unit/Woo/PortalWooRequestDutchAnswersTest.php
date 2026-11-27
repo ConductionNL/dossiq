@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Controller\PortalWooRequestController;
+use OCA\Dossiq\Controller\Support\SubmissionMadeOnce;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -106,7 +107,13 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 			appName: 'dossiq',
 			request: $request,
 			verifier: new PortalAssertionVerifier(config: null, secretOverride: 'a-dedicated-portaliq-secret-0123'),
-			intake: new WooRequestIntake(settingsService: $settings, urlGenerator: $urls, logger: $this->createMock(LoggerInterface::class)),
+			submissions: new SubmissionMadeOnce(
+				intake: new WooRequestIntake(
+					settingsService: $settings,
+					urlGenerator: $urls,
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				)
+			),
 			throttler: $this->createMock(IThrottler::class),
 			logger: $this->createMock(LoggerInterface::class),
 			l10n: $this->catalogue(),

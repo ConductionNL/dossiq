@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DsoController;
+use OCA\Dossiq\Controller\Support\GuardedCaseActions;
+use OCA\Dossiq\Controller\Support\CooperationRequestActions;
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
 use OCA\Dossiq\Service\Dso\DsoObjectRepository;
@@ -430,17 +432,20 @@ class DsoControllerTest extends TestCase {
 		$this->eventDispatcher = $this->createMock(IEventDispatcher::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$repository = new DsoObjectRepository(
+			settingsService: $this->settingsService,
+			logger: $this->logger,
+		);
 		$this->controller = new DsoController(
 			appName: 'dossiq',
 			request: $this->request,
-			dsoCaseService: $this->dsoCaseService,
-			decisionService: $this->decisionService,
-			samenwerkService: $this->samenwerkService,
-			repository: new DsoObjectRepository(
-				settingsService: $this->settingsService,
-				logger: $this->logger,
+			cases: new GuardedCaseActions(
+				repository: $repository,
+				dsoCaseService: $this->dsoCaseService,
+				decisionService: $this->decisionService,
+				doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
 			),
-			doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
+			samenwerking: new CooperationRequestActions(repository: $repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);
@@ -507,17 +512,20 @@ class DsoControllerTest extends TestCase {
 
 		$requestStub = new DsoControllerRequestStub(content: '{"newStatus":"in_handling"}');
 
+		$repository = new DsoObjectRepository(
+			settingsService: $settingsServiceMock,
+			logger: $this->logger,
+		);
 		$controller = new DsoController(
 			appName: 'dossiq',
 			request: $requestStub,
-			dsoCaseService: $this->dsoCaseService,
-			decisionService: $this->decisionService,
-			samenwerkService: $this->samenwerkService,
-			repository: new DsoObjectRepository(
-				settingsService: $settingsServiceMock,
-				logger: $this->logger,
+			cases: new GuardedCaseActions(
+				repository: $repository,
+				dsoCaseService: $this->dsoCaseService,
+				decisionService: $this->decisionService,
+				doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
 			),
-			doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
+			samenwerking: new CooperationRequestActions(repository: $repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);
@@ -545,17 +553,20 @@ class DsoControllerTest extends TestCase {
 
 		$requestStub = new DsoControllerRequestStub(content: '{"motivation":"test"}');
 
+		$repository = new DsoObjectRepository(
+			settingsService: $this->settingsService,
+			logger: $this->logger,
+		);
 		$controller = new DsoController(
 			appName: 'dossiq',
 			request: $requestStub,
-			dsoCaseService: $this->dsoCaseService,
-			decisionService: $this->decisionService,
-			samenwerkService: $this->samenwerkService,
-			repository: new DsoObjectRepository(
-				settingsService: $this->settingsService,
-				logger: $this->logger,
+			cases: new GuardedCaseActions(
+				repository: $repository,
+				dsoCaseService: $this->dsoCaseService,
+				decisionService: $this->decisionService,
+				doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
 			),
-			doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
+			samenwerking: new CooperationRequestActions(repository: $repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);

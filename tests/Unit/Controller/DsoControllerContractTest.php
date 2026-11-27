@@ -42,6 +42,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DsoController;
+use OCA\Dossiq\Controller\Support\GuardedCaseActions;
+use OCA\Dossiq\Controller\Support\CooperationRequestActions;
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
 use OCA\Dossiq\Service\Dso\DsoObjectRepository;
@@ -407,11 +409,13 @@ class DsoControllerContractTest extends TestCase {
 		return new DsoController(
 			appName: 'dossiq',
 			request: new DsoContractRequestStub(params: $params, content: $content),
-			dsoCaseService: $this->dsoCaseService,
-			decisionService: $this->decisionService,
-			samenwerkService: $this->samenwerkService,
-			repository: $this->repository,
-			doorsturenNotifier: $this->doorsturenNotifier,
+			cases: new GuardedCaseActions(
+				repository: $this->repository,
+				dsoCaseService: $this->dsoCaseService,
+				decisionService: $this->decisionService,
+				doorsturenNotifier: $this->doorsturenNotifier,
+			),
+			samenwerking: new CooperationRequestActions(repository: $this->repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);

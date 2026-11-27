@@ -20,6 +20,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DsoController;
+use OCA\Dossiq\Controller\Support\GuardedCaseActions;
+use OCA\Dossiq\Controller\Support\CooperationRequestActions;
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
 use OCA\Dossiq\Service\Dso\DsoObjectRepository;
@@ -197,11 +199,8 @@ class DsoCaseMutationsGoldenTest extends TestCase {
 		return new DsoController(
 			'dossiq',
 			$request,
-			$cases,
-			$decisions,
-			$samenwerk,
-			$repository,
-			$notifier,
+			new GuardedCaseActions(repository: $repository, dsoCaseService: $cases, decisionService: $decisions, doorsturenNotifier: $notifier),
+			new CooperationRequestActions(repository: $repository, samenwerkService: $samenwerk),
 			$session,
 			$logger
 		);

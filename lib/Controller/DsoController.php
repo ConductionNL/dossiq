@@ -8,10 +8,11 @@
  * workflow actions (status transition, beschikking generation, samenwerking
  * initiation/response, doorsturen) for omgevingsvergunning zaken.
  *
- * OpenRegister reads are delegated to {@see DsoObjectRepository} and the
- * doorsturen domain event to {@see DsoDoorsturenNotifier} (ADR-022), so this
- * controller only validates input, applies the authorization guard and maps
- * outcomes onto responses.
+ * The dashboard read and the guarded case writes (the per-object guard, then
+ * the status transition, beschikking or doorsturen event) are delegated to
+ * {@see GuardedCaseActions}, the samenwerkverzoek writes to
+ * {@see CooperationRequestActions} (ADR-022), so this controller only validates
+ * input and maps outcomes onto responses.
  *
  * All endpoints require authentication (@NoAdminRequired) and carry per-object
  * authorization guards (ADR-005 Rule 3) to prevent IDOR.
@@ -32,12 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\GuardedCaseActions;
+use OCA\Dossiq\Controller\Support\CooperationRequestActions;
 use OCA\Dossiq\Controller\Support\RequestBodyFields;
-use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
-use OCA\Dossiq\Kernel\Contracts\DsoObjectRepositoryInterface;
-use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -73,22 +71,18 @@ class DsoController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param DsoCaseServiceInterface $dsoCaseService The DSO case service
-	 * @param BeschikkingGenerationServiceInterface $decisionService The beschikking generation service
-	 * @param SamenwerkverzoekServiceInterface $samenwerkService The samenwerkverzoek service
-	 * @param DsoObjectRepositoryInterface $repository The OpenRegister read collaborator
-	 * @param DsoDoorsturenNotifierInterface $doorsturenNotifier The doorsturen event dispatcher
+	 * @param GuardedCaseActions $cases The dashboard read and the guarded writes on a case
+	 * @param CooperationRequestActions $samenwerking The samenwerkverzoek writes
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DsoCaseServiceInterface $dsoCaseService,
-		private readonly BeschikkingGenerationServiceInterface $decisionService,
-		private readonly SamenwerkverzoekServiceInterface $samenwerkService,
-		private readonly DsoObjectRepositoryInterface $repository,
-		private readonly DsoDoorsturenNotifierInterface $doorsturenNotifier,
+		private readonly GuardedCaseActions $cases,
+		private readonly CooperationRequestActions $samenwerking,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -108,6 +102,8 @@ class DsoController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function dashboard(): JSONResponse {
@@ -122,11 +118,13 @@ class DsoController extends Controller {
 		$params = $this->dashboardParams();
 
 		try {
-			$outcome = $this->repository->fetchDashboard(
+			$outcome = $this->cases->dashboard(
 				params: $params,
-				activiteitgroep: (string)$activiteitgroep,
-				regelkwalificatie: (string)$regelkwalificatie,
-				location: (string)$location
+				filters: [
+					'activiteitgroep' => (string)$activiteitgroep,
+					'regelkwalificatie' => (string)$regelkwalificatie,
+					'location' => (string)$location,
+				]
 			);
 
 			return $this->dashboardAnswer(outcome: $outcome);
@@ -230,23 +228,17 @@ class DsoController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @throws \Exception When reading or transitioning the case fails.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function applyStatusTransition(IUser $user, array $request): JSONResponse {
 		['caseId' => $caseId, 'body' => $body] = $request;
-		$case = $this->mutableCase(caseId: $caseId, user: $user);
+		$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$updated = $this->dsoCaseService->transitionStatus(
-			caseId: $caseId,
-			newStatus: (string)($body['newStatus'] ?? ''),
-			besluitdatum: $this->fields->optionalString(body: $body, key: 'besluitdatum'),
-			notes: $this->fields->optionalString(body: $body, key: 'notes'),
-			userId: $user->getUID()
-		);
-
-		return new JSONResponse($updated);
+		return new JSONResponse($this->cases->transition(caseId: $caseId, body: $body, userId: $user->getUID()));
 	}//end applyStatusTransition()
 
 	/**
@@ -262,6 +254,8 @@ class DsoController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function generateBeschikking(string $caseId): JSONResponse {
@@ -281,12 +275,12 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$case = $this->mutableCase(caseId: $caseId, user: $user);
+			$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return $this->writeBeschikking(caseId: $caseId, body: $body);
+			return new JSONResponse($this->cases->beschikking(caseId: $caseId, body: $body), Http::STATUS_CREATED);
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
@@ -308,6 +302,8 @@ class DsoController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function initiateSamenwerking(string $caseId): JSONResponse {
@@ -322,12 +318,12 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$case = $this->mutableCase(caseId: $caseId, user: $user);
+			$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return $this->writeSamenwerking(caseId: $caseId, body: $body);
+			return new JSONResponse($this->samenwerking->startSamenwerking(caseId: $caseId, body: $body), Http::STATUS_CREATED);
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
@@ -349,6 +345,8 @@ class DsoController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function respondSamenwerking(string $samenwerkId): JSONResponse {
@@ -358,21 +356,13 @@ class DsoController extends Controller {
 		}
 
 		$body = $this->fields->read(request: $this->request);
-		$accept = (bool)($body['accept'] ?? false);
-		$advies = (string)($body['advice'] ?? '');
 
 		try {
-			if ($this->mutableSamenwerk(samenwerkId: $samenwerkId, user: $user) === null) {
+			if ($this->samenwerking->mutableSamenwerk(samenwerkId: $samenwerkId, user: $user) === null) {
 				return new JSONResponse(['error' => 'Samenwerkverzoek not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			$updated = $this->samenwerkService->respondToSamenwerking(
-				samenwerkId: $samenwerkId,
-				accept: $accept,
-				advies: $advies
-			);
-
-			return new JSONResponse($updated);
+			return new JSONResponse($this->samenwerking->answerSamenwerking(samenwerkId: $samenwerkId, body: $body));
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
@@ -427,22 +417,18 @@ class DsoController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @throws \Exception When reading the case or dispatching fails.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function forwardCase(IUser $user, array $request): JSONResponse {
 		['caseId' => $caseId, 'body' => $body] = $request;
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
-		$case = $this->mutableCase(caseId: $caseId, user: $user);
+		$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$this->doorsturenNotifier->dispatchDoorgestuurd(
-			case: $case,
-			caseId: $caseId,
-			targetBevoegdGezag: $targetBevoegdGezag,
-			reason: (string)($body['reason'] ?? ''),
-			userId: $user->getUID()
-		);
+		$this->cases->forward(case: $case, caseId: $caseId, body: $body, userId: $user->getUID());
 
 		return $this->forwarded(caseId: $caseId, targetBevoegdGezag: $targetBevoegdGezag);
 	}//end forwardCase()
@@ -472,51 +458,6 @@ class DsoController extends Controller {
 	}//end failure()
 
 	/**
-	 * The case the user may change, or null when it does not exist.
-	 *
-	 * The per-object guard throws `Not authorized` when the user may not
-	 * change it, which {@see failure()} answers as a 403.
-	 *
-	 * @param string $caseId The case.
-	 * @param IUser  $user   The caller.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function mutableCase(string $caseId, IUser $user): ?array {
-		$case = $this->repository->findZaak(caseId: $caseId);
-		if ($case === null) {
-			return null;
-		}
-
-		$this->dsoCaseService->authorizeZaakMutation(case: $case, user: $user);
-		return $case;
-	}//end mutableCase()
-
-	/**
-	 * The samenwerkverzoek the user may answer, or null when it does not exist.
-	 *
-	 * The guard throws `Not authorized` when the user may not answer it,
-	 * which {@see failure()} answers as a 403.
-	 *
-	 * @param string $samenwerkId The samenwerkverzoek.
-	 * @param IUser  $user        The caller.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function mutableSamenwerk(string $samenwerkId, IUser $user): ?array {
-		$samenwerkverzoek = $this->repository->findSamenwerkverzoek(samenwerkId: $samenwerkId);
-		if ($samenwerkverzoek === null) {
-			return null;
-		}
-
-		$this->samenwerkService->authorizeSamenwerkMutation(
-			samenwerk: $samenwerkverzoek,
-			user: $user
-		);
-		return $samenwerkverzoek;
-	}//end mutableSamenwerk()
-
-	/**
 	 * A 400 naming what the request lacks.
 	 *
 	 * @param string $message The error.
@@ -544,40 +485,4 @@ class DsoController extends Controller {
 			]
 		);
 	}//end forwarded()
-
-	/**
-	 * Generate the beschikking the body asks for.
-	 *
-	 * @param string               $caseId The case.
-	 * @param array<string, mixed> $body   The request body.
-	 *
-	 * @return JSONResponse The 201 with the generated beschikking.
-	 */
-	private function writeBeschikking(string $caseId, array $body): JSONResponse {
-		$result = $this->decisionService->generateBeschikking(
-			caseId: $caseId,
-			outcome: (string)($body['outcome'] ?? ''),
-			motivation: (string)($body['motivation'] ?? '')
-		);
-
-		return new JSONResponse($result, Http::STATUS_CREATED);
-	}//end writeBeschikking()
-
-	/**
-	 * Start the samenwerkverzoek the body asks for.
-	 *
-	 * @param string               $caseId The case.
-	 * @param array<string, mixed> $body   The request body.
-	 *
-	 * @return JSONResponse The 201 with the samenwerkverzoek.
-	 */
-	private function writeSamenwerking(string $caseId, array $body): JSONResponse {
-		$samenwerkverzoek = $this->samenwerkService->initiateSamenwerking(
-			caseId: $caseId,
-			aangezochtGezag: (string)($body['requestedCompetentAuthority'] ?? ''),
-			rationale: (string)($body['rationale'] ?? '')
-		);
-
-		return new JSONResponse($samenwerkverzoek, Http::STATUS_CREATED);
-	}//end writeSamenwerking()
 }//end class
