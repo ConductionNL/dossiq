@@ -21,6 +21,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\Support\ReceivedCaseRead;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
@@ -36,6 +37,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
+ * @uses   \OCA\Dossiq\Listener\Support\ReceivedCaseRead
  * @uses   \OCA\Dossiq\Service\Intake\IntakeTermStart
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Listener\BezwaarDecisionListener
@@ -104,8 +106,7 @@ class DeadlineCaseCreatedListenerTest extends TestCase {
 
 		return new DeadlineCaseCreatedListener(
 			termService: $terms,
-			slugResolver: $schemaSlugs,
-			caseTypeSlugs: $caseTypeSlugs,
+			receivedCases: new ReceivedCaseRead(slugResolver: $schemaSlugs, caseTypeSlugs: $caseTypeSlugs, logger: $logger),
 			logger: $logger,
 			caseTerms: $caseTerms,
 			resolution: null,
@@ -173,8 +174,7 @@ class DeadlineCaseCreatedListenerTest extends TestCase {
 
 		$listener = new DeadlineCaseCreatedListener(
 			termService: $terms,
-			slugResolver: $schemaSlugs,
-			caseTypeSlugs: $caseTypeSlugs,
+			receivedCases: new ReceivedCaseRead(slugResolver: $schemaSlugs, caseTypeSlugs: $caseTypeSlugs, logger: $this->createMock(LoggerInterface::class)),
 			logger: $this->createMock(LoggerInterface::class),
 			resolution: $resolution,
 		);

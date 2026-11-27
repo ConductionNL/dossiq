@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\Support\ReceivedCaseRead;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
@@ -90,8 +91,7 @@ class DeadlineCaseCreatedListenerRefusalsTest extends TestCase {
 
 		return new DeadlineCaseCreatedListener(
 			termService: $this->terms,
-			slugResolver: $schemaSlugs,
-			caseTypeSlugs: $caseTypeSlugs,
+			receivedCases: new ReceivedCaseRead(slugResolver: $schemaSlugs, caseTypeSlugs: $caseTypeSlugs, logger: $this->logger),
 			logger: $this->logger,
 			caseTerms: $this->caseTerms,
 		);

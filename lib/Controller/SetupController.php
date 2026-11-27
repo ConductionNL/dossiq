@@ -33,12 +33,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\DatasetLoad;
+use OCA\Dossiq\Controller\Support\RegisterInstall;
 use OCA\Dossiq\Kernel\Contracts\ActiveOrganisationProfileInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\FirstRunReadinessInterface;
-use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
-use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -54,15 +53,6 @@ use OCP\IRequest;
  */
 class SetupController extends Controller {
 
-	/**
-	 * The case definition package the `seed` action installs.
-	 *
-	 * It ships with `install: on-request`, so no upgrade writes it; this
-	 * action and `occ dossiq:package:install bezwaar-beroep` are the two ways in.
-	 *
-	 * @var string
-	 */
-	private const SEED_PACKAGE = 'bezwaar-beroep';
 	/**
 	 * Setup contract version; matches manifest.setup.version.
 	 *
@@ -118,8 +108,7 @@ class SetupController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IAppConfig $appConfig App-config reader/writer.
 	 * @param DemoDataServiceInterface $demoDataService Demo dataset import (ADR-111 rule 4).
-	 * @param SettingsServiceInterface $settingsService OpenRegister availability + config import.
-	 * @param PackageInstallerInterface $packages Installs the case definition package the `seed` action asks for.
+	 * @param RegisterInstall $register Register readiness, the register import and the `seed` package install.
 	 * @param FirstRunReadinessInterface $readiness The minimum an instance needs, read live.
 	 * @param ActiveOrganisationProfileInterface $organisationProfile The active organisation's name and logo (Organisation step).
 	 * @param CaseTypePackageChoiceInterface $caseTypes The on-request case type packages (Case types step).
@@ -130,8 +119,7 @@ class SetupController extends Controller {
 		IRequest $request,
 		private readonly IAppConfig $appConfig,
 		private readonly DemoDataServiceInterface $demoDataService,
-		private readonly SettingsServiceInterface $settingsService,
-		private readonly PackageInstallerInterface $packages,
+		private readonly RegisterInstall $register,
 		private readonly FirstRunReadinessInterface $readiness,
 		private readonly ActiveOrganisationProfileInterface $organisationProfile,
 		private readonly CaseTypePackageChoiceInterface $caseTypes,
@@ -155,12 +143,11 @@ class SetupController extends Controller {
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
-		$registerDone = $this->settingsService->isOpenRegisterAvailable() === true
-			&& $this->config(key: 'register') !== ''
-			&& $this->config(key: 'case_type_schema') !== '';
+		$registerDone = $this->register->isReady();
 		// Read BEFORE the completion marker is written below, so the visit that
 		// finishes the wizard still offers the case types step once.
 		$wizardDoneBefore = $this->config(key: 'setup_completed_version') === (string)self::SETUP_VERSION;
@@ -415,8 +402,10 @@ class SetupController extends Controller {
 			),
 			'skip-demo-data' => $this->datasets->decline(),
 			'dismiss-setup' => $this->dismissSetup(),
-			'init-register' => $this->initRegister(),
-			'seed' => $this->installSeedPackage(),
+			// `init-register` is no longer a wizard step: the admin settings
+			// page repairs the register. Kept for runbooks and scripts.
+			'init-register' => $this->register->initialise(),
+			'seed' => $this->register->installSeedPackage(),
 			'install-case-types' => $this->installCaseTypes(),
 			default => new DataResponse(
 				['success' => false, 'message' => 'Unknown setup action: ' . $actionId],
@@ -441,21 +430,6 @@ class SetupController extends Controller {
 	}//end dismissSetup()
 
 	/**
-	 * Re-import the register and schemas.
-	 *
-	 * No longer a wizard step: the admin settings page repairs the register
-	 * (wizard-dataset-card-load). Kept for runbooks and scripts.
-	 *
-	 * @return DataResponse
-	 *
-	 * @spec openspec/specs/first-time-setup/spec.md
-	 */
-	private function initRegister(): DataResponse {
-		$this->settingsService->loadConfiguration(force: true);
-		return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
-	}//end initRegister()
-
-	/**
 	 * The Case types step: a card's Load button posts its package as `dataset`.
 	 *
 	 * @return DataResponse The installer's outcome; 422 when it did not install.
@@ -470,31 +444,6 @@ class SetupController extends Controller {
 
 		return new DataResponse($outcome);
 	}//end installCaseTypes()
-
-	/**
-	 * Install the package the `seed` action stands for, through the installer.
-	 *
-	 * Installed and already-current both complete the step: either way the
-	 * case types are on this instance. A refusal or a failed write answers 422
-	 * with the installer's own message and leaves the step open.
-	 *
-	 * @return DataResponse `{ success, message, detail }`, where detail is the installer's outcome.
-	 *
-	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
-	 */
-	private function installSeedPackage(): DataResponse {
-		$outcome = $this->packages->install(id: self::SEED_PACKAGE);
-		$done = in_array($outcome['status'], [PackageInstallerInterface::INSTALLED, PackageInstallerInterface::CURRENT], true);
-		if ($done === false) {
-			return new DataResponse(
-				['success' => false, 'message' => $outcome['message'], 'detail' => $outcome],
-				Http::STATUS_UNPROCESSABLE_ENTITY,
-			);
-		}
-
-		$this->appConfig->setValueString('dossiq', 'setup_seed_done', '1');
-		return new DataResponse(['success' => true, 'message' => $outcome['message'], 'detail' => $outcome]);
-	}//end installSeedPackage()
 
 	/**
 	 * Refuse a posted dataset the demo data service does not offer.

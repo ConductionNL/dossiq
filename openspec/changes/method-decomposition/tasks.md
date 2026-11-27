@@ -2104,6 +2104,22 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         findings on both files under both rulesets.
         Characterisation, green before and after: every `Termijn` and `Term` suite (1,058 tests, the one
         `StubApiDriftTest` failure as on development). Own test: `tests/Unit/Service/Term/TermStartsTest` (4).
+  - [x] 8dy `SetupController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The register side of the setup
+        wizard (whether the register is ready, the forced register import of `init-register`, and the `seed` package
+        install with its 422 on a refusal and its `setup_seed_done` record) moved to the generic
+        `Controller/Support/RegisterInstall` (`isReady()`, `initialise()`, `installSeedPackage()`; bodies moved unchanged).
+        The controller takes it in place of the settings service and the package installer, so the container autowires it;
+        the action ids and their answers are unchanged. Coupling 14 to 12; phpmd: zero findings on both files under both
+        rulesets. Characterisation, green before and after: `SetupControllerStatusTest`, `SetupControllerReadinessTest`
+        and `SetupWizardStepsTest` (61 tests). Own test: `tests/Unit/Controller/Support/RegisterInstallTest` (4).
+  - [x] 8dz `DeadlineCaseCreatedListener` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Which case an event
+        received (a create that is not a draft, or a draft sent; an object of the `case` schema with an id and a case type;
+        the case type resolved to its slug, warned about when it has none) moved to the generic
+        `Listener/Support/ReceivedCaseRead` (`read()`; bodies moved unchanged, the warning word for word). The listener takes
+        it in place of the two slug resolvers and the receipt moment, and binds the terms of the `CreatedCase` it answers.
+        Coupling 15 to 12; phpmd: no new findings (the StaticAccess on `ReferencedUuid` in `referenced()` was there on
+        development, on an untouched line). Characterisation, green before and after: every `DeadlineCaseCreated*` suite and
+        `DraftIsNotReceivedRegistrationTest` (44 tests). Own test: `tests/Unit/Listener/Support/ReceivedCaseReadTest` (3).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

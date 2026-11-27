@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\Support\ReceivedCaseRead;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
@@ -44,6 +45,7 @@ use RuntimeException;
  * A new case binds its term only when it is a case with a resolvable type; failures are logged.
  *
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
+ * @uses   \OCA\Dossiq\Listener\Support\ReceivedCaseRead
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Service\Support\ReferencedUuid
  * @uses   \OCA\Dossiq\Service\Support\SerialisedResult
@@ -120,8 +122,7 @@ class DeadlineCaseCreatedListenerGuardsTest extends TestCase {
 
 		return new DeadlineCaseCreatedListener(
 			termService: $this->terms,
-			slugResolver: $schemaSlugs,
-			caseTypeSlugs: $caseTypeSlugs,
+			receivedCases: new ReceivedCaseRead(slugResolver: $schemaSlugs, caseTypeSlugs: $caseTypeSlugs, logger: $logger),
 			logger: $logger,
 			caseTerms: $this->caseTerms,
 		);
