@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Where a workflow backfill writes: the object service, the register and its schemas.
@@ -66,4 +68,25 @@ final class BackfillTarget {
 	public function isConfigured(): bool {
 		return in_array('', [$this->register, $this->schemas->caseType, $this->schemas->status, $this->schemas->template], true) === false;
 	}//end isConfigured()
+
+	/**
+	 * Save an object into one of the schemas of this register, as the object service answers it.
+	 *
+	 * A refusal of the object service is not caught here: each step of the
+	 * backfill decides what a failed write means for it.
+	 *
+	 * @param string               $schema The schema, one of {@see self::$schemas}.
+	 * @param array<string, mixed> $object The object to save.
+	 * @param string|null          $uuid   The uuid of the object to replace, or null to create one.
+	 *
+	 * @return mixed What the object service answers.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function save(string $schema, array $object, ?string $uuid = null): mixed {
+		return $this->objectService->saveObject(
+			object: $object,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $this->register, schema: $schema), uuid: $uuid)
+		);
+	}//end save()
 }//end class
