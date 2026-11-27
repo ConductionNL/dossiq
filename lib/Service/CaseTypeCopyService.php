@@ -40,9 +40,6 @@ use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\Support\LanguageMapText;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -362,14 +359,13 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 	 * @param array<string, mixed> $payload    The object to create.
 	 *
 	 * @return array<string, mixed>|null The created object.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveNew(CaseTypeDerivation $derivation, array $payload): ?array {
 		$target = $derivation->target;
 		try {
-			$created = $target->objectService->saveObject(
-				object: $payload,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schema))
-			);
+			$created = $target->save(payload: $payload);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'CaseTypeCopyService: failed to create the new case type',
@@ -473,15 +469,14 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 	 * @param array<string, mixed> $child The child row.
 	 *
 	 * @return mixed What the store answers.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveChild(CaseTypeChildCopy $copy, array $child): mixed {
 		$payload = $this->stripIdentity(data: $child);
 		$payload['caseType'] = $copy->newCaseTypeId;
 
-		return $copy->target->objectService->saveObject(
-			object: $payload,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $copy->target->register, schema: $copy->target->schema))
-		);
+		return $copy->target->save(payload: $payload);
 	}//end saveChild()
 
 	/**
@@ -586,6 +581,8 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 	 * @param string             $id     The object id.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function fetchObject(CaseTypeCopyTarget $target, string $id): ?array {
 		if ($id === '') {
@@ -593,7 +590,7 @@ class CaseTypeCopyService implements CaseTypeCopyServiceInterface {
 		}
 
 		try {
-			$obj = $target->objectService->find($id, new ObjectFindOptions(register: $target->register, schema: $target->schema));
+			$obj = $target->find(id: $id);
 		} catch (\Throwable $e) {
 			$this->logger->debug(
 				'CaseTypeCopyService: object lookup failed',

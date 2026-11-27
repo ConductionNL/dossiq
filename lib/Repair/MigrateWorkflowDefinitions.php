@@ -38,8 +38,6 @@ use OCA\Dossiq\Service\Workflow\BackfillCaseType;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels;
 use OCA\Dossiq\Service\Workflow\BackfilledTemplateShape;
 use OCA\Dossiq\Service\Workflow\BackfillTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -225,13 +223,12 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param array<string, mixed> $template The template.
 	 *
 	 * @return string|null The new id ('' when the store answers none), or null when the save failed.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveTemplate(BackfillTarget $target, array $template): ?string {
 		try {
-			$created = $target->objectService->saveObject(
-				object: $template,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->template))
-			);
+			$created = $target->save(schema: $target->schemas->template, object: $template);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: workflow backfill failed to save template',
@@ -338,15 +335,15 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param BackfillCaseType $caseType The case type, pinned to its template.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function pinCaseType(BackfillTarget $target, BackfillCaseType $caseType): void {
 		try {
-			$target->objectService->saveObject(
+			$target->save(
+				schema: $target->schemas->caseType,
 				object: $this->withPin(row: $caseType->row, pin: ['workflowDefinition' => $caseType->templateId]),
-				options: new ObjectSaveOptions(
-					target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->caseType),
-					uuid: $caseType->id
-				)
+				uuid: $caseType->id
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
@@ -463,11 +460,14 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 	 * @param BackfillCaseType $caseType The case type, pinned to its template.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function pinOpenCases(BackfillTarget $target, BackfillCaseType $caseType): void {
 		foreach ($this->unpinnedCases(target: $target, caseTypeId: $caseType->id) as $case) {
 			try {
-				$target->objectService->saveObject(
+				$target->save(
+					schema: $target->schemas->cases,
 					object: $this->withPin(
 						row: $case,
 						pin: [
@@ -475,10 +475,7 @@ class MigrateWorkflowDefinitions implements IRepairStep {
 							'workflowVersion' => 1,
 						]
 					),
-					options: new ObjectSaveOptions(
-						target: new ObjectFindTarget(register: $target->register, schema: $target->schemas->cases),
-						uuid: (string)$case['id']
-					)
+					uuid: (string)$case['id']
 				);
 			} catch (\Throwable $e) {
 				$this->logger->error(

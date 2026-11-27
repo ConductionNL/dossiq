@@ -27,6 +27,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 use OCA\Dossiq\Service\CaseType\CaseTypeChildCopy;
 use OCA\Dossiq\Service\CaseType\CaseTypeCopyTarget;
 use OCA\Dossiq\Service\CaseType\CaseTypeDerivation;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -81,4 +83,85 @@ class CaseTypeCopyValuesTest extends TestCase {
 		$this->assertSame('ct-1', $derivation->sourceId);
 		$this->assertTrue($derivation->asVersion);
 	}//end testADerivationHoldsItsSourceAndKind()
+
+	/**
+	 * A target saves into its own register and schema and answers what the store answered.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testATargetSavesIntoItsRegisterAndSchema(): void {
+		$objects = $this->recordingStore();
+		$target = new CaseTypeCopyTarget(objectService: $objects, register: 'dossiq', schema: 'statusType');
+
+		$saved = $target->save(payload: ['name' => 'Ontvangen']);
+
+		$this->assertSame(expected: ['saved' => ['name' => 'Ontvangen']], actual: $saved);
+		$this->assertSame(expected: [['save', 'dossiq', 'statusType']], actual: $objects->calls);
+	}//end testATargetSavesIntoItsRegisterAndSchema()
+
+	/**
+	 * A target finds by id in its own register and schema, and a refusal reaches the caller.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testATargetFindsInItsRegisterAndSchemaAndLetsARefusalThrough(): void {
+		$objects = $this->recordingStore();
+		$target = new CaseTypeCopyTarget(objectService: $objects, register: 'dossiq', schema: 'caseType');
+
+		$this->assertSame(expected: ['id' => 'ct-1'], actual: $target->find(id: 'ct-1'));
+		$this->assertSame(expected: [['find', 'ct-1', 'dossiq', 'caseType']], actual: $objects->calls);
+
+		$this->expectException(exception: \RuntimeException::class);
+		$target->find(id: 'refused');
+	}//end testATargetFindsInItsRegisterAndSchemaAndLetsARefusalThrough()
+
+	/**
+	 * An object store that records its calls.
+	 *
+	 * @return object
+	 */
+	private function recordingStore(): object {
+		return new class {
+			/**
+			 * The calls, in order.
+			 *
+			 * @var array<int, array<int, mixed>>
+			 */
+			public array $calls = [];
+
+			/**
+			 * Record a save and answer the payload wrapped.
+			 *
+			 * @param array             $object  The object.
+			 * @param ObjectSaveOptions $options Where it goes.
+			 *
+			 * @return array
+			 */
+			public function saveObject(array $object, ObjectSaveOptions $options): array {
+				$this->calls[] = ['save', $options->target->register, $options->target->schema];
+				return ['saved' => $object];
+			}
+
+			/**
+			 * Record a find; refuse the id `refused`.
+			 *
+			 * @param string            $id      The id.
+			 * @param ObjectFindOptions $options Where to look.
+			 *
+			 * @return array
+			 */
+			public function find(string $id, ObjectFindOptions $options): array {
+				if ($id === 'refused') {
+					throw new \RuntimeException('store down');
+				}
+
+				$this->calls[] = ['find', $id, $options->register, $options->schema];
+				return ['id' => $id];
+			}
+		};
+	}//end recordingStore()
 }//end class
