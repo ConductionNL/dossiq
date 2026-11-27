@@ -171,7 +171,7 @@ class SessionServiceRefusalsTest extends TestCase {
 		$clock     = $this->createMock(ITimeFactory::class);
 		$clock->method('now')->willReturnCallback(fn (): DateTimeImmutable => $this->now);
 
-		$this->logger  = $this->createMock(LoggerInterface::class);
+		$this->logger  = $this->createMock(originalClassName: LoggerInterface::class);
 		$this->service = new SessionService(
 			settingsService: $settings,
 			timeFactory: $clock,
@@ -287,7 +287,10 @@ class SessionServiceRefusalsTest extends TestCase {
 		$this->store->refuseSaves = true;
 		$this->logger->expects($this->once())->method('error')->with(
 			$this->anything(),
-			$this->callback(callback: fn (array $context): bool => $context['caseId'] === self::CASE_ID && $context['exception'] === 'object store refused the save'),
+			$this->callback(
+				callback: fn (array $context): bool => $context['caseId'] === self::CASE_ID
+					&& $context['exception'] === 'object store refused the save'
+			),
 		);
 
 		try {
