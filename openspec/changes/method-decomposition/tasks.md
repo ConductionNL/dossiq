@@ -2005,7 +2005,36 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation: the `destroyedAt` format pinned in `CaseDestructionTest::testTheRecordNamesWhoDecided` and run
         green on the old code first, beside the rest of `CaseDestructionTest` and `CaseRecycleControllerTest`. Own test:
         `tests/Unit/Service/Recycle/CasePurgeTest` (2).
-  - [x] 8do `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
+  - [x] 8do `Task/EngineInboxQuery` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Turning a flat set of named
+        filters into OpenRegister's TaskInbox criteria (audience, filter, window, anchor, order, each built with named
+        arguments; a filter no part knows passed on so the engine refuses it by name) moved to `Service/Task/InboxCriteria`
+        (`forFilters()`; body moved unchanged). The query keeps resolving the inbox, making the read, unwrapping the
+        envelope and telling a failed read apart from an empty one; a missing criteria class still throws inside its
+        catch. It builds the criteria in its constructor, so its constructor is unchanged. Coupling 15 to 9; phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `EngineInboxQueryTest`, `EngineInboxQueryResolutionTest`,
+        `EngineTaskInboxTest`, `EngineTaskInboxCaseAndInstanceTest`, the onboarding steps, inspection run and status
+        checklist suites. Own test: `tests/Unit/Service/Task/InboxCriteriaTest` (2).
+  - [x] 8dp `Controller/AdviceController` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The three advice
+        writes and their answers (a status transition: 400 on a refusal, a logged 500 otherwise; an advice request stamped
+        with the case, the requester and `open`: 201, 400 on an unreadable value, a logged 500 naming the case; a
+        reminder through the authorized seam: 403 on a refusal, a 500 without the internal message) moved to
+        `Controller/Support/AdviceWrites` (`transition()`, `request()`, `remind()`, `adviceRequestFailure()`; bodies and
+        log lines moved unchanged, the requester passed as a uid). The controller keeps the session and the per-case
+        guards and builds the writes in its constructor, so its constructor is unchanged; the logger is now passed
+        through rather than held. `OneDateWritePathTest` lists the new file under the advice write path. Coupling 15
+        to 11; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `AdviceControllerContractTest` (27, every answer of every route),
+        `AdviceServiceAuthorizationTest` and `OneDateWritePathTest`. Own test:
+        `tests/Unit/Controller/Support/AdviceWritesTest` (4).
+  - [ ] 8dq The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
+        `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
+        `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
+        green, but it was dropped before push. Each renamed call site of the six static helpers carries a development
+        StaticAccess finding on that line, and the diff check counts a finding on a touched line as new: 29 phpmd
+        findings that block. The static helpers have to become injected collaborators first, which is the StaticAccess
+        work (150 findings), not a rename.
+  - [x] 8dq `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
         of a payout (the payable amount of a calculation, definitive before cumulative; saving a payout row; the row a
         finance callback names by its reference; the refusal when either schema is not configured, and one sentence
         with the cause per failing read or write) moved to `Money/PayoutStore` (`payableAmount()`, `save()`,
