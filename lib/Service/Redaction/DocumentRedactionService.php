@@ -41,14 +41,11 @@ namespace OCA\Dossiq\Service\Redaction;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\DocumentRedactionServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentTextInterface;
-use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Service\FilinqRedactionClient;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\ZgwDocumentService;
 use OCP\IL10N;
 use RuntimeException;
-use Throwable;
 
 /**
  * Detects, checks and redacts a partly public document, or records an uploaded redacted version.
@@ -71,19 +68,19 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 	 * @param FilinqRedactionClient         $filinq      Detection, the review mark and the redaction.
 	 * @param WOOAnonymisationAssistService $assist      The rules floor and Hermiq's spans.
 	 * @param DocumentTextInterface                  $text        The text OpenRegister extracted from the file.
-	 * @param WooCaseDocumentsInterface              $documents   The original's informatieobject.
-	 * @param ZgwDocumentService            $zgw         Finds a legacy document's file by its name.
+	 * @param RedactionOriginal             $originals   The original's informatieobject and file.
 	 * @param RedactedCopyRecorder          $copies      Records the copy as a document of the case.
 	 * @param RedactionEntities             $entities    One list of passages from every source.
 	 * @param IL10N                         $l10n        The refusals, in the officer's language.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly WOODocumentAssessmentService $assessments,
 		private readonly FilinqRedactionClient $filinq,
 		private readonly WOOAnonymisationAssistService $assist,
 		private readonly DocumentTextInterface $text,
-		private readonly WooCaseDocumentsInterface $documents,
-		private readonly ZgwDocumentService $zgw,
+		private readonly RedactionOriginal $originals,
 		private readonly RedactedCopyRecorder $copies,
 		private readonly RedactionEntities $entities,
 		private readonly IL10N $l10n,
@@ -98,12 +95,13 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 	 * @return array<int, array<string, mixed>> `{documentRef, title, redactedDocumentRef, redaction}` per document.
 	 *
 	 * @spec openspec/specs/document-redaction/spec.md#requirement-the-redaction-panel-shows-what-filinq-and-hermiq-detected-req-drd-001
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function forCase(string $caseId): array {
 		$rows = [];
 		foreach ($this->assessments->partlyPublicAssessments(caseId: $caseId) as $assessment) {
 			$documentRef = (string)($assessment['documentRef'] ?? '');
-			$original = ($this->documents->meta(documentId: $documentRef) ?? []);
+			$original = ($this->originals->meta(documentRef: $documentRef) ?? []);
 			$rows[] = [
 				'documentRef' => $documentRef,
 				'title' => (string)($original['title'] ?? ($original['fileName'] ?? '')),
@@ -379,11 +377,12 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 	 * @return array{redactedDocumentRef: string, redaction: array<string, mixed>}
 	 *
 	 * @throws RefusedException When the document is not partly public, the upload is empty, or it cannot be stored.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function uploadFor(RedactionRun $run, RedactedUpload $upload): array {
 		$run->assessment = $this->partlyPublic(caseId: $run->caseId, documentRef: $run->documentRef);
 		$this->assertUploaded(upload: $upload);
-		$run->original = $this->original(documentRef: $run->documentRef);
+		$run->original = $this->originals->read(documentRef: $run->documentRef);
 
 		$stored = $this->storedUpload(run: $run, upload: $upload);
 		$run->redaction = array_merge(
@@ -474,10 +473,11 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 	 * @return void
 	 *
 	 * @throws RefusedException When the document cannot be read or names no file.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function readOriginal(RedactionRun $run): void {
-		$run->original = $this->original(documentRef: $run->documentRef);
-		$run->fileId = $this->fileIdOf(documentRef: $run->documentRef, original: $run->original);
+		$run->original = $this->originals->read(documentRef: $run->documentRef);
+		$run->fileId = $this->originals->fileIdOf(documentRef: $run->documentRef, original: $run->original);
 	}//end readOriginal()
 
 	/**
@@ -502,61 +502,7 @@ class DocumentRedactionService implements DocumentRedactionServiceInterface {
 		return $assessment;
 	}//end partlyPublic()
 
-	/**
-	 * The original's informatieobject.
-	 *
-	 * @param string $documentRef The document.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @throws RefusedException When the document cannot be read.
-	 */
-	private function original(string $documentRef): array {
-		$original = $this->documents->meta(documentId: $documentRef);
-		if ($original === null) {
-			throw new RefusedException(
-				rule: 'document-unreadable',
-				sentence: $this->l10n->t('This document could not be read.'),
-				status: RefusedException::STATUS_INDETERMINATE
-			);
-		}
 
-		return $original;
-	}//end original()
-
-	/**
-	 * The Nextcloud file of the original.
-	 *
-	 * @param string               $documentRef The document.
-	 * @param array<string, mixed> $original    Its informatieobject.
-	 *
-	 * @return int The file id.
-	 *
-	 * @throws RefusedException When the document names no file that exists.
-	 */
-	private function fileIdOf(string $documentRef, array $original): int {
-		$fileId = (int)($original['fileId'] ?? 0);
-		if ($fileId > 0) {
-			return $fileId;
-		}
-
-		$fileName = (string)($original['fileName'] ?? ($original['bestandsnaam'] ?? ''));
-		$missing = null;
-		if ($fileName !== '') {
-			try {
-				return $this->zgw->getFileId(uuid: $documentRef, fileName: $fileName);
-			} catch (Throwable $e) {
-				$missing = $e;
-			}
-		}
-
-		throw new RefusedException(
-			rule: 'file-unresolved',
-			sentence: $this->l10n->t('This document has no file to redact. Upload a redacted version instead.'),
-			status: RefusedException::STATUS_UNPROCESSABLE,
-			previous: $missing
-		);
-	}//end fileIdOf()
 
 	/**
 	 * Record the copy filinq wrote.

@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Dossiq\Service\FilinqRedactionClient;
 use OCA\Dossiq\Service\Redaction\DocumentRedactionService;
 use OCA\Dossiq\Service\Redaction\RedactedCopyRecorder;
+use OCA\Dossiq\Service\Redaction\RedactionOriginal;
 use OCA\Dossiq\Service\Redaction\RedactionEntities;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
@@ -191,8 +192,11 @@ class DocumentRedactionServiceTest extends TestCase {
 				logger: new NullLogger()
 			),
 			text: new DocumentText(container: $this->extraction(), logger: new NullLogger()),
-			documents: new WooCaseDocuments(settingsService: $settings, rootFolder: $rootFolder, logger: new NullLogger()),
-			zgw: $this->createMock(ZgwDocumentService::class),
+			originals: new RedactionOriginal(
+				documents: new WooCaseDocuments(settingsService: $settings, rootFolder: $rootFolder, logger: new NullLogger()),
+				zgw: $this->createMock(originalClassName: ZgwDocumentService::class),
+				l10n: new SourceL10n(),
+			),
 			copies: new RedactedCopyRecorder(store: new DocumentRecordStore(settingsService: $settings), rootFolder: $rootFolder),
 			entities: new RedactionEntities(),
 			l10n: new SourceL10n(),
