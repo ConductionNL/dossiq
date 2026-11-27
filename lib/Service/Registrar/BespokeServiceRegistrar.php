@@ -102,6 +102,7 @@ class BespokeServiceRegistrar {
 	 * @return void
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	private function registerSettingsController(IRegistrationContext $context): void {
 		$context->registerService(
@@ -112,8 +113,7 @@ class BespokeServiceRegistrar {
 					container: $c,
 					appManager: $c->get('OCP\\App\\IAppManager'),
 					settingsService: $c->get(SettingsService::class),
-					groupManager: $c->get('OCP\\IGroupManager'),
-					userSession: $c->get('OCP\\IUserSession'),
+					adminCaller: $c->get('OCA\\Dossiq\\Controller\\Support\\AdminCaller'),
 					l10n: $c->get('OCP\\IL10N')
 				);
 			}

@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Registrar;
 
 use OCA\Dossiq\Controller\DashboardController;
 use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Kernel\Contracts\PackageAdminTabsInterface;
 use OCA\Dossiq\Kernel\Contracts\QueueUrgencySettingsInterface;
 use OCA\Dossiq\Repair\InitializeSettings;
@@ -52,6 +53,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Registrar\BespokeServiceRegistrar
  * @uses \OCA\Dossiq\Controller\DashboardController
  * @uses \OCA\Dossiq\Controller\SettingsController
+ * @uses \OCA\Dossiq\Controller\Support\AdminCaller
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
@@ -214,7 +216,7 @@ class BespokeServiceRegistrarTest extends TestCase {
 	}//end testTheDashboardControllerIsBuilt()
 
 	/**
-	 * The settings controller is built from the container itself and the settings service, groups, session and translator.
+	 * The settings controller is built from the container itself and the settings service, the admin caller and translator.
 	 *
 	 * @return void
 	 */
@@ -226,8 +228,7 @@ class BespokeServiceRegistrarTest extends TestCase {
 					'OCP\\IRequest' => $this->createMock(IRequest::class),
 					'OCP\\App\\IAppManager' => $this->createMock(IAppManager::class),
 					SettingsService::class => $this->createMock(SettingsService::class),
-					'OCP\\IGroupManager' => $this->createMock(IGroupManager::class),
-					'OCP\\IUserSession' => $this->createMock(IUserSession::class),
+					AdminCaller::class => new AdminCaller(userSession: $this->createMock(IUserSession::class), groupManager: $this->createMock(IGroupManager::class)),
 					'OCP\\IL10N' => $this->createMock(IL10N::class),
 				],
 				asked: $asked
@@ -236,7 +237,7 @@ class BespokeServiceRegistrarTest extends TestCase {
 
 		$this->assertInstanceOf(SettingsController::class, $controller);
 		$this->assertSame(
-			['OCP\\IRequest', 'OCP\\App\\IAppManager', SettingsService::class, 'OCP\\IGroupManager', 'OCP\\IUserSession', 'OCP\\IL10N'],
+			['OCP\\IRequest', 'OCP\\App\\IAppManager', SettingsService::class, AdminCaller::class, 'OCP\\IL10N'],
 			$asked
 		);
 	}//end testTheSettingsControllerIsBuilt()

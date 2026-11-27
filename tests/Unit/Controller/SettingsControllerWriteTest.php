@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
@@ -48,6 +49,7 @@ use Psr\Container\ContainerInterface;
  * against a controller that silently wrote nothing.
  *
  * @covers \OCA\Dossiq\Controller\SettingsController
+ * @uses   \OCA\Dossiq\Controller\Support\AdminCaller
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Settings\SettingValueRules
  */
@@ -78,8 +80,7 @@ class SettingsControllerWriteTest extends TestCase {
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			groupManager: $this->createMock(originalClassName: IGroupManager::class),
-			userSession: $this->createMock(originalClassName: IUserSession::class),
+			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
 			l10n: $this->createMock(originalClassName: IL10N::class)
 		);
 	}//end controller()
@@ -242,8 +243,7 @@ class SettingsControllerWriteTest extends TestCase {
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			groupManager: $this->createMock(originalClassName: IGroupManager::class),
-			userSession: $this->createMock(originalClassName: IUserSession::class),
+			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
 			l10n: $l10n
 		);
 		$response = $controller->update();
@@ -282,8 +282,7 @@ class SettingsControllerWriteTest extends TestCase {
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			groupManager: $this->createMock(originalClassName: IGroupManager::class),
-			userSession: $this->createMock(originalClassName: IUserSession::class),
+			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
 			l10n: $l10n
 		);
 		$response = $controller->update();
