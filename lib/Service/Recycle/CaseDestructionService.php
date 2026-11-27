@@ -42,14 +42,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Recycle;
 
-use DateTime;
 use OCA\Dossiq\Kernel\Contracts\CaseDestructionServiceInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
 use OCA\OpenRegister\Db\AuditTrailMapper;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -90,6 +87,13 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 	public const DESTROY_ACTION = 'object.destroyed';
 
 	/**
+	 * Permanently deletes the case once its destruction is recorded.
+	 *
+	 * @var CasePurge
+	 */
+	private readonly CasePurge $purge;
+
+	/**
 	 * The refusals this service raises, and nothing else does.
 	 *
 	 * @var array<int, string>
@@ -112,6 +116,8 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 	 * @param IUserSession $userSession The session, for the actor on the act.
 	 * @param IGroupManager $groupManager Reads the caller's groups.
 	 * @param LoggerInterface $logger Structured logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly CaseRecycleService $recycle,
@@ -122,6 +128,7 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->purge = new CasePurge(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -165,6 +172,8 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 	 * duplicate the role check, both clocks and the record to express it.
 	 *
 	 * @spec openspec/specs/case-management/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function destroy(string $caseId, bool $waiveWindow = false): array {
 		$entity = $this->requireDeleted(caseId: $caseId);
@@ -183,7 +192,7 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 
 		$scope = $this->destroyScope(entity: $entity);
 		$record = $this->record(entity: $entity, scope: $scope, window: $window, waived: $waiveWindow);
-		$this->purge(caseId: $caseId);
+		$this->purge->delete(caseId: $caseId);
 
 		return [
 			'success' => true,
@@ -373,13 +382,15 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 	 * @param bool $waived Whether an open window was waived.
 	 *
 	 * @return array<string, mixed> The record.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function destructionContext(object $entity, array $scope, ?array $window, bool $waived): array {
 		$user = $this->userSession->getUser();
 		$actor = ($user?->getUID() ?? 'system');
 		return [
 			'destroyedBy' => $actor,
-			'destroyedAt' => (new DateTime())->format(DateTime::ATOM),
+			'destroyedAt' => date(DATE_ATOM),
 			'objectUuid' => (string)$entity->getUuid(),
 			'rule' => 'case-type-destroying-role',
 			'deletionWindow' => $window,
@@ -441,36 +452,6 @@ class CaseDestructionService implements CaseDestructionServiceInterface {
 			$this->logger->error('Dossiq: could not record the destruction: ' . $e->getMessage());
 		}
 	}//end fallbackRecord()
-
-	/**
-	 * Permanently delete the case itself.
-	 *
-	 * The record above is already written, so a failure here leaves an
-	 * over-recorded destruction rather than an unrecorded one.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException When OpenRegister is not available.
-	 */
-	private function purge(string $caseId): void {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('openregister_unavailable');
-		}
-
-		$objectService->deleteObject(
-			new ObjectDeletion(
-				uuid: $caseId,
-				target: new ObjectFindTarget(
-						register: $this->settingsService->getConfigValue('register'),
-						schema: $this->settingsService->getConfigValue('case_schema')
-					),
-				permanent: true
-			)
-		);
-	}//end purge()
 
 	/**
 	 * OpenRegister's destruction scope service, or null.
