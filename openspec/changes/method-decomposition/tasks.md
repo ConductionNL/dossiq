@@ -2034,3 +2034,24 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         StaticAccess finding on that line, and the diff check counts a finding on a touched line as new: 29 phpmd
         findings that block. The static helpers have to become injected collaborators first, which is the StaticAccess
         work (150 findings), not a rename.
+  - [x] 8dr `Controller/DocumentReviewController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The signed-in
+        caller when they may read or change the case (401 `not-authenticated` without a session user, the translated
+        `no-case-access` 403 without access) moved to `Controller/Support/ReviewCaseCaller` (`requireReader()`,
+        `requireWriter()`; bodies moved unchanged with the `AnswersNoCaseAccess` trait). The controller takes it in place
+        of `IUserSession` and `CaseAccessGuardInterface`; the container autowires it. The shared `CaseCaller` and
+        `CaseAccessRefusal` were not reused: their 401 and 403 bodies differ from this controller's. The routes still
+        call a `require*` guard, and gate-7's checker reports none of them on the old or the new file. Coupling 14 to 13;
+        phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `DocumentReviewControllerTest`, `DocumentReviewGateGoldenTest` (every
+        route's 401 and 403) and `ReviewBatchCreateGoldenTest`, each building the controller over the same doubles through
+        `ReviewCaseCaller`. Own test: `tests/Unit/Controller/Support/ReviewCaseCallerTest` (3).
+  - [x] 8ds `KpiAggregationService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Resolving OpenRegister's
+        object service (logged when it does not resolve on an installed OpenRegister) and its language service (only
+        with the translation switch), both only when OpenRegister is installed, moved to
+        `Service/KpiOpenRegisterServices` (`objectService()`, `languageService()`; bodies and the log line moved
+        unchanged). The service takes it in place of `IAppManager` and `ContainerInterface`; the container autowires
+        it. The `catch-return-null` allowlist entry for `objectService` moves to the new file (same count, same
+        ceiling). Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `KpiAggregationServiceTest` and `TranslatableTypeNamesReadAsTextTest`
+        (the translation switch put back after the read), plus the controller suites that mock the service. Own test:
+        `tests/Unit/Service/KpiOpenRegisterServicesTest` (4).
