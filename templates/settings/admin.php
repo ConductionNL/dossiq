@@ -7,6 +7,8 @@ $appId = OCA\Dossiq\AppInfo\Application::APP_ID;
 // the -settings entry depends on them, so they must load first.
 Util::addScript($appId, $appId . '-shared-vendor');
 Util::addScript($appId, $appId . '-shared-nc-vue');
+// nextcloud-vue's stylesheet, copied to css/ by the build (webpack.config.js).
+Util::addStyle($appId, 'nextcloud-vue');
 Util::addScript($appId, $appId . '-settings');
 ?>
 <div id="dossiq-settings"></div>
