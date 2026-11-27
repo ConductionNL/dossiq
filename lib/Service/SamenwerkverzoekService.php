@@ -27,10 +27,9 @@ namespace OCA\Dossiq\Service;
 use Exception;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SamenwerkverzoekServiceInterface;
+use OCA\Dossiq\Service\Support\SavedObjectArray;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -53,6 +52,13 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	use SearchesObjects;
 
 	/**
+	 * Saves an object and answers it as stored.
+	 *
+	 * @var SavedObjectArray
+	 */
+	private readonly SavedObjectArray $saves;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The application config service
@@ -60,6 +66,8 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	 * @param IEventDispatcher $eventDispatcher The event dispatcher
 	 * @param LoggerInterface $logger The logger
 	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -68,6 +76,7 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly ObjectServiceInterface $objectService,
 	) {
+		$this->saves = new SavedObjectArray();
 	}//end __construct()
 
 	/**
@@ -119,15 +128,19 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	 * @param array<string,mixed>                                             $samenwerkverzoek The samenwerkverzoek as submitted.
 	 *
 	 * @return array<string,mixed> The created samenwerkverzoek object
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveAndAnnounce(array $store, array $samenwerkverzoek): array {
 		// The saveObject() call returns an ObjectEntityInterface (which extends
 		// JsonSerializable), never an array — returning it straight out of a
 		// method declared `: array` is a TypeError.
-		$created = $store['objectService']->saveObject(
-			object: $samenwerkverzoek,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
-		)->jsonSerialize();
+		$created = $this->saves->save(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			object: $samenwerkverzoek
+		);
 
 		$this->announceInitiated(created: $created, samenwerkverzoek: $samenwerkverzoek);
 
@@ -180,14 +193,18 @@ class SamenwerkverzoekService implements SamenwerkverzoekServiceInterface {
 	 * @param array<string, mixed> $request The samenwerkverzoek with its response.
 	 *
 	 * @return array<string,mixed> The updated samenwerkverzoek object
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function saveResponse(array $store, array $request): array {
 		// See initiateSamenwerking() — saveObject() returns an entity, not an
 		// array.
-		$updated = $store['objectService']->saveObject(
-			object: $request,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $store['register'], schema: $store['schema']))
-		)->jsonSerialize();
+		$updated = $this->saves->save(
+			objectService: $store['objectService'],
+			register: $store['register'],
+			schema: $store['schema'],
+			object: $request
+		);
 
 		$this->logger->info(
 			'Dossiq SamenwerkverzoekService: samenwerking responded',

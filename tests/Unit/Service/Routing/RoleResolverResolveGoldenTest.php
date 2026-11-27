@@ -11,6 +11,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Routing;
 
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\AreaRouting;
+use OCA\Dossiq\Service\Routing\CaseRoleSource;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
@@ -91,7 +92,7 @@ class RoleResolverResolveGoldenTest extends TestCase {
 
 		return new RoleResolverService(
 			registry: $registry,
-			settingsService: $settings,
+			roleSource: new CaseRoleSource(settingsService: $settings, logger: $logger),
 			cache: $cache,
 			delegation: $delegation,
 			area: new AreaRouting(),
