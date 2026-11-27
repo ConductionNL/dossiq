@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\HearingCalendarService
  * @uses \OCA\Dossiq\Service\Calendar\PlannedEventFields
+ * @uses \OCA\Dossiq\Service\Calendar\HearingCalendarWriter
  *
  * @uses \OCA\Dossiq\AppInfo\Application
  * @uses \OCA\Dossiq\Service\HearingCalendarEvent

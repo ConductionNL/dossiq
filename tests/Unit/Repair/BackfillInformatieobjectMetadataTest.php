@@ -39,6 +39,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * registered and anything that is not a file are left alone.
  *
  * @covers \OCA\Dossiq\Repair\BackfillInformatieobjectMetadata
+ * @uses   \OCA\Dossiq\Repair\Support\InformatieobjectFileWrite
  * @uses   \OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */

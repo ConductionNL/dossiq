@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
@@ -33,10 +34,8 @@ use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
@@ -72,19 +71,19 @@ class SettingsController extends Controller {
 	 * @param ContainerInterface $container The container
 	 * @param IAppManager $appManager The app manager
 	 * @param SettingsServiceInterface $settingsService The settings service
-	 * @param IGroupManager $groupManager The group manager
-	 * @param IUserSession $userSession The user session
+	 * @param AdminCaller $adminCaller Whether the caller is an administrator.
 	 * @param IL10N $l10n The translation service (signing hint, refusal sentences).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
 		private SettingsServiceInterface $settingsService,
-		private readonly IGroupManager $groupManager,
-		private readonly IUserSession $userSession,
+		private readonly AdminCaller $adminCaller,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -132,10 +131,10 @@ class SettingsController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function index(): JSONResponse {
-		$user = $this->userSession->getUser();
-		$isAdmin = $user !== null && $this->groupManager->isAdmin($user->getUID());
+		$isAdmin = $this->adminCaller->isAdmin();
 
 		$config = $this->settingsFor(isAdmin: $isAdmin);
 

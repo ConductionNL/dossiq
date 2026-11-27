@@ -33,6 +33,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\EmailSettingsController;
 use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Controller\StufController;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
 use OCA\Dossiq\Service\Email\SenderBlocklist;
@@ -58,6 +59,7 @@ use OCP\App\IAppManager;
  * @covers \OCA\Dossiq\Controller\EmailSettingsController
  * @covers \OCA\Dossiq\Controller\Support\MailIntakeSettings
  * @covers \OCA\Dossiq\Controller\SettingsController
+ * @uses   \OCA\Dossiq\Controller\Support\AdminCaller
  * @covers \OCA\Dossiq\Controller\StufController
  * */
 class IntegrationProbesRecordTest extends TestCase {
@@ -284,8 +286,10 @@ class IntegrationProbesRecordTest extends TestCase {
 			container: $container,
 			appManager: $this->createMock(IAppManager::class),
 			settingsService: $settingsService,
-			groupManager: $this->createMock(IGroupManager::class),
-			userSession: $this->createMock(IUserSession::class),
+			adminCaller: new AdminCaller(
+				userSession: $this->createMock(originalClassName: IUserSession::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class)
+			),
 			l10n: $this->createMock(IL10N::class)
 		);
 	}//end settingsController()

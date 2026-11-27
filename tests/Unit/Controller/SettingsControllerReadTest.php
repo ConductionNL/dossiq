@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SettingsController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\App\IAppManager;
@@ -42,6 +43,7 @@ use RuntimeException;
  * The read side of the settings controller and the update branches the write test leaves out.
  *
  * @covers \OCA\Dossiq\Controller\SettingsController
+ * @uses   \OCA\Dossiq\Controller\Support\AdminCaller
  * @uses   \OCA\Dossiq\Exception\RefusedException
  */
 class SettingsControllerReadTest extends TestCase {
@@ -118,8 +120,7 @@ class SettingsControllerReadTest extends TestCase {
 			container: $this->container,
 			appManager: $this->appManager,
 			settingsService: $this->settings,
-			groupManager: $this->groups,
-			userSession: $this->session,
+			adminCaller: new AdminCaller(userSession: $this->session, groupManager: $this->groups),
 			l10n: $l10n,
 		);
 	}//end controller()

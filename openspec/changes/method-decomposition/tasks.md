@@ -1873,3 +1873,33 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         schema), `RecallControllerTest` and `ReviewContractRegistrarTest`, unchanged but for one `@covers`/`@uses` line.
         Own test: `tests/Unit/Review/RecallSampleStoreTest` (4); keeping the derived progress on a save turns it red
         (checked).
+  - [x] 8da `Controller/SettingsController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Whether the caller
+        is a signed-in administrator (the session and the group manager) moved to `Controller/Support/AdminCaller::isAdmin()`
+        (body unchanged; no session answers false without asking the group manager). The controller keeps choosing the
+        full or the public settings, the signing hint, the save and its refusals. Its constructor takes `AdminCaller` in
+        place of `IUserSession` and `IGroupManager`; `BespokeServiceRegistrar` asks the container for it by name, so the
+        registrar's own coupling is unchanged. Coupling 14 to 13; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `SettingsControllerReadTest` (8, including the admin and the public
+        read), `SettingsControllerWriteTest`, `IntegrationProbesRecordTest` and `BespokeServiceRegistrarTest` (which
+        now records the container asked for `AdminCaller`). Own test: `tests/Unit/Controller/Support/AdminCallerTest` (3).
+  - [x] 8db `HearingCalendarService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Writing the hearing into
+        each principal's first calendar that takes it (accepts ICS, not in the trash, writable), a refusal passing to the
+        next calendar, an unreadable principal skipped, and the warning when no calendar took it, moved to
+        `Service/Calendar/HearingCalendarWriter` (`writeForAll()`, with `writeToCalendar()` and `takesHearings()`; bodies and
+        log lines moved unchanged). The service keeps building the event, the organiser, the attendees and the principals,
+        and builds the writer in its constructor beside `PlannedEventFields`, so its constructor and the container are
+        unchanged. Coupling 14 to 13; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `HearingCalendarServiceTest` and `HearingCalendarServicePinTest` (13,
+        with every log line in order), `HearingServiceTest`. Own test: `tests/Unit/Service/Calendar/HearingCalendarWriterTest`
+        (4); writing into a calendar in the trash turns it red.
+  - [x] 8dc `Repair/BackfillInformatieobjectMetadata` (1, unsuppressed: CouplingBetweenObjects 14 against 13). What the
+        back-fill writes for one file (the informatieobject with its defaults, the owner as author and a SHA-256 of the
+        content, then its link to the case when a join schema is configured and the save answered a uuid) moved to
+        `Repair/Support/InformatieobjectFileWrite::write()` (with `informatieobjectFor()`, `authorOf()`, `describedFile()`,
+        `savedUuid()`, `joinRecord()`; bodies moved unchanged). The step keeps the system identity, the folder walk, the
+        skip of registered names and part files, the per-file catch and the counts, and builds the write in its
+        constructor, so its constructor is unchanged. Coupling 14 to 13; phpmd: zero findings on both files under both
+        rulesets.
+        Characterisation, green before and after: `BackfillInformatieobjectMetadataTest` (7) and
+        `RepairStepRegistrationTest`. Own test: `tests/Unit/Repair/Support/InformatieobjectFileWriteTest` (3: the
+        informatieobject and its link, no owner, no uuid no link).
