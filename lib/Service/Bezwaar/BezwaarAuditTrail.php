@@ -41,13 +41,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Bezwaar;
 
-use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Dossiq\Kernel\Contracts\BezwaarAuditTrailInterface;
 use OCA\Dossiq\Service\Support\ObjectAuditEvents;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -129,6 +125,7 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 	 * @return array<string, mixed> The entry.
 	 *
 	 * @spec openspec/specs/bezwaar-awb-audit-trail/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function entry(string $event, array $payload, string $tag = ''): array {
 		$entry = ['event' => $event];
@@ -138,7 +135,7 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 		}
 
 		$entry['actor'] = $this->resolveActor();
-		$entry['at'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+		$entry['at'] = date(DATE_ATOM);
 		$entry['payload'] = $payload;
 
 		return $entry;
@@ -348,6 +345,8 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 	 * @return void
 	 *
 	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the record is deleted first.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function recordOrDelete(object $objectService, BezwaarEntryCommand $command): void {
 		try {
@@ -358,12 +357,7 @@ class BezwaarAuditTrail implements BezwaarAuditTrailInterface {
 				$notWritten->logContext()
 			);
 			try {
-				$objectService->deleteObject(
-					new ObjectDeletion(
-						uuid: $command->objectUuid,
-						target: new ObjectFindTarget(register: $command->register, schema: $command->schema)
-					)
-				);
+				$objectService->deleteObject($command->recordDeletion());
 			} catch (Throwable $e) {
 				$this->logger->error(
 					'Dossiq bezwaar: the record without an entry could not be deleted',

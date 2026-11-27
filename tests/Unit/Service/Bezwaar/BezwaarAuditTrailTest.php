@@ -78,6 +78,25 @@ class BezwaarAuditTrailTest extends TestCase {
 	}
 
 	/**
+	 * An entry is stamped with the moment it was built, as an ATOM timestamp with its offset.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testAnEntryIsStampedWithAnAtomTimestamp(): void {
+		$before = time();
+		$entry = $this->bezwaarAuditTrail()->entry(event: 'hearing-waived', payload: []);
+		$after = time();
+
+		$this->assertMatchesRegularExpression(pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/', string: $entry['at']);
+		$stamped = (new \DateTimeImmutable($entry['at']))->getTimestamp();
+		$this->assertGreaterThanOrEqual(expected: $before, actual: $stamped);
+		$this->assertLessThanOrEqual(expected: $after, actual: $stamped);
+		$this->assertSame(expected: (new \DateTimeImmutable())->format('P'), actual: substr(string: $entry['at'], offset: -6));
+	}//end testAnEntryIsStampedWithAnAtomTimestamp()
+
+	/**
 	 * The actor is the session's, never the payload's, and `system` without a session.
 	 *
 	 * @return void
