@@ -9,7 +9,7 @@
  * rule that produced it; a store that answers nothing is refused.
  *
  * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service\Termijn
+ * @package  OCA\Dossiq\Tests\Unit\Service\Term
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -25,20 +25,20 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Tests\Unit\Service\Termijn;
+namespace OCA\Dossiq\Tests\Unit\Service\Term;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
-use OCA\Dossiq\Service\Termijn\TermStarts;
+use OCA\Dossiq\Service\Term\TermStarts;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
  * Unit tests for TermStarts.
  *
- * @covers \OCA\Dossiq\Service\Termijn\TermStarts
+ * @covers \OCA\Dossiq\Service\Term\TermStarts
  * @uses   \OCA\Dossiq\Service\TermStart
  */
 final class TermStartsTest extends TestCase {

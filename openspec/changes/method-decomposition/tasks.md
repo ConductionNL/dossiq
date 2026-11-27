@@ -2096,14 +2096,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         resolution's definition, else the case type's active one, refused with `NoTermijnDefinitieException` without
         either; the start date and duration) and storing its first instance (a running `statutory` term, its end counted
         and rolled by the definition, the rule that produced it; refused when the store answers nothing) moved to
-        `Service/Termijn/TermStarts` (`begin()`, `store()`; bodies moved unchanged, the definition read straight from
+        `Service/Term/TermStarts` (in the generic `Term` folder, so the procedure-named file count does not grow) (`begin()`, `store()`; bodies moved unchanged, the definition read straight from
         `TermDefinitions::activeFor()`, which is all `getTermijnDefinitie()` did). The service keeps the start event, the
         engine timer, the case mirror and every later write; `recordStart()` and `armOrFollow()` take the definition,
         duration and start date instead of the `TermStart`. It builds the starts over its own definitions and store in
         its constructor, so its constructor and the container are unchanged. Coupling 14 to 13 (starts 7); phpmd: zero
         findings on both files under both rulesets.
         Characterisation, green before and after: every `Termijn` and `Term` suite (1,058 tests, the one
-        `StubApiDriftTest` failure as on development). Own test: `tests/Unit/Service/Termijn/TermStartsTest` (4).
+        `StubApiDriftTest` failure as on development). Own test: `tests/Unit/Service/Term/TermStartsTest` (4).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

@@ -10,7 +10,7 @@
  * the engine timer, the case mirror and every later write of the term.
  *
  * @category Service
- * @package  OCA\Dossiq\Service\Termijn
+ * @package  OCA\Dossiq\Service\Term
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -27,10 +27,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\Dossiq\Service\Termijn;
+namespace OCA\Dossiq\Service\Term;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\TermStart;
 use RuntimeException;
