@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DocumentReviewController;
+use OCA\Dossiq\Controller\Support\ReviewCaseCaller;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Review\BatchSelection;
 use OCA\Dossiq\Review\ReviewBatches;
@@ -42,6 +43,7 @@ use PHPUnit\Framework\TestCase;
  * Golden test for DocumentReviewController::createBatch.
  *
  * @covers \OCA\Dossiq\Controller\DocumentReviewController
+ * @uses \OCA\Dossiq\Controller\Support\ReviewCaseCaller
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class ReviewBatchCreateGoldenTest extends TestCase {
@@ -118,8 +120,7 @@ class ReviewBatchCreateGoldenTest extends TestCase {
 			summary: $this->createMock(ReviewSummary::class),
 			batches: $this->batchesFor(world: $world),
 			selection: $this->selectionFor(world: $world),
-			caseAccessGuard: $guard,
-			userSession: $session,
+			caller: new ReviewCaseCaller(userSession: $session, accessGuard: $guard, l10n: $l10n),
 			l10n: $l10n,
 		);
 	}//end controllerFor()

@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DocumentReviewController;
+use OCA\Dossiq\Controller\Support\ReviewCaseCaller;
 use OCA\Dossiq\Review\BatchSelection;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewSummary;
@@ -45,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * The review endpoints' refusals.
  *
  * @covers \OCA\Dossiq\Controller\DocumentReviewController
+ * @uses \OCA\Dossiq\Controller\Support\ReviewCaseCaller
  *
  * @spec openspec/specs/case-management/spec.md
  */
@@ -198,8 +200,7 @@ class DocumentReviewGateGoldenTest extends TestCase {
 			summary: $this->review['summary'],
 			batches: $this->review['batches'],
 			selection: $this->review['selection'],
-			caseAccessGuard: $this->guard,
-			userSession: $this->session,
+			caller: new ReviewCaseCaller(userSession: $this->session, accessGuard: $this->guard, l10n: $l10n),
 			l10n: $l10n,
 		);
 		$arguments = ['id' => 'c-1'];
