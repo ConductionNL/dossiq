@@ -34,9 +34,8 @@ use OCA\Dossiq\Kernel\Contracts\BrcCrossRegisterSyncInterface;
 use OCA\Dossiq\Kernel\Contracts\BrcDocumentLinkHandlerInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Service\Zgw\BrcDecisionDeletion;
 use OCA\Dossiq\Service\Zgw\BrcHelperFactory;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -71,18 +70,18 @@ class BrcController extends ZgwController {
 	private const ZGW_API = 'besluiten';
 
 	/**
-	 * The ZGW resource a besluit delete acts on.
-	 *
-	 * @var string
-	 */
-	private const DECISION_RESOURCE = 'besluiten';
-
-	/**
 	 * What the Besluiten API keeps in step in the Zaken and Documenten registers.
 	 *
 	 * @var BrcCrossRegisterSyncInterface
 	 */
 	private readonly BrcCrossRegisterSyncInterface $sync;
+
+	/**
+	 * Deletes a besluit after its destroy rules, with its OIOs in DRC.
+	 *
+	 * @var BrcDecisionDeletion
+	 */
+	private readonly BrcDecisionDeletion $decisions;
 
 	/**
 	 * The besluitinformatieobject routes.
@@ -101,6 +100,8 @@ class BrcController extends ZgwController {
 	 * @param IRequest $request The incoming request.
 	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 * @param SettingsServiceInterface $settingsService The settings service.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
@@ -112,6 +113,7 @@ class BrcController extends ZgwController {
 		$helpers = new BrcHelperFactory();
 		$this->sync = $helpers->brcCrossRegisterSync(zgwService: $zgwService, settingsService: $settingsService);
 		$this->documentLinks = $helpers->brcDocumentLinkHandler(zgwService: $zgwService, sync: $this->sync);
+		$this->decisions = new BrcDecisionDeletion(zgwService: $zgwService, sync: $this->sync);
 	}//end __construct()
 
 	/**
@@ -401,6 +403,8 @@ class BrcController extends ZgwController {
 	 * @param string $uuid The besluit UUID to delete
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function destroyDecision(string $uuid): JSONResponse {
 		$objectService = $this->zgwService->getObjectService();
@@ -414,7 +418,7 @@ class BrcController extends ZgwController {
 			return $this->zgwService->mappingNotFoundResponse(self::ZGW_API, $resource);
 		}
 
-		$refusal = $this->deleteDecision(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid);
+		$refusal = $this->decisions->delete(objectService: $objectService, mappingConfig: $mappingConfig, uuid: $uuid, request: $this->request);
 		if ($refusal !== null) {
 			return $refusal;
 		}
@@ -435,85 +439,4 @@ class BrcController extends ZgwController {
 
 		return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
 	}//end notifiedDeletion()
-
-	/**
-	 * Find a besluit and delete it, answering why not when it cannot be.
-	 *
-	 * @param object $objectService The object service.
-	 * @param array $mappingConfig The besluiten mapping.
-	 * @param string $uuid The besluit UUID.
-	 *
-	 * @return JSONResponse|null The failure, not-found or validation response, or null once deleted.
-	 */
-	private function deleteDecision(object $objectService, array $mappingConfig, string $uuid): ?JSONResponse {
-		$object = self::DECISION_RESOURCE . ' ' . $uuid;
-		try {
-			$existingObj = $objectService->find(
-				$uuid,
-				new ObjectFindOptions(
-					register: $mappingConfig['sourceRegister'],
-					schema: $mappingConfig['sourceSchema']
-				)
-			);
-		} catch (\Throwable $e) {
-			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
-		}
-
-		if ($existingObj === null) {
-			return $this->zgwService->notFoundResponse();
-		}
-
-		try {
-			return $this->validateAndDeleteDecision(objectService: $objectService, existingObj: $existingObj, uuid: $uuid);
-		} catch (\Throwable $e) {
-			return $this->zgwService->storeFailureResponse(error: $e, operation: 'BRC delete besluit', object: $object);
-		}//end try
-	}//end deleteDecision()
-
-	/**
-	 * Run the destroy business rules, then sync-delete the besluit's OIOs and delete it.
-	 *
-	 * @param object $objectService The object service.
-	 * @param mixed $existingObj The stored besluit.
-	 * @param string $uuid The besluit UUID.
-	 *
-	 * @return JSONResponse|null The validation error, or null once deleted.
-	 *
-	 * @throws \Throwable When the sync or the delete fails.
-	 */
-	private function validateAndDeleteDecision(object $objectService, mixed $existingObj, string $uuid): ?JSONResponse {
-		$existingData = $this->objectToArray(row: $existingObj);
-
-		// Run destroy business rules.
-		$ruleResult = $this->zgwService->getBusinessRulesService()->validate(
-			zgwApi: self::ZGW_API,
-			resource: self::DECISION_RESOURCE,
-			action: 'destroy',
-			body: [],
-			existingObject: $existingData
-		);
-		if ($ruleResult['valid'] === false) {
-			return new JSONResponse(
-				data: $this->zgwService->buildValidationError($ruleResult),
-				statusCode: $ruleResult['status']
-			);
-		}
-
-		// Build the besluit URL for OIO cleanup.
-		$decisionUrl = $this->zgwService->buildBaseUrl(
-			$this->request,
-			self::ZGW_API,
-			'besluiten'
-		) . '/' . $uuid;
-
-		// Cascade delete of BesluitInformatieObjecten is handled by
-		// OpenRegister via onDelete: CASCADE on decisionDocument.decision.
-		// Brc-009: Sync-delete OIOs in DRC (cross-component side-effect).
-		$this->sync->deleteOiosForDecision(decisionUrl: $decisionUrl);
-
-		// Delete the besluit itself.
-		$objectService->deleteObject(new ObjectDeletion(uuid: $uuid));
-
-		return null;
-	}//end validateAndDeleteDecision()
 }//end class
