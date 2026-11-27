@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for TaskChecklistController.
  *
  * @covers \OCA\Dossiq\Controller\TaskChecklistController
+ * @covers \OCA\Dossiq\Controller\ChecklistRunFailure
  */
 class TaskChecklistControllerTest extends TestCase {
 

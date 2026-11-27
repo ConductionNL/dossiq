@@ -18410,8 +18410,8 @@
 				},
 				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards; nextcloud-vue CnSaveViewDialog draws a share section (CnSavedViewShareFields, people and groups, read-only or edit) narrowed by `savedViewsShareGroups` (change saved-view-share-groups); dossiq sets `savedViewsShareGroups: mine` on every list page with saved views (src/manifest.json Cases, Tasks, CaseObjects, Contacts, Organisations; src/manifest.d/89-search.json SearchResults; dossiq #6894, tests/vitest/savedViewsShareOwnGroups.spec.js); the Zuiddrecht example set ships Marleen Postma's view shared read-only with Team Vergunningen (lib/Settings/example-sets/zuiddrecht.json, tests/Unit/Settings/ZuiddrechtBoardSavedViewsTest.php); tests/e2e/case-views-shared.spec.ts written (runs in the nightly)",
 				"readOn": "2026-11-24",
-				"plan": "openspec/changes/case-views-shared-with-a-team",
-				"requirement": "openspec/changes/case-views-shared-with-a-team/specs/case-search-and-lists :: A saved case view can be shared with a team (REQ-CSL-SHARE-01)"
+				"plan": "openspec/changes/archive/2026-11-26-case-views-shared-with-a-team",
+				"requirement": "openspec/changes/archive/2026-11-26-case-views-shared-with-a-team/specs/case-search-and-lists :: A saved case view can be shared with a team (REQ-CSL-SHARE-01)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches exist at all (see 9.3), so none can be shared | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",

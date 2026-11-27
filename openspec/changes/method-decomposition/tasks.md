@@ -1816,3 +1816,60 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         listener suite does not reach); dropping the own-term check turns 2 tests red (checked). The statutory row of
         the date-arithmetic audit (`docs/research/date-arithmetic-audit-2026-09-14.md`) moved with the arithmetic to the
         new file, so `EveryTermOnTheCalendarTest` keeps holding it to the engine calendar.
+  - [x] 8cv `Transitions/StatusTypeLookup` (1, unsuppressed: BooleanArgumentFlag on the private `read()`, `$render`).
+        A rendered and a stored read of a statusType are two views, not a flag: `read()` takes the view by name
+        (`VIEW_RENDERED`, `VIEW_STORED`), and `rowFor()` and `storedRowFor()` each name theirs. The schema key, the only
+        one ever passed, is the class's `SCHEMA_KEY`. What is kept for the request is keyed by view and id, so a rendered
+        and a stored read of one status stay apart as before; the find options, the catch and the answers are unchanged,
+        and the catch-return-null allowlist entry (`read`) still names the method. phpmd: zero findings on the file
+        under both rulesets.
+        Characterisation, green on the old class first: `StatusTypeLookupReadTest::testTheRenderedAndTheStoredViewAreKeptApart`
+        (each view read once, each with its own render option, both read again after `forget()`), beside the existing
+        read tests (12 in all). Keying the kept reads by id alone turns it red (checked).
+        Whole unit suite: the same failures before and after, none in this class (`StatusEntryRequirementsGuardTest`
+        needs a sibling openregister checkout with its vendor directory and fails without one on development too).
+  - [x] 8cw `Controller/SavedMailController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The storage side of
+        reading a saved mail file (the file as the caller reaches it by id, and its bytes, a storage failure logged and
+        answered as absent) moved to `Controller/SavedMailFiles` (beside `SavedMailRead`: a swallowing catch under `lib/Service` counts against the `ServiceCatchReturnsNullTest` ceiling) (`nodeFor()`, `contentOf()`; bodies and the log line
+        moved unchanged, `contentOf()` takes the file, the case and the file id instead of the controller's
+        `SavedMailRead`). The controller keeps the authentication, the case guard, the size cap and the hand-off to the
+        reader. Its constructor takes `SavedMailFiles` in place of `IRootFolder` and `LoggerInterface`; the container
+        autowires both, and no code but the one test builds the controller by hand. Coupling 14 to 12; phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `SavedMailControllerTest` (8: anonymous, refused case, no case,
+        unreachable file, the size cap, unreadable storage, the hand-off and a kept answer), which builds the controller
+        over the same doubles through `SavedMailFiles`. Own test: `tests/Unit/Controller/SavedMailFilesTest` (3);
+        answering a folder as a file turns it red (checked).
+  - [x] 8cx `Controller/TaskChecklistController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The answer to a
+        checklist run the store did not take (OpenRegister's two validation refusals a 400 logged at info, this app's own
+        refusal a 422, anything else a 500 logged as an error) moved to `Controller/ChecklistRunFailure` (`answer()`, with
+        `rejectedPayload()` and `serverFault()`; bodies, comments and log lines moved unchanged). The controller keeps the
+        guards and the hand-off to the run service, and builds the answer in its constructor, so its constructor and the
+        container are unchanged (the logger is now passed through rather than held). Coupling 14 to 12; phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `TaskChecklistControllerTest` (11, including the 400 for both
+        OpenRegister refusals, the 500 for a genuine fault and the 422), unchanged but for one `@covers` line. Own test:
+        `tests/Unit/Controller/ChecklistRunFailureTest` (3, with the log level and wording of each answer, which the
+        controller suite does not assert); dropping the custom-validation arm turns 2 tests red (checked).
+  - [x] 8cy `Controller/PayoutCallbackController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading a
+        signed callback's fields and parsing its actual payment date through the one date write path (a malformed date
+        or body a 400 with the reason, never today) moved to `Controller/PayoutCallbackFields::read()` (body moved
+        unchanged). The controller keeps the signature check, the hand-off to the payout service and the unknown-reference
+        answer. Its constructor takes `PayoutCallbackFields` in place of `CaseDateNormaliserInterface`; the container
+        autowires it, and only the two tests build the controller by hand. `OneDateWritePathTest` lists the new file
+        under the controller's write path. Coupling 14 to 13; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `PayoutCallbackControllerTest` and `PayoutCallbackGoldenTest`
+        (11), building the controller over the same reader and dates through `PayoutCallbackFields`, and
+        `OneDateWritePathTest`. Own test: `tests/Unit/Controller/PayoutCallbackFieldsTest` (3); parsing an absent date
+        turns it red (checked).
+  - [x] 8cz `Review/RecallSamples` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Where a case's Recall samples
+        are kept (the case's stored samples read through OpenRegister, a sample written back without its derived
+        progress, and the refusal when the register will not store it) moved to `Review/RecallSampleStore` (`rows()`,
+        `save()`, with `savedRow()` and `unstored()`; bodies, the log line and the refusal moved unchanged). The service
+        keeps the draw, the judgement, the progress and the estimate, and builds the store in its constructor, so its
+        constructor, interface and container alias are unchanged (the settings service and the logger are now passed
+        through rather than held). Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `RecallSamplesTest` (9, including the refused save and the missing
+        schema), `RecallControllerTest` and `ReviewContractRegistrarTest`, unchanged but for one `@covers`/`@uses` line.
+        Own test: `tests/Unit/Review/RecallSampleStoreTest` (4); keeping the derived progress on a save turns it red
+        (checked).

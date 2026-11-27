@@ -50,6 +50,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\RecallController
  * @uses \OCA\Dossiq\Review\RecallSamples
+ * @uses \OCA\Dossiq\Review\RecallSampleStore
  * @uses \OCA\Dossiq\Review\StoppingRules
  * @uses \OCA\Dossiq\Review\StoppingRuleMet
  * @uses \OCA\Dossiq\Review\DocumentRelevance
