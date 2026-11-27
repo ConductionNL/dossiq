@@ -2034,3 +2034,15 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         StaticAccess finding on that line, and the diff check counts a finding on a touched line as new: 29 phpmd
         findings that block. The static helpers have to become injected collaborators first, which is the StaticAccess
         work (150 findings), not a rename.
+  - [x] 8dq `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
+        of a payout (the payable amount of a calculation, definitive before cumulative; saving a payout row; the row a
+        finance callback names by its reference; the refusal when either schema is not configured, and one sentence
+        with the cause per failing read or write) moved to `Money/PayoutStore` (`payableAmount()`, `save()`,
+        `byReference()`; bodies and refusal texts moved unchanged). The service keeps the decisions: the IBAN check, the
+        deadline, the finance handoff, withdrawing and raising again, and the callback fields. It no longer names
+        `MoneyStore` or `\Throwable`. The service builds the store in its constructor, so its constructor and the
+        container are unchanged. Coupling 14 to 12 (store 5); phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after but for one `@uses` line in five: `PayoutServiceTest`,
+        `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `AmountObjectionServiceTest`,
+        `AmountObjectionServiceFailuresTest` and `MigratePayoutRowsToFinanceEdgesTest`.
+        Own test: `tests/Unit/Service/Money/PayoutStoreTest` (8).

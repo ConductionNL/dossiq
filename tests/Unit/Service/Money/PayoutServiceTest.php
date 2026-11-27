@@ -40,6 +40,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Money\PayoutService
+ * @uses \OCA\Dossiq\Service\Money\PayoutStore
  * @uses \OCA\Dossiq\Service\Money\PayoutRequest
  * @covers \OCA\Dossiq\Service\Money\PayoutRequester
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser

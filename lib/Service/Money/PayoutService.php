@@ -40,7 +40,6 @@ use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\IURLGenerator;
 use RuntimeException;
@@ -51,7 +50,6 @@ use RuntimeException;
  * @spec openspec/specs/payout/spec.md
  */
 class PayoutService implements PayoutServiceInterface {
-	use SearchesObjects;
 
 	/**
 	 * Default uiterste-betaaldatum offset in days from the ingebrekestelling
@@ -84,6 +82,13 @@ class PayoutService implements PayoutServiceInterface {
 	];
 
 	/**
+	 * Reads the accruing amounts and reads and writes the payout rows.
+	 *
+	 * @var PayoutStore
+	 */
+	private readonly PayoutStore $store;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
@@ -93,6 +98,7 @@ class PayoutService implements PayoutServiceInterface {
 	 * @param PayoutRequester|null $payouts Hands the payout to the finance app.
 	 * @param IURLGenerator|null $urls Builds the callback address the finance app posts to.
 	 * @param OwningCaseResolver|null $owningCase Finds the case a calculation belongs to, so the payout names it.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -102,6 +108,7 @@ class PayoutService implements PayoutServiceInterface {
 		private readonly ?IURLGenerator $urls = null,
 		private readonly ?OwningCaseResolver $owningCase = null,
 	) {
+		$this->store = new PayoutStore(settingsService: $settingsService);
 	}//end __construct()
 
 	/**
@@ -150,18 +157,10 @@ class PayoutService implements PayoutServiceInterface {
 	private function prepare(PayoutRequest $request, ?DateTimeImmutable $receiptDate): array {
 		$request->assertPayable();
 
-		[$objectService, $register, $bSchema, $uSchema] = $this->configuredStore(
-			schemaKeys: [MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA, MoneyConfigKeys::PAYOUT_SCHEMA]
-		);
-
-		$amounts = new MoneyStore(objectService: $objectService, register: $register, schema: $bSchema);
-		$request->amount = $this->resolvePayableAmount(amounts: $amounts, calculationId: $request->calculationId);
+		$request->amount = $this->store->payableAmount(calculationId: $request->calculationId);
 		$request->paymentDateLatest = $this->paymentDeadline(receiptDate: $receiptDate);
 
-		return $this->storedUnlessInFinance(
-			row: $this->raiseRowInFinance(row: $this->payoutRow(request: $request)),
-			store: new MoneyStore(objectService: $objectService, register: $register, schema: $uSchema)
-		);
+		return $this->storedUnlessInFinance(row: $this->raiseRowInFinance(row: $this->payoutRow(request: $request)));
 	}//end prepare()
 
 	/**
@@ -170,41 +169,20 @@ class PayoutService implements PayoutServiceInterface {
 	 * Finance holds the payout once it has a payable id; dossiq keeps no copy
 	 * of it then (REQ-DQM-004).
 	 *
-	 * @param array<string, mixed> $row   The row as finance answered it.
-	 * @param MoneyStore           $store Where payout rows are stored.
+	 * @param array<string, mixed> $row The row as finance answered it.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When the row cannot be saved.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function storedUnlessInFinance(array $row, MoneyStore $store): array {
+	private function storedUnlessInFinance(array $row): array {
 		if ((string)($row['payableId'] ?? '') !== '') {
 			return $row;
 		}
 
-		return $this->persistDisbursement(store: $store, row: $row);
+		return $this->store->save(row: $row);
 	}//end storedUnlessInFinance()
-
-	/**
-	 * The object service, the register and the schemas the keys name; a refusal when any is missing.
-	 *
-	 * @param array<int, string> $schemaKeys The config keys of the schemas, in order.
-	 *
-	 * @return array<int, mixed> The object service, the register, then one schema per key.
-	 *
-	 * @throws RuntimeException When the store or a schema is not configured.
-	 */
-	private function configuredStore(array $schemaKeys): array {
-		$objectService = $this->settingsService->getObjectService();
-		$store = [$objectService, (string)$this->settingsService->getConfigValue('register')];
-		foreach ($schemaKeys as $key) {
-			$store[] = (string)$this->settingsService->getConfigValue($key);
-		}
-
-		if ($objectService === null || in_array('', array_slice($store, 1), true) === true) {
-			throw new RuntimeException('The accruing amount and payout schemas are not configured');
-		}
-
-		return $store;
-	}//end configuredStore()
 
 	/**
 	 * The latest day of payment: the Awb 4:17 offset after receipt, rolled by the Awt (art. 1).
@@ -389,77 +367,6 @@ class PayoutService implements PayoutServiceInterface {
 	}//end caseLinkOf()
 
 	/**
-	 * Resolve the payable amount locked on a DwangsomBerekening.
-	 *
-	 * @param MoneyStore $amounts       Where the accruing amounts are stored.
-	 * @param string     $calculationId Berekening id.
-	 *
-	 * @return int Payable amount in EUR cents.
-	 *
-	 * @throws RuntimeException When the berekening is missing or has nothing payable.
-	 */
-	private function resolvePayableAmount(MoneyStore $amounts, string $calculationId): int {
-		$calculation = $this->calculation(amounts: $amounts, calculationId: $calculationId);
-		if ($calculation === null) {
-			throw new RuntimeException('Accruing amount not found: ' . $calculationId);
-		}
-
-		$final = (int)($calculation['definitiveAmount'] ?? $calculation['cumulativeAmount'] ?? 0);
-		if ($final <= 0) {
-			throw new RuntimeException('DwangsomBerekening has no payable amount');
-		}
-
-		return $final;
-	}//end resolvePayableAmount()
-
-	/**
-	 * Read one DwangsomBerekening.
-	 *
-	 * @param MoneyStore $amounts       Where the accruing amounts are stored.
-	 * @param string     $calculationId Berekening id.
-	 *
-	 * @return array<string, mixed>|null The calculation, or null when there is none.
-	 *
-	 * @throws RuntimeException When the lookup fails.
-	 */
-	private function calculation(MoneyStore $amounts, string $calculationId): ?array {
-		try {
-			return $this->findObjectAsArray(
-				objectService: $amounts->objectService,
-				register: $amounts->register,
-				schema: $amounts->schema,
-				id: $calculationId
-			);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('Accruing amount lookup failed: ' . $e->getMessage());
-		}
-	}//end calculation()
-
-	/**
-	 * Persist a DwangsomUitbetaling row.
-	 *
-	 * @param MoneyStore           $store Where payout rows are stored.
-	 * @param array<string, mixed> $row   Row to persist.
-	 *
-	 * @return array<string, mixed> The saved row, or the supplied row.
-	 *
-	 * @throws RuntimeException When persisting fails.
-	 */
-	private function persistDisbursement(MoneyStore $store, array $row): array {
-		try {
-			$saved = $this->saveObjectAsArray(
-				objectService: $store->objectService,
-				register: $store->register,
-				schema: $store->schema,
-				object: $row
-			);
-			return ($saved ?? $row);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomUitbetaling persist failed: ' . $e->getMessage());
-		}
-	}//end persistUitbetaling()
-
-	/**
 	 * Handle a signed callback updating the payout state.
 	 *
 	 * @param string $reference Payment reference.
@@ -472,6 +379,7 @@ class PayoutService implements PayoutServiceInterface {
 	 * @throws RuntimeException When the referentie is unknown.
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function handleCallback(
 		string $reference,
@@ -482,62 +390,10 @@ class PayoutService implements PayoutServiceInterface {
 		$callback = new PayoutCallback(
 			reference: $reference, status: $status, paymentDate: $paymentDate, betalingsreferentie: $betalingsreferentie
 		);
-		[$objectService, $register, $uSchema] = $this->configuredStore(schemaKeys: [MoneyConfigKeys::PAYOUT_SCHEMA]);
-		$payouts = new MoneyStore(objectService: $objectService, register: $register, schema: $uSchema);
+		$row = $this->applyCallbackFields(row: $this->store->byReference(reference: $callback->reference), callback: $callback);
 
-		$row = $this->findDisbursementByReference(payouts: $payouts, reference: $callback->reference);
-		$row = $this->applyCallbackFields(row: $row, callback: $callback);
-
-		return $this->persistDisbursement(store: $payouts, row: $row);
+		return $this->store->save(row: $row);
 	}//end handleCallback()
-
-	/**
-	 * Look up the single DwangsomUitbetaling row carrying a referentie.
-	 *
-	 * @param MoneyStore $payouts   Where payout rows are stored.
-	 * @param string     $reference Payment reference.
-	 *
-	 * @return array<string, mixed> The matching row.
-	 *
-	 * @throws RuntimeException When the lookup fails or the referentie is unknown.
-	 */
-	private function findDisbursementByReference(MoneyStore $payouts, string $reference): array {
-		$rows = $this->disbursementsWithReference(payouts: $payouts, reference: $reference);
-
-		$row = null;
-		if (count($rows) > 0) {
-			$row = $rows[0];
-		}
-
-		if (is_array($row) === false) {
-			throw new RuntimeException('No DwangsomUitbetaling found for referentie ' . $reference);
-		}
-
-		return $row;
-	}//end findUitbetalingByReferentie()
-
-	/**
-	 * The DwangsomUitbetaling rows carrying a referentie.
-	 *
-	 * @param MoneyStore $payouts   Where payout rows are stored.
-	 * @param string     $reference Payment reference.
-	 *
-	 * @return array<int, mixed> The rows.
-	 *
-	 * @throws RuntimeException When the lookup fails.
-	 */
-	private function disbursementsWithReference(MoneyStore $payouts, string $reference): array {
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $payouts->objectService,
-				register: $payouts->register,
-				schema: $payouts->schema,
-				filters: ['reference' => $reference],
-			);
-		} catch (\Throwable $e) {
-			throw new RuntimeException('DwangsomUitbetaling lookup failed: ' . $e->getMessage());
-		}
-	}//end disbursementsWithReference()
 
 	/**
 	 * Apply the ERP callback fields onto an uitbetaling row.
