@@ -36,9 +36,8 @@ use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Service\Email\ReceivedEmail;
-use OCA\Dossiq\Service\Email\SentCaseMail;
+use OCA\Dossiq\Service\Email\SentMailRecorder;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -66,6 +65,13 @@ class CaseEmailService implements CaseEmailServiceInterface {
 	private const ESCAPE_NONE = 'none';
 
 	/**
+	 * Stores a sent mail on its case and puts its line on the timeline.
+	 *
+	 * @var SentMailRecorder
+	 */
+	private readonly SentMailRecorder $recorder;
+
+	/**
 	 * Constructor.
 	 *
 	 * 🔴 NO TRANSPORT HERE (inbound-mail-filters 8.1, decisions 165 and 182).
@@ -78,14 +84,17 @@ class CaseEmailService implements CaseEmailServiceInterface {
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
 	 * @param OutboundMailRules $sending The outbound mail, the recipient allowlist and the opt-out.
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly CaseEmailRepository $repository,
 		private readonly CaseContactDirectory $contactDirectory,
 		private readonly OutboundMailRules $sending,
-		private readonly CaseTimeline $timeline,
+		CaseTimeline $timeline,
 	) {
+		$this->recorder = new SentMailRecorder(repository: $repository, timeline: $timeline);
 	}//end __construct()
 
 	/**
@@ -280,6 +289,7 @@ class CaseEmailService implements CaseEmailServiceInterface {
 	 *
 	 * @spec openspec/specs/flow-nodes-to-their-owners/spec.md
 	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function recordSentEmail(
 		string $caseId,
@@ -289,62 +299,15 @@ class CaseEmailService implements CaseEmailServiceInterface {
 		string $body,
 		string $delivery = 'sent',
 	): string {
-		$mail = new SentCaseMail(
-			caseId: $caseId, fromAddress: $fromAddress, to: $to, subject: $subject, body: $body, delivery: $delivery
+		return $this->recorder->record(
+			caseId: $caseId,
+			fromAddress: $fromAddress,
+			to: $to,
+			subject: $subject,
+			body: $body,
+			delivery: $delivery,
 		);
-
-		return $this->recordSent(mail: $mail);
 	}//end recordSentEmail()
-
-	/**
-	 * Record a sent mail as a case document and put its line on the timeline.
-	 *
-	 * @param SentCaseMail $mail The mail.
-	 *
-	 * @return string The message id of the stored email record.
-	 */
-	private function recordSent(SentCaseMail $mail): string {
-		// Record the sent email as a case document.
-		$messageId = $this->repository->recordSentEmail(
-			caseId: $mail->caseId,
-			fromAddress: $mail->fromAddress,
-			to: $mail->to,
-			subject: $mail->subject,
-			body: $mail->body,
-		);
-
-		$this->recordMailOut(mail: $mail, messageId: (string)$messageId);
-
-		return (string)$messageId;
-	}//end recordSent()
-
-	/**
-	 * Put a sent mail's line on the case timeline.
-	 *
-	 * PUBLIC: the recipient already has this message in their own inbox,
-	 * so hiding its line from the timeline they are shown would only hide
-	 * it from the person who has it.
-	 *
-	 * @param SentCaseMail $mail      The mail.
-	 * @param string       $messageId The document it was recorded as.
-	 *
-	 * @return void
-	 */
-	private function recordMailOut(SentCaseMail $mail, string $messageId): void {
-		$this->timeline->record(
-			caseId: $mail->caseId,
-			kind: TimelineKinds::MAIL_OUT,
-			message: $mail->subject,
-			fields: [
-				'recipient' => $mail->to,
-				'subject' => $mail->subject,
-				'documentId' => $messageId,
-				'delivery' => $mail->delivery,
-				'sender' => $mail->fromAddress,
-			],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
-		);
-	}//end recordMailOut()
 
 	/**
 	 * Assert that a recipient address is well-formed and allowed.

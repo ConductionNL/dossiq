@@ -12,6 +12,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Routing;
 use JsonSerializable;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\AreaRouting;
+use OCA\Dossiq\Service\Routing\CaseRoleSource;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
@@ -107,13 +108,14 @@ class RoleResolverCaseRolesTest extends TestCase {
 		$delegation = $this->createMock(RoleDelegationResolver::class);
 		$delegation->method('apply')->willReturnArgument(0);
 
+		$logger = $this->createMock(LoggerInterface::class);
 		(new RoleResolverService(
 			registry: $registry,
-			settingsService: $settings,
+			roleSource: new CaseRoleSource(settingsService: $settings, logger: $logger),
 			cache: $cache,
 			delegation: $delegation,
 			area: new AreaRouting(),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $logger,
 		))->resolve(rule: ['strategy' => 'single-role', 'roleType' => 'behandelaar'], case: ['id' => 'case-1']);
 	}//end resolveOver()
 

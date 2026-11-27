@@ -41,6 +41,7 @@ use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermInstanceStore;
+use OCA\Dossiq\Service\Termijn\TermStarts;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
@@ -75,6 +76,13 @@ class TermijnService implements TermijnServiceInterface {
 	private readonly TermInstanceStore $store;
 
 	/**
+	 * How a statutory term starts, and its first stored instance.
+	 *
+	 * @var TermStarts
+	 */
+	private readonly TermStarts $starts;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings + ObjectService access.
@@ -98,6 +106,7 @@ class TermijnService implements TermijnServiceInterface {
 	 * @param IL10N|null $l10n Writes the start event's sentence in Nextcloud's language; left out it is the
 	 *        Dutch sentence the case history keys on.
 	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -116,6 +125,7 @@ class TermijnService implements TermijnServiceInterface {
 			timer: $timerService,
 		));
 		$this->store = ($store ?? new TermInstanceStore(settingsService: $settingsService, logger: $logger));
+		$this->starts = new TermStarts(definitions: $this->definitions, store: $this->store);
 	}//end __construct()
 
 	/**
@@ -147,6 +157,7 @@ class TermijnService implements TermijnServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function createTermijnInstance(
 		string $caseId,
@@ -154,59 +165,39 @@ class TermijnService implements TermijnServiceInterface {
 		?DateTimeImmutable $startDate = null,
 		?array $resolution = null,
 	): array {
-		$start = $this->termStart(caseId: $caseId, start: ['caseType' => $caseType, 'startDate' => $startDate, 'resolution' => $resolution]);
+		$start = $this->starts->begin(caseId: $caseId, start: ['caseType' => $caseType, 'startDate' => $startDate, 'resolution' => $resolution]);
 
-		$saved = $this->storeStartedInstance(start: $start);
+		$saved = $this->starts->store(start: $start);
 
-		$this->recordStart(saved: $saved, start: $start);
+		$this->recordStart(
+			saved: $saved,
+			start: ['definitie' => $start->definitie, 'durationDays' => $start->durationDays, 'startDate' => $start->startDate]
+		);
 
-		return $this->armOrFollow(saved: $saved, start: $start);
+		return $this->armOrFollow(saved: $saved, definitie: $start->definitie);
 	}//end createTermijnInstance()
 
-	/**
-	 * The start of a term, with the definition it starts under.
-	 *
-	 * @param string                                                                                            $caseId The case uuid.
-	 * @param array{caseType: string, startDate: DateTimeImmutable|null, resolution: array<string, mixed>|null} $start  `caseType` the zaaktype
-	 *                                                                                                                  identifier; `startDate`
-	 *                                                                                                                  optional start (defaults to
-	 *                                                                                                                  now); `resolution` the
-	 *                                                                                                                  resolution a caller already
-	 *                                                                                                                  made.
-	 *
-	 * @return TermStart
-	 *
-	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
-	 */
-	private function termStart(string $caseId, array $start): TermStart {
-		[$caseType, $startDate, $resolution] = [$start['caseType'], $start['startDate'], $start['resolution']];
-		$start = new TermStart();
-		$start->caseId = $caseId;
-		$start->caseType = $caseType;
-		$start->startDate = ($startDate ?? new DateTimeImmutable());
-		$start->resolution = $resolution;
-		$start->definitie = $this->definitionToStart(start: $start);
-		$start->durationDays = (int)($start->definitie['standardDurationDays'] ?? 0);
-
-		return $start;
-	}//end termStart()
 
 	/**
 	 * Record the start event of a stored instance.
 	 *
-	 * @param array<string, mixed> $saved The stored instance.
-	 * @param TermStart            $start The start it was stored from.
+	 * @param array<string, mixed>                                                                  $saved The stored instance.
+	 * @param array{definitie: array<string, mixed>, durationDays: int, startDate: DateTimeImmutable} $start The start it was stored from:
+	 *                                                                                                       its definition, duration and
+	 *                                                                                                       start date.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function recordStart(array $saved, TermStart $start): void {
+	private function recordStart(array $saved, array $start): void {
 		$this->recordEvent(
 			termInstanceId: (string)($saved['id'] ?? ''),
 			type: 'start',
-			basis: (string)($start->definitie['legalBasis'] ?? 'AWB 4:13'),
+			basis: (string)($start['definitie']['legalBasis'] ?? 'AWB 4:13'),
 			rationale: $this->startRationale(),
-			daysImpact: $start->durationDays,
-			moment: $start->startDate,
+			daysImpact: $start['durationDays'],
+			moment: $start['startDate'],
 		);
 	}//end recordStart()
 
@@ -230,13 +221,15 @@ class TermijnService implements TermijnServiceInterface {
 	/**
 	 * Arm the engine timer, or bring the case in line when no timer was armed.
 	 *
-	 * @param array<string, mixed> $saved The stored instance.
-	 * @param TermStart            $start The start it was stored from.
+	 * @param array<string, mixed> $saved    The stored instance.
+	 * @param array<string, mixed> $definitie The definition it started under.
 	 *
 	 * @return array<string, mixed> The instance as last written.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function armOrFollow(array $saved, TermStart $start): array {
-		$armed = $this->armEngineTimer(instance: $saved, definitie: $start->definitie);
+	private function armOrFollow(array $saved, array $definitie): array {
+		$armed = $this->armEngineTimer(instance: $saved, definitie: $definitie);
 		if ($armed !== null) {
 			// Arming wrote the instance again through updateTermijnInstance(),
 			// which has already brought the case in line.
@@ -248,91 +241,8 @@ class TermijnService implements TermijnServiceInterface {
 		return $saved;
 	}//end armOrFollow()
 
-	/**
-	 * The definition the term starts from: the resolution's, or the case type's active one.
-	 *
-	 * @param TermStart $start The term start.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @throws NoTermijnDefinitieException When the case type has no active definition.
-	 */
-	private function definitionToStart(TermStart $start): array {
-		$definitie = (($start->resolution['definition'] ?? null) ?? $this->getTermijnDefinitie(caseType: $start->caseType));
-		if ($definitie === null) {
-			// A DISTINCT type, because this is the one refusal a caller can
-			// act on and the one that must not be swallowed at debug level:
-			// it means no statutory clock started for this case at all.
-			throw new NoTermijnDefinitieException(
-				message: 'No active TermijnDefinitie configured for zaaktype "' . $start->caseType . '" (REQ-TERM-001-A)'
-			);
-		}
 
-		return $definitie;
-	}//end definitionToStart()
 
-	/**
-	 * Store the new statutory term instance.
-	 *
-	 * @param TermStart $start The term start.
-	 *
-	 * @return array<string, mixed> The stored instance.
-	 *
-	 * @throws RuntimeException When the instance could not be persisted.
-	 */
-	private function storeStartedInstance(TermStart $start): array {
-		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $this->startedInstance(start: $start));
-		if ($saved === null) {
-			throw new RuntimeException(
-				'Failed to persist TermijnInstance for zaak "' . $start->caseId . '" (persistence unavailable)'
-			);
-		}
-
-		return $saved;
-	}//end storeStartedInstance()
-
-	/**
-	 * The new instance: its definition, its kind, and its end counted and rolled.
-	 *
-	 * @param TermStart $start The term start.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function startedInstance(TermStart $start): array {
-		// COUNTED AND ROLLED IN ONE CALL. The Algemene termijnenwet roll used to
-		// sit here, one line below the count, and the two always ran together.
-		// They live together now, on the class that reads what the definition
-		// declares, so no caller can take the count without the roll.
-		$endDate = $this->definitions
-			->endDateFor(start: $start->startDate, days: $start->durationDays, definitie: $start->definitie)
-			->format('Y-m-d');
-
-		$instance = [
-			'case' => $start->caseId,
-			'deadlineDefinition' => (string)($start->definitie['id'] ?? ''),
-			// The kind this instance carries. A term created here is the one the
-			// Awb sets and the citizen is told about, and every instance written
-			// before the four kinds existed is one of these too, which is why
-			// {@see TermKind::ofInstance()} reads an absent kind as statutory.
-			'kind' => TermKind::STATUTORY,
-			'startDate' => $start->startDate->format('Y-m-d\TH:i:sP'),
-			'endDateCalculated' => $endDate,
-			'endDateCurrent' => $endDate,
-			'status' => 'lopend',
-			'countExtensions' => 0,
-			'notificatiesVerstuurd' => [],
-		];
-
-		// Which rule produced this term, recorded rather than re-derivable. A
-		// term somebody disputes has to be explainable a year later, and the
-		// configuration will have changed by then.
-		if ($start->resolution !== null) {
-			$instance['resolvedFrom'] = (string)($start->resolution['resolvedFrom'] ?? '');
-			$instance['resolutionSnapshot'] = (array)($start->resolution['snapshot'] ?? []);
-		}
-
-		return $instance;
-	}//end startedInstance()
 
 	/**
 	 * Arm the engine timer for a freshly created instance and store its

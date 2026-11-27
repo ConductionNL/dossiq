@@ -37,14 +37,13 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
 use OCA\Dossiq\Service\Routing\AreaRouting;
+use OCA\Dossiq\Service\Routing\CaseRoleSource;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
 use OCA\Dossiq\Service\Support\ObjectArray;
-use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Central role-routing engine.
@@ -52,7 +51,6 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T02
  */
 class RoleResolverService implements RoleResolverServiceInterface {
-	use RefusesWhenIndeterminate;
 
 	/**
 	 * Default strategy name when normalising legacy fields.
@@ -68,15 +66,17 @@ class RoleResolverService implements RoleResolverServiceInterface {
 	 * Constructor.
 	 *
 	 * @param StrategyRegistry $registry Strategy registry
-	 * @param SettingsService $settingsService Bridge to ObjectService + config
+	 * @param CaseRoleSource $roleSource Reads the stored role records of a case
 	 * @param RoleResolutionCache $cache What a rule last resolved to against a case
 	 * @param RoleDelegationResolver $delegation Active-window delegate substitution
 	 * @param AreaRouting $area Turns the area held on a case into the team a rule routes to
 	 * @param LoggerInterface $logger Logger
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly StrategyRegistry $registry,
-		private readonly SettingsService $settingsService,
+		private readonly CaseRoleSource $roleSource,
 		private readonly RoleResolutionCache $cache,
 		private readonly RoleDelegationResolver $delegation,
 		private readonly AreaRouting $area,
@@ -364,67 +364,21 @@ class RoleResolverService implements RoleResolverServiceInterface {
 	 * @return array<int, array<string, mixed>> The role rows, empty when the case has none.
 	 *
 	 * @throws RefusedException When the role register could not be read at all.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function loadCaseRoles(string $caseId): array {
 		if ($caseId === '') {
 			return [];
 		}
 
-		$source = $this->roleSource();
-		if ($source === null) {
+		$records = $this->roleSource->recordsOf(caseId: $caseId);
+		if ($records === null) {
 			return [];
 		}
 
-		return $this->rowsOf(records: $this->readRoles(source: $source, caseId: $caseId));
+		return $this->rowsOf(records: $records);
 	}//end loadCaseRoles()
-
-	/**
-	 * Where the case roles are read: the object service, register and role schema; null when any is missing.
-	 *
-	 * @return array{0: object, 1: string, 2: string}|null The source.
-	 */
-	private function roleSource(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('role_schema');
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		return [$objectService, $register, $schema];
-	}//end roleSource()
-
-	/**
-	 * The stored role records of one case; refused when the register cannot be read.
-	 *
-	 * @param array{0: object, 1: string, 2: string} $source The object service, register and role schema.
-	 * @param string                                 $caseId The case UUID.
-	 *
-	 * @return mixed What the register answered.
-	 *
-	 * @throws RefusedException When the role register could not be read at all.
-	 */
-	private function readRoles(array $source, string $caseId): mixed {
-		[$objectService, $register, $schema] = $source;
-
-		// OpenRegister's ObjectService::findAll() takes ONE config array. This
-		// call used to pass ($register, $schema, $filters) positionally, which
-		// is a TypeError against `array $config` — and the catch that stood
-		// here turned that TypeError into an empty role list, so stored case
-		// roles were never loaded and rule resolution silently fell through to
-		// its other sources. An empty role list is also how a routing rule
-		// resolves to nobody, which is why the read now refuses instead.
-		return $this->readOrRefuse(
-			read: fn (): mixed => $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema, 'case' => $caseId]]),
-			what: 'the roles on case ' . $caseId,
-			rule: 'case-roles-unreadable',
-			sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
-		);
-	}//end readRoles()
 
 	/**
 	 * The records as rows; one that reads as nothing is left out.
@@ -455,21 +409,4 @@ class RoleResolverService implements RoleResolverServiceInterface {
 	private function toArray(mixed $value): array {
 		return ObjectArray::of(value: $value);
 	}//end toArray()
-
-	/**
-	 * Throw a runtime exception with a static message.
-	 *
-	 * Helper for callers that wrap resolution; kept for symmetry.
-	 *
-	 * @param string $message Failure label
-	 *
-	 * @return never
-	 *
-	 * @throws RuntimeException
-	 *
-	 * @spec openspec/specs/role-based-step-routing/spec.md
-	 */
-	public function fail(string $message): never {
-		throw new RuntimeException($message);
-	}//end fail()
 }//end class

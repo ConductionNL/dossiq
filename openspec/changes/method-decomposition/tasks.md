@@ -2060,6 +2060,49 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation, green before and after: `KpiAggregationServiceTest` and `TranslatableTypeNamesReadAsTextTest`
         (the translation switch put back after the read), plus the controller suites that mock the service. Own test:
         `tests/Unit/Service/KpiOpenRegisterServicesTest` (4).
+  - [x] 8du `CaseEmailService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Recording a mail that went out
+        about a case (the stored message, then its public `mail-uitgaand` line naming the document, the sender and what
+        became of it) moved to `Service/Email/SentMailRecorder` (`record()`; bodies moved unchanged, the `SentCaseMail`
+        built there). The service keeps the checks before a send, the hand-off to the Mail account, the templates and the
+        inbound linking, and `recordSentEmail()` stays its public seam for the flow listener. It builds the recorder in
+        its constructor, so its constructor and the container are unchanged. Coupling 14 to 13 (recorder 4); phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `CaseEmailServiceTest`, `CaseEmailSentRecordGoldenTest` (the document
+        before the line, the line's fields, a named delivery), `CaseEmailInboundGoldenTest`, `SendFromTemplateRefusesTest`,
+        `EmailControllerTest`, `EmailControllerContractTest`, `FlowEmailSentListenerTest` and the send-template handler
+        suites. Own test: `tests/Unit/Service/Email/SentMailRecorderTest` (2).
+  - [x] 8dv `RoleResolverService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading the stored role
+        records of a case (the object service, register and role schema, nothing without one of them, a failing read
+        logged and refused as `case-roles-unreadable`) moved to `Service/Routing/CaseRoleSource` (`recordsOf()`; bodies
+        moved unchanged with the `RefusesWhenIndeterminate` trait). The resolver keeps turning the records into rows
+        (its `ObjectArray` copy, which `ObjectArrayCopiesTest` reads, stays) and everything after. It takes the source in
+        place of `SettingsService`; the container autowires it. Removed, not moved: the public `fail()`, which had no
+        caller and is not on the interface. Coupling 14 to 12 (source 4); phpmd: no new findings (the StaticAccess on
+        `ObjectArray` in `toArray()` was there on development, on an untouched line).
+        Characterisation, green before and after: `RoleResolverResolveGoldenTest`, `RoleResolverCaseRolesTest`,
+        `AreaRoutingIsConsultedTest`, `RefusalReplacesTheEmptyAnswerTest` (the unreadable register refused, not routed to
+        nobody), `ObjectArrayCopiesTest` and the routing, role-mutation and take-back suites, each building the resolver
+        over the same doubles through `CaseRoleSource`. Own test: `tests/Unit/Service/Routing/CaseRoleSourceTest` (3).
+  - [x] 8dw `SamenwerkverzoekService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The save that both the
+        create and the response end with (into the register and schema, answered as the stored entity serialises) moved
+        to the generic `Service/Support/SavedObjectArray` (`save()`; body moved unchanged). The trait's
+        `saveObjectAsArray()` was not reused: it answers null for an answer it cannot read, where this path answers the
+        serialised entity. The service builds it in its constructor, so its constructor and the container are unchanged.
+        Coupling 14 to 13 (saver 3); phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `SamenwerkverzoekServiceTest`, `DsoCaseMutationsGoldenTest`,
+        `DsoControllerTest` and `DsoControllerContractTest`. Own test: `tests/Unit/Service/Support/SavedObjectArrayTest` (1).
+  - [x] 8dx `TermijnService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). How a statutory term starts (the
+        resolution's definition, else the case type's active one, refused with `NoTermijnDefinitieException` without
+        either; the start date and duration) and storing its first instance (a running `statutory` term, its end counted
+        and rolled by the definition, the rule that produced it; refused when the store answers nothing) moved to
+        `Service/Termijn/TermStarts` (`begin()`, `store()`; bodies moved unchanged, the definition read straight from
+        `TermDefinitions::activeFor()`, which is all `getTermijnDefinitie()` did). The service keeps the start event, the
+        engine timer, the case mirror and every later write; `recordStart()` and `armOrFollow()` take the definition,
+        duration and start date instead of the `TermStart`. It builds the starts over its own definitions and store in
+        its constructor, so its constructor and the container are unchanged. Coupling 14 to 13 (starts 7); phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: every `Termijn` and `Term` suite (1,058 tests, the one
+        `StubApiDriftTest` failure as on development). Own test: `tests/Unit/Service/Termijn/TermStartsTest` (4).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
