@@ -2,7 +2,9 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Every webpack entry that imports the library also imports its stylesheet.
+ * Every webpack entry that imports the library gets its stylesheet: the page
+ * that loads it links css/nextcloud-vue.css (copied there by the build, kept
+ * parsed by the browser between loads), or the entry imports the sheet.
  *
  * The library's component styles live in one built sheet,
  * `@conduction/nextcloud-vue/css/index.css`, and webpack does not pull it in
@@ -39,9 +41,25 @@ describe('entries that use the library load its stylesheet', () => {
 		expect(users).toEqual(expect.arrayContaining(['main.js']))
 	})
 
-	it.each(users)('🔴 %s imports the library stylesheet', (entry) => {
-		expect(fs.readFileSync(path.join(ROOT, 'src', entry), 'utf8')).toMatch(
-			LIBRARY_CSS,
-		)
+	// The page that loads each linked entry, and the line that links the sheet.
+	const LINKED_BY = {
+		'main.js': 'templates/index.php',
+		'settings.js': 'templates/settings/admin.php',
+		'dashboardWidgets.js': 'lib/Dashboard/DashboardPageWidget.php',
+	}
+	const LINK = /addStyle\([^)]*'nextcloud-vue'\)/
+
+	it.each(users)('🔴 %s gets the library stylesheet', (entry) => {
+		const source = fs.readFileSync(path.join(ROOT, 'src', entry), 'utf8')
+		if (LINKED_BY[entry]) {
+			expect(fs.readFileSync(path.join(ROOT, LINKED_BY[entry]), 'utf8')).toMatch(LINK)
+			expect(source).not.toMatch(LIBRARY_CSS)
+		} else {
+			expect(source).toMatch(LIBRARY_CSS)
+		}
+	})
+
+	it('copies the library stylesheet to css/ in the build', () => {
+		expect(webpackConfig).toContain("path.join(__dirname, 'css', 'nextcloud-vue.css')")
 	})
 })

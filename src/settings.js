@@ -7,10 +7,9 @@ import pinia from './pinia.js'
 // library's lazy chunks (the setup wizard's status fetch) resolve against
 // /settings/admin and the wizard's cards come up empty.
 import './publicPath.js'
-// Library CSS, as in main.js: an explicit import, because webpack tree-shakes
-// side-effect imports from aliased packages. Without it the admin page drew
-// every library component unstyled (no table scroll box, no card look).
-import '@conduction/nextcloud-vue/css/index.css'
+// Library CSS: templates/settings/admin.php links css/nextcloud-vue.css (copied
+// there by the build). Without it the admin page drew every library component
+// unstyled (no table scroll box, no card look).
 
 registerTranslations()
 

@@ -64,8 +64,9 @@ import {
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
 import './publicPath.js'
-// Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
-import '@conduction/nextcloud-vue/css/index.css'
+// Library CSS is not imported here: the build copies it to css/nextcloud-vue.css
+// and each page that loads the -shared-nc-vue chunk links it, so the browser
+// keeps it parsed between loads instead of the bundle inserting ~1.1 MB of text.
 // Global (unscoped) app styles
 import './assets/app.css'
 

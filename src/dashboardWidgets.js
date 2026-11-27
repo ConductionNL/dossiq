@@ -23,7 +23,7 @@ import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import StartCaseWidget from './views/widgets/StartCaseWidget.vue'
 import pinia from './pinia.js'
 
-import '@conduction/nextcloud-vue/css/index.css'
+// Library CSS: DashboardPageWidget::load() links css/nextcloud-vue.css.
 
 const OPEN = { isFinalStatus: { ne: true, orNull: true } }
 const CASE_HREF = '/apps/dossiq/cases/{id}'
