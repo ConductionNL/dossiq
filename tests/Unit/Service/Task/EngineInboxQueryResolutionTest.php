@@ -29,6 +29,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineInboxQuery
+ * @uses \OCA\Dossiq\Service\Task\InboxCriteria
  */
 class EngineInboxQueryResolutionTest extends TestCase {
 

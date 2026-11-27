@@ -67,6 +67,7 @@ use RuntimeException;
  * coverage driver, and neither pcov nor xdebug is installed here.
  *
  * @uses \OCA\Dossiq\Service\Task\EngineInboxQuery
+ * @uses \OCA\Dossiq\Service\Task\InboxCriteria
  */
 class EngineTaskInboxTest extends TestCase {
 

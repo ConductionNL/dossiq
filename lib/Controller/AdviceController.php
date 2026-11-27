@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AdviceWrites;
 use OCA\Dossiq\Controller\Support\JsonRequestBody;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
@@ -39,7 +40,6 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -49,6 +49,13 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class AdviceController extends Controller {
+
+	/**
+	 * Makes the advice writes and answers each one's outcome.
+	 *
+	 * @var AdviceWrites
+	 */
+	private readonly AdviceWrites $writes;
 	/**
 	 * Constructor.
 	 *
@@ -58,16 +65,18 @@ class AdviceController extends Controller {
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
 	 * @param CaseAccessGuardInterface $caseAccessGuard Per-case authorization (fails closed)
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly AdviceServiceInterface $adviceService,
 		private readonly IUserSession $userSession,
-		private readonly LoggerInterface $logger,
+		LoggerInterface $logger,
 		private readonly CaseAccessGuardInterface $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->writes = new AdviceWrites(adviceService: $adviceService, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -91,6 +100,7 @@ class AdviceController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function transitionStatus(string $id): JSONResponse {
 		if ($this->userSession->getUser() === null) {
@@ -104,34 +114,8 @@ class AdviceController extends Controller {
 			return new JSONResponse(['error' => 'to status is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return $this->transition(id: $id, to: $to, data: $data);
+		return $this->writes->transition(id: $id, to: $to, data: $data);
 	}//end transitionStatus()
-
-	/**
-	 * Move an advice request to a status, answering the record or the error.
-	 *
-	 * @param string               $id   The advice UUID
-	 * @param string               $to   The target status.
-	 * @param array<string, mixed> $data The request body.
-	 *
-	 * @return JSONResponse Updated record
-	 *
-	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function transition(string $id, string $to, array $data): JSONResponse {
-		try {
-			$advice = $this->adviceService->transitionStatus($id, $to, $data);
-			return new JSONResponse($advice);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(
-				['error' => $e->getMessage()],
-				Http::STATUS_BAD_REQUEST,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error('Dossiq: advice transition failed: ' . $e->getMessage());
-			return new JSONResponse(['error' => 'Could not transition advice request'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-	}//end transition()
 
 	/**
 	 * Dispatch a manual reminder notification to the adviseur.
@@ -143,26 +127,14 @@ class AdviceController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function dispatchReminder(string $id): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		try {
-			// Authorized seam. The unguarded `dispatchReminder()` behind it is
-			// the cron's, and is not reachable from HTTP.
-			$this->adviceService->dispatchReminderAsUser($id);
-			return new JSONResponse(['status' => 'reminded']);
-		} catch (\RuntimeException $e) {
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
-		} catch (\Throwable $e) {
-			$this->logger->error('Dossiq: advice dispatchReminder failed: ' . $e->getMessage());
-			return new JSONResponse(
-				['error' => 'Could not send reminder'],
-				Http::STATUS_INTERNAL_SERVER_ERROR,
-			);
-		}
+		return $this->writes->remind(id: $id);
 	}//end dispatchReminder()
 
 	/**
@@ -175,6 +147,7 @@ class AdviceController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/specs/advice-management/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function createForCase(string $id): JSONResponse {
@@ -202,57 +175,8 @@ class AdviceController extends Controller {
 			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->requestAdviceFor(id: $id, user: $user);
+		return $this->writes->request(id: $id, uid: $user->getUID(), data: $this->readJsonBody());
 	}//end createForCase()
-
-	/**
-	 * Create the advice request from the request body, answering a refusal or failure as a response.
-	 *
-	 * @param string $id   UUID of the case
-	 * @param IUser  $user The requesting user, already allowed to mutate the case
-	 *
-	 * @return JSONResponse Created advice request or error
-	 *
-	 * @spec openspec/specs/advice-management/spec.md
-	 */
-	private function requestAdviceFor(string $id, IUser $user): JSONResponse {
-		$data = $this->readJsonBody();
-		$data['caseRef'] = $id;
-		$data['requestedBy'] = $user->getUID();
-		$data['status'] = 'open';
-
-		try {
-			$advice = $this->adviceService->requestAdvice(caseId: $id, data: $data, requestedBy: $user->getUID());
-			return new JSONResponse(data: $advice, statusCode: Http::STATUS_CREATED);
-		} catch (\InvalidArgumentException $e) {
-			// A date the system cannot read is the caller's to fix, and nothing
-			// is created. It used to be stored verbatim.
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		} catch (\Throwable $e) {
-			return $this->adviceRequestFailure(error: $e, id: $id);
-		}
-	}//end requestAdviceFor()
-
-	/**
-	 * Log a failed advice request and answer it as a server error.
-	 *
-	 * @param \Throwable $error The failure.
-	 * @param string     $id    UUID of the case
-	 *
-	 * @return JSONResponse The error.
-	 *
-	 * @spec openspec/specs/advice-management/spec.md
-	 */
-	private function adviceRequestFailure(\Throwable $error, string $id): JSONResponse {
-		$this->logger->error(
-			'Failed to create advice request for case ' . $id . ': ' . $error->getMessage(),
-			['app' => AppIdentity::APP_ID]
-		);
-		return new JSONResponse(
-			['error' => 'Could not create advice request: ' . $error->getMessage()],
-			Http::STATUS_INTERNAL_SERVER_ERROR,
-		);
-	}//end adviceRequestFailure()
 
 	/**
 	 * Get all advice requests for a specific case.

@@ -110,6 +110,8 @@ class OneDateWritePathTest extends TestCase {
 		],
 		'AdviceController' => [
 			'Controller/AdviceController.php',
+			// The advice writes moved here in method-decomposition 8dp.
+			'Controller/Support/AdviceWrites.php',
 			'Service/AdviceService.php',
 		],
 		'WOOAssessmentController' => [
