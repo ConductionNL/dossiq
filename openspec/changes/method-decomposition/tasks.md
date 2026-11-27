@@ -2254,6 +2254,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         the container autowires it. Coupling 15 to 13 (readable 4); phpmd: zero findings on both files.
         Characterisation, green before and after: `WooGatherAddTest` and `WooGatherAddAnswerGoldenTest` (31). Own test:
         `tests/Unit/Service/Documents/CallerReadableTest` (2).
+  - [x] 8en `AppInfo/Application` (1, unsuppressed: CouplingBetweenObjects 20 against 13). The wiring `register()` handed
+        to registrars moved to two composites in `AppInfo/Registrar`: `ComponentContractRegistrar` runs the six component
+        contract registrars (contribution, integration, notification, portal, review, Woo), and `WiringRegistrar` runs the
+        lifecycle, service, component contract and listener registrars, in the order `register()` ran them. What
+        `register()` states itself stays in `Application.php`, where the gates and the source-reading tests look for it:
+        the OpenRegister interface alias, the two setup checks, the capability, the MCP scan alias, the search provider
+        and the config lexicon. Coupling 20 to 12 (wiring 5, contracts 7); phpmd: zero findings on the three files.
+        Characterisation, green before and after: every `AppInfo` registrar and registration suite, `CapabilitiesTest`,
+        `ConfigLexiconTest`, `DsoIntakeCheckTest` and `DossiqScannableServicesTest`. Own test:
+        `tests/Unit/AppInfo/WiringRegistrarTest` (2: each composite records exactly the registrations its registrars make
+        when run one by one, in order).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
