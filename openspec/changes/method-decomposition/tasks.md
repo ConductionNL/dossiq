@@ -1888,7 +1888,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `Service/Calendar/HearingCalendarWriter` (`writeForAll()`, with `writeToCalendar()` and `takesHearings()`; bodies and
         log lines moved unchanged). The service keeps building the event, the organiser, the attendees and the principals,
         and builds the writer in its constructor beside `PlannedEventFields`, so its constructor and the container are
-        unchanged. Coupling 14 to 13; phpmd: zero findings on both files under both rulesets.
+        unchanged. Coupling 14 to 12 (measured with the rule's maximum at 1); phpmd: zero findings on both files under
+        both rulesets.
         Characterisation, green before and after: `HearingCalendarServiceTest` and `HearingCalendarServicePinTest` (13,
         with every log line in order), `HearingServiceTest`. Own test: `tests/Unit/Service/Calendar/HearingCalendarWriterTest`
         (4); writing into a calendar in the trash turns it red.
@@ -1903,3 +1904,43 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation, green before and after: `BackfillInformatieobjectMetadataTest` (7) and
         `RepairStepRegistrationTest`. Own test: `tests/Unit/Repair/Support/InformatieobjectFileWriteTest` (3: the
         informatieobject and its link, no owner, no uuid no link).
+  - [x] 8dd `People/FileRequestService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Building the create-only
+        e-mail share of the case folder from a checked request and having the share manager create it (a refusal a 500
+        naming the reason) moved to `Service/People/UploadShareWrite` (`send()`, answering the share's token, with
+        `uploadShare()` and `createdShare()`; bodies moved unchanged). The service keeps the party, the address, the
+        indicator refusal, the folder, the caller and the expiry, and builds the write in its constructor, so its
+        constructor and the container are unchanged. Coupling 14 to 12; phpmd: zero findings on both files under both
+        rulesets.
+        Characterisation, green before and after: `FileRequestServiceTest` (with every setter on the share and the
+        refused share), `FileRequestServiceRefusalsTest` and `FileRequestControllerTest`. Own test:
+        `tests/Unit/Service/People/UploadShareWriteTest` (3: the share and its token, an ownerless folder without a note,
+        the refusal).
+  - [x] 8de `PublicationService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading the case to publish
+        from OpenRegister (normalised to an array; a missing or unreadable case refused, the unreadable one logged) and
+        saving it back into its register and schema moved to `Service/Publication/PublishedCase` (`load()`, `save()`;
+        bodies and the log line moved unchanged). The service keeps the channel check, the publication record, the date
+        rule and the integriq delivery, and builds the store in its constructor, so its constructor is unchanged.
+        Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `PublicationServiceTest`, `PublicationServiceGoldenTest` (including
+        the case read that throws), `BesluitvormingPublishHandlerTest` and `PublicationControllerTest`. Own test:
+        `tests/Unit/Service/Publication/PublishedCaseTest` (5).
+  - [x] 8df `Controller/PortalWooAnswerController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading the
+        forwarded answer into a submission (the request id, the answer, and the files under `bijlagen` read into bytes
+        and re-checked for number and size) moved to `Controller/Support/PortalAnswerRead` (`read()`, answering the
+        submission or null, with `attachments()`, `uploadEntries()`, `readUpload()` and `stringParam()`; bodies moved
+        unchanged). The controller keeps the assertion, the audience, the 422 and the hand-off, and builds the reader in
+        its constructor, so its constructor is unchanged. Coupling 14 to 12; phpmd: zero findings on both files under
+        both rulesets.
+        Characterisation, green before and after: `PortalWooAnswerControllerTest` (the single and multiple uploads, the
+        six files, the 10 MB edge) and `PortalWooAnswerTest`. Own test: `tests/Unit/Controller/Support/PortalAnswerReadTest`
+        (4).
+  - [x] 8dg `WOODeadlineService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The handler's notice when a
+        deadline is seven days out or has passed (the warning or overdue subject, the case, the days; a notice that
+        cannot be sent logged) moved to `Service/Notification/DeadlineWarningNotice` (`send()`, with `deadlineSubject()`
+        and `deadlineNotification()`; bodies and the log line moved unchanged). The service keeps reading the case,
+        counting the days and deciding when to warn, and builds the notice in its constructor, so its constructor is
+        unchanged. Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
+        Characterisation, written first and green on the old class: two tests added to `WOODeadlineServiceTest` (the
+        overdue notice's app, user, object, subject and parameters; a notice that cannot be sent is logged and the
+        warning stands), beside `OneDateWritePathTest`, `StatutoryTermParityTest` and the `WOOAssessmentController`
+        suites. Own test: `tests/Unit/Service/Notification/DeadlineWarningNoticeTest` (3).
