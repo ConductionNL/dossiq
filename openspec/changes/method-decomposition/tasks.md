@@ -2152,6 +2152,34 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation, green before and after: `DocumentRedactionServiceTest`, `DocumentRedactionStepsGoldenTest` and
         `DocumentRedactionControllerTest`, built over the same doubles through `RedactionOriginal`. Own test:
         `tests/Unit/Service/Redaction/RedactionOriginalTest` (3).
+  - [x] 8ec `Controller/WooReportController` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Reading the
+        throughput report for one case or a period (moments read as the tenant's days) and recording the read on the
+        audit trail of every case it counted before anything is answered moved to `Controller/Support/RecordedReportRead`
+        (`scope()`, `read()`; bodies moved unchanged). A report that cannot be made or a read that cannot be recorded comes
+        back as `{rule, status}` instead of a thrown refusal, and the controller words it as before. The controller keeps
+        the session, the switch and group checks, the refusal sentences and the JSON or CSV answer. It takes the read in
+        place of the read log and the date normaliser; the container autowires it. Coupling 15 to 13 (read 4); phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `WooReportControllerTest` (off, outside the group, an administrator
+        outside it, signed out, an audited read, an unrecorded read, a period and a missing period, moments as days, the
+        offer, the CSV, the CSV link without a token) and the throughput report suites. Own test:
+        `tests/Unit/Controller/Support/RecordedReportReadTest` (3).
+  - [x] 8ed `Listener/Registrar/IntakeListenerRegistrar` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The
+        listeners that check a case at intake (the BAG location check and the intake requirements before a case is
+        stored, the special-category processing log after) moved to `Listener/Registrar/IntakeValidationListenerRegistrar`,
+        which the intake registrar calls the way it already calls `IntakeFormListenerRegistrar`. Same events, same
+        listeners, same order. Coupling 15 to 13 (validation registrar 8); phpmd: zero findings on both files.
+        Characterisation, green before and after: every `Registrar` and `Registration` suite (172 tests). Own test:
+        `tests/Unit/AppInfo/IntakeValidationListenerRegistrarTest` (1).
+  - [x] 8ee `Command/DrainIntakeObjectsCommand` (1, unsuppressed: CouplingBetweenObjects 16 against 13). The three store
+        calls the generic drain takes as callbacks (the case already holding a source, found by its id as the external
+        reference; one case submitted through OpenRegister's form submit as the drain's user, a refusal answered as its
+        findings; a source marked with the case it became, without its own metadata) moved to `Command/PortalDrainCalls`
+        (`existingCase()`, `submitter()`, `sourceMarker()`; bodies moved unchanged, over the same `PortalDrainSetup`). The
+        command keeps the prerequisites, the run and the report. It builds the calls in `execute()`, so its constructor
+        and the container are unchanged. Coupling 16 to 13 (calls 6); phpmd: zero findings on both files.
+        Characterisation, green before and after: `DrainIntakeObjectsCommandTest`, `DrainIntakeObjectsCommandEdgesTest`,
+        `IntakeObjectDrainTest` and `ServiceCatchReturnsNullTest`. Own test: `tests/Unit/Command/PortalDrainCallsTest` (3).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

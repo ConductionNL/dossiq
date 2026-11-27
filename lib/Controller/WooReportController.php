@@ -22,10 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Controller\Support\RecordedReportRead;
 use OCA\Dossiq\Kernel\AppIdentity;
-use OCA\Dossiq\Kernel\Contracts\CaseDateNormaliserInterface;
-use OCA\Dossiq\Kernel\Contracts\WooReportReadLogInterface;
 use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCP\AppFramework\Controller;
@@ -58,21 +56,21 @@ class WooReportController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param WooReportSwitches $switches The organisation switches.
 	 * @param WooThroughputReportInterface $throughputReport The throughput report.
-	 * @param WooReportReadLogInterface $readLog The read log on the audit trail.
+	 * @param RecordedReportRead $reads Reads the report and records the read.
 	 * @param IUserSession $userSession The user session.
 	 * @param IL10N $l10n The translations.
-	 * @param CaseDateNormaliserInterface|null $dates Reads a moment as the tenant's calendar date.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly WooReportSwitches $switches,
 		private readonly WooThroughputReportInterface $throughputReport,
-		private readonly WooReportReadLogInterface $readLog,
+		private readonly RecordedReportRead $reads,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
-		private readonly ?CaseDateNormaliserInterface $dates = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -163,27 +161,22 @@ class WooReportController extends Controller {
 	 * @return JSONResponse|DataDownloadResponse
 	 *
 	 * @spec openspec/specs/woo-review-reports/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function recordedThroughput(IUser $user): JSONResponse|DataDownloadResponse {
-		$caseId = trim((string)$this->request->getParam('case', ''));
-		$from = $this->calendarDate(value: trim((string)$this->request->getParam('from', '')));
-		$to = $this->calendarDate(value: trim((string)$this->request->getParam('to', '')));
-		$scope = ['from' => $from, 'to' => $to];
-		if ($caseId !== '') {
-			$scope = ['case' => $caseId];
+		$scope = $this->reads->scope(
+			caseId: trim((string)$this->request->getParam('case', '')),
+			from: trim((string)$this->request->getParam('from', '')),
+			to: trim((string)$this->request->getParam('to', ''))
+		);
+
+		$outcome = $this->reads->read(readerId: $user->getUID(), scope: $scope);
+		if ($outcome['refusal'] !== null) {
+			$rule = $outcome['refusal']['rule'];
+			return new JSONResponse(['error' => $rule, 'message' => $this->sentence(rule: $rule)], $outcome['refusal']['status']);
 		}
 
-		try {
-			$report = $this->read(caseId: $caseId, from: $from, to: $to);
-			$this->readLog->recordThroughputRead(readerId: $user->getUID(), scope: $scope, caseIds: $report['cases']);
-		} catch (RefusedException $e) {
-			return new JSONResponse(
-				['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())],
-				$e->getStatus()
-			);
-		}
-
-		return $this->throughputAnswer(scope: $scope, report: $report);
+		return $this->throughputAnswer(scope: $scope, report: $outcome['report']);
 	}//end recordedThroughput()
 
 	/**
@@ -208,42 +201,7 @@ class WooReportController extends Controller {
 		return new JSONResponse(['scope' => $scope] + $report);
 	}//end throughputAnswer()
 
-	/**
-	 * A period bound as the tenant's calendar date. A dashboard date range
-	 * sends moments (`2026-10-01T22:00:00.000Z`); the report counts days, so
-	 * a moment is read as the day it falls on in the tenant's zone. A plain
-	 * date, or anything else, passes as given and the report judges it.
-	 *
-	 * @param string $value The bound as it arrived.
-	 *
-	 * @return string The bound as `Y-m-d`, or the value unchanged.
-	 */
-	private function calendarDate(string $value): string {
-		if ($this->dates === null || preg_match('/^\d{4}-\d{2}-\d{2}T/', $value) !== 1) {
-			return $value;
-		}
 
-		return ($this->dates->toCalendarDateOrNull(value: $value) ?? $value);
-	}//end calendarDate()
-
-	/**
-	 * Read one case, or a period when no case is named.
-	 *
-	 * @param string $caseId The case, or ''.
-	 * @param string $from The first day of the period.
-	 * @param string $to The last day of the period.
-	 *
-	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
-	 *
-	 * @throws RefusedException When the report cannot be made.
-	 */
-	private function read(string $caseId, string $from, string $to): array {
-		if ($caseId !== '') {
-			return $this->throughputReport->forCase(caseId: $caseId);
-		}
-
-		return $this->throughputReport->forPeriod(from: $from, to: $to);
-	}//end read()
 
 	/**
 	 * The 403 of a report the organisation has not switched on.
