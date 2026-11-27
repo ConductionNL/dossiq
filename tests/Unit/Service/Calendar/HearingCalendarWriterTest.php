@@ -76,7 +76,7 @@ final class HearingCalendarWriterTest extends TestCase {
 	 * @return WriterTestCalendar
 	 */
 	private function calendar(string $label, bool $deleted=false, bool $writable=true, ?\Throwable $refusal=null): WriterTestCalendar {
-		$calendar = $this->createMock(WriterTestCalendar::class);
+		$calendar = $this->createMock(originalClassName: WriterTestCalendar::class);
 		$calendar->method('isDeleted')->willReturn($deleted);
 		$calendar->method('isWritable')->willReturn($writable);
 		$calendar->method('createFromString')->willReturnCallback(
@@ -98,7 +98,7 @@ final class HearingCalendarWriterTest extends TestCase {
 	 * @return HearingCalendarWriter
 	 */
 	private function writer(array $calendars): HearingCalendarWriter {
-		$manager = $this->createMock(ICalendarManager::class);
+		$manager = $this->createMock(originalClassName: ICalendarManager::class);
 		$manager->method('getCalendarsForPrincipal')->willReturnCallback(
 			static function (string $principal) use ($calendars): array {
 				$answer = ($calendars[$principal] ?? []);
@@ -110,7 +110,7 @@ final class HearingCalendarWriterTest extends TestCase {
 			}
 		);
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->method('warning')->willReturnCallback(
 			function (string $message): void {
 				$this->warnings[] = $message;
@@ -129,7 +129,7 @@ final class HearingCalendarWriterTest extends TestCase {
 		$writer = $this->writer(
 			calendars: [
 				'principals/users/org' => [
-					$this->createMock(ICalendar::class),
+					$this->createMock(originalClassName: ICalendar::class),
 					$this->calendar(label: 'trash', deleted: true),
 					$this->calendar(label: 'readonly', writable: false),
 					$this->calendar(label: 'work'),
@@ -140,9 +140,9 @@ final class HearingCalendarWriterTest extends TestCase {
 
 		$written = $writer->writeForAll(event: new HearingCalendarEvent(uid: 'u-1', ics: 'ICS'), principals: ['principals/users/org']);
 
-		$this->assertSame(1, $written);
-		$this->assertSame(['work:u-1.ics:ICS'], $this->writes);
-		$this->assertSame([], $this->warnings);
+		$this->assertSame(expected: 1, actual: $written);
+		$this->assertSame(expected: ['work:u-1.ics:ICS'], actual: $this->writes);
+		$this->assertSame(expected: [], actual: $this->warnings);
 	}//end testTheFirstCalendarThatTakesTheEventGetsIt()
 
 	/**
@@ -166,14 +166,14 @@ final class HearingCalendarWriterTest extends TestCase {
 			principals: ['principals/users/org', 'principals/users/alice']
 		);
 
-		$this->assertSame(1, $written);
-		$this->assertSame(['full:u-2.ics:ICS', 'spare:u-2.ics:ICS'], $this->writes);
+		$this->assertSame(expected: 1, actual: $written);
+		$this->assertSame(expected: ['full:u-2.ics:ICS', 'spare:u-2.ics:ICS'], actual: $this->writes);
 		$this->assertSame(
-			[
+			expected: [
 				'Calendar refused the hearing event for principals/users/org: full',
 				'Could not read calendars for principals/users/alice: dav down',
 			],
-			$this->warnings
+			actual: $this->warnings
 		);
 	}//end testARefusalFallsThroughAndAnUnreadablePrincipalIsSkipped()
 
@@ -190,9 +190,9 @@ final class HearingCalendarWriterTest extends TestCase {
 			principals: ['principals/users/org', 'principals/users/bob']
 		);
 
-		$this->assertSame(0, $written);
-		$this->assertSame([], $this->writes);
-		$this->assertSame(['No writable calendar found for the hearing, event not stored'], $this->warnings);
+		$this->assertSame(expected: 0, actual: $written);
+		$this->assertSame(expected: [], actual: $this->writes);
+		$this->assertSame(expected: ['No writable calendar found for the hearing, event not stored'], actual: $this->warnings);
 	}//end testNobodysCalendarTakingItIsReported()
 
 	/**
@@ -213,7 +213,7 @@ final class HearingCalendarWriterTest extends TestCase {
 			principals: ['principals/users/org', 'principals/users/alice']
 		);
 
-		$this->assertSame(2, $written);
-		$this->assertSame(['org:u-4.ics:ICS', 'alice:u-4.ics:ICS'], $this->writes);
+		$this->assertSame(expected: 2, actual: $written);
+		$this->assertSame(expected: ['org:u-4.ics:ICS', 'alice:u-4.ics:ICS'], actual: $this->writes);
 	}//end testEveryPrincipalThatTookItIsCounted()
 }//end class

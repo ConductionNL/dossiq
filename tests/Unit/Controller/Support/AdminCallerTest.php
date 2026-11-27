@@ -69,7 +69,7 @@ final class AdminCallerTest extends TestCase {
 
 		$caller = new AdminCaller(userSession: $this->session(uid: null), groupManager: $groups);
 
-		$this->assertFalse($caller->isAdmin());
+		$this->assertFalse(condition: $caller->isAdmin());
 	}//end testNobodySignedInIsNoAdmin()
 
 	/**
@@ -83,7 +83,7 @@ final class AdminCallerTest extends TestCase {
 
 		$caller = new AdminCaller(userSession: $this->session(uid: 'beheerder'), groupManager: $groups);
 
-		$this->assertTrue($caller->isAdmin());
+		$this->assertTrue(condition: $caller->isAdmin());
 	}//end testASignedInAdministratorIsAnAdmin()
 
 	/**
@@ -97,6 +97,6 @@ final class AdminCallerTest extends TestCase {
 
 		$caller = new AdminCaller(userSession: $this->session(uid: 'behandelaar'), groupManager: $groups);
 
-		$this->assertFalse($caller->isAdmin());
+		$this->assertFalse(condition: $caller->isAdmin());
 	}//end testASignedInUserWhoIsNoAdministratorIsNoAdmin()
 }//end class

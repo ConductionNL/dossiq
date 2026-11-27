@@ -55,20 +55,47 @@ final class InformatieobjectFileWriteTest extends TestCase {
 			/** @var array<int, array{object: array, register: string, schema: string}> */
 			public array $saved = [];
 
+			/**
+			 * Constructor.
+			 *
+			 * @param bool $answersObjects Whether a save answers an object with a uuid.
+			 */
 			public function __construct(private bool $answersObjects) {
 			}
 
+			/**
+			 * Record a save; answer an object with a uuid, or a bare array.
+			 *
+			 * @param array              $object  The object.
+			 * @param ObjectSaveOptions $options Where it is saved.
+			 *
+			 * @return mixed
+			 */
 			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): mixed {
-				$this->saved[] = ['object' => $object, 'register' => (string)$options->target->register, 'schema' => (string)$options->target->schema];
+				$this->saved[] = [
+					'object' => $object,
+					'register' => (string)$options->target->register,
+					'schema' => (string)$options->target->schema,
+				];
 				if ($this->answersObjects === false) {
 					return [];
 				}
 
 				$uuid = 'io-' . count($this->saved);
 				return new class($uuid) {
+					/**
+					 * Constructor.
+					 *
+					 * @param string $uuid The uuid.
+					 */
 					public function __construct(private string $uuid) {
 					}
 
+					/**
+					 * The saved object's uuid.
+					 *
+					 * @return string
+					 */
 					public function getUuid(): string {
 						return $this->uuid;
 					}
@@ -105,8 +132,11 @@ final class InformatieobjectFileWriteTest extends TestCase {
 	 */
 	private function writer(string $joinSchema): InformatieobjectFileWrite {
 		$settings = $this->createMock(originalClassName: SettingsServiceInterface::class);
-		$settings->method('getConfigValue')->willReturnCallback(
-			static fn (string $key): string => ($key === 'dossier_zaakinformatieobject_schema') ? $joinSchema : ''
+		$settings->method('getConfigValue')->willReturnMap(
+			[
+				['dossier_zaakinformatieobject_schema', '', $joinSchema],
+				['dossier_zaakinformatieobject_schema', $joinSchema],
+			]
 		);
 		return new InformatieobjectFileWrite(settingsService: $settings);
 	}//end writer()
@@ -126,14 +156,21 @@ final class InformatieobjectFileWriteTest extends TestCase {
 			stored: ['case-1', $this->file(owner: $owner)]
 		);
 
-		$this->assertCount(2, $store->saved);
+		$this->assertCount(expectedCount: 2, haystack: $store->saved);
 		[$info, $join] = $store->saved;
-		$this->assertSame(['23', '7'], [$info['register'], $info['schema']]);
-		$this->assertSame('Anna Bakker', $info['object']['auteur']);
-		$this->assertSame(['brief.pdf', 'brief.pdf', 5, 'application/pdf', 901], [$info['object']['title'], $info['object']['fileName'], $info['object']['bestandsomvang'], $info['object']['format'], $info['object']['fileId']]);
-		$this->assertSame(['sha256', hash('sha256', 'brief')], [$info['object']['integrity']['algorithm'], $info['object']['integrity']['value']]);
-		$this->assertSame(['23', '8'], [$join['register'], $join['schema']]);
-		$this->assertSame(['case-1', 'io-1'], [$join['object']['case'], $join['object']['informatieobject']]);
+		$this->assertSame(expected: ['23', '7'], actual: [$info['register'], $info['schema']]);
+		$this->assertSame(expected: 'Anna Bakker', actual: $info['object']['auteur']);
+		$object = $info['object'];
+		$this->assertSame(
+			expected: ['brief.pdf', 'brief.pdf', 5, 'application/pdf', 901],
+			actual: [$object['title'], $object['fileName'], $object['bestandsomvang'], $object['format'], $object['fileId']]
+		);
+		$this->assertSame(
+			expected: ['sha256', hash('sha256', 'brief')],
+			actual: [$object['integrity']['algorithm'], $object['integrity']['value']]
+		);
+		$this->assertSame(expected: ['23', '8'], actual: [$join['register'], $join['schema']]);
+		$this->assertSame(expected: ['case-1', 'io-1'], actual: [$join['object']['case'], $join['object']['informatieobject']]);
 	}//end testTheInformatieobjectAndItsCaseLinkAreSaved()
 
 	/**
@@ -149,8 +186,8 @@ final class InformatieobjectFileWriteTest extends TestCase {
 			stored: ['case-1', $this->file(owner: null)]
 		);
 
-		$this->assertCount(1, $store->saved);
-		$this->assertSame('', $store->saved[0]['object']['auteur']);
+		$this->assertCount(expectedCount: 1, haystack: $store->saved);
+		$this->assertSame(expected: '', actual: $store->saved[0]['object']['auteur']);
 	}//end testAFileWithoutAnOwnerHasNoAuthor()
 
 	/**
@@ -166,7 +203,7 @@ final class InformatieobjectFileWriteTest extends TestCase {
 			stored: ['case-1', $this->file(owner: null)]
 		);
 
-		$this->assertCount(1, $store->saved);
-		$this->assertSame('7', $store->saved[0]['schema']);
+		$this->assertCount(expectedCount: 1, haystack: $store->saved);
+		$this->assertSame(expected: '7', actual: $store->saved[0]['schema']);
 	}//end testNoLinkIsWrittenWithoutASavedUuid()
 }//end class
