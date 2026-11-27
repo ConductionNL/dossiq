@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DocumentReviewController;
+use OCA\Dossiq\Controller\Support\ReviewCaseCaller;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -44,6 +45,7 @@ use Psr\Log\LoggerInterface;
  * Relevance and the summary through the real reviews, summary and assessment service.
  *
  * @covers \OCA\Dossiq\Controller\DocumentReviewController
+ * @uses \OCA\Dossiq\Controller\Support\ReviewCaseCaller
  * @covers \OCA\Dossiq\Review\ReviewSummary
  * @covers \OCA\Dossiq\Review\DocumentRelevance
  * @covers \OCA\Dossiq\Review\ReviewBatches
@@ -171,8 +173,7 @@ class DocumentReviewControllerTest extends TestCase {
 					caseDocuments: $caseDocuments,
 				),
 			),
-			caseAccessGuard: $guard,
-			userSession: $session,
+			caller: new ReviewCaseCaller(userSession: $session, accessGuard: $guard, l10n: $l10n),
 			l10n: $l10n,
 		);
 	}//end controller()

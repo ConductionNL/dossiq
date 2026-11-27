@@ -22,11 +22,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\AnswersNoCaseAccess;
+use OCA\Dossiq\Controller\Support\ReviewCaseCaller;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\BatchSelectionInterface;
-use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewSummaryInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
@@ -37,7 +36,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
-use OCP\IUserSession;
 
 /**
  * Marks a document in or out of scope, reports the case by relevance beside the verdicts,
@@ -49,8 +47,6 @@ use OCP\IUserSession;
  * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md
  */
 class DocumentReviewController extends Controller {
-	use AnswersNoCaseAccess;
-
 	/**
 	 * Constructor.
 	 *
@@ -59,11 +55,12 @@ class DocumentReviewController extends Controller {
 	 * @param ReviewSummaryInterface $summary The case summary.
 	 * @param ReviewBatchesInterface $batches The review batches.
 	 * @param BatchSelectionInterface $selection Which documents a batch takes.
-	 * @param CaseAccessGuardInterface $caseAccessGuard The per-case access check.
-	 * @param IUserSession $userSession The session.
+	 * @param ReviewCaseCaller $caller The signed-in caller, when they may read or change the case.
 	 * @param IL10N $l10n The translations.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
@@ -71,8 +68,7 @@ class DocumentReviewController extends Controller {
 		private readonly ReviewSummaryInterface $summary,
 		private readonly ReviewBatchesInterface $batches,
 		private readonly BatchSelectionInterface $selection,
-		private readonly CaseAccessGuardInterface $caseAccessGuard,
-		private readonly IUserSession $userSession,
+		private readonly ReviewCaseCaller $caller,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -86,10 +82,11 @@ class DocumentReviewController extends Controller {
 	 * @return JSONResponse The summary, or the refusal.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function summary(string $id): JSONResponse {
-		$user = $this->caseReader(id: $id);
+		$user = $this->caller->requireReader(id: $id);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
@@ -106,10 +103,11 @@ class DocumentReviewController extends Controller {
 	 * @return JSONResponse The saved review, or the refusal.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-relevance-is-marked-apart-from-the-verdict-and-reported-req-wrt-001
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function relevance(string $id, string $documentRef): JSONResponse {
-		$user = $this->caseWriter(id: $id);
+		$user = $this->caller->requireWriter(id: $id);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
@@ -136,10 +134,11 @@ class DocumentReviewController extends Controller {
 	 * @return JSONResponse `{results: [...]}`, or the refusal.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function batches(string $id): JSONResponse {
-		$user = $this->caseReader(id: $id);
+		$user = $this->caller->requireReader(id: $id);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
@@ -155,10 +154,11 @@ class DocumentReviewController extends Controller {
 	 * @return JSONResponse The batch (201), or the refusal; a taken document answers 409 with `taken`.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function createBatch(string $id): JSONResponse {
-		$user = $this->caseWriter(id: $id);
+		$user = $this->caller->requireWriter(id: $id);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
@@ -242,10 +242,11 @@ class DocumentReviewController extends Controller {
 	 * @return JSONResponse The saved review with its unseen required pages, or the refusal.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function pagesSeen(string $id, string $documentRef): JSONResponse {
-		$user = $this->caseReader(id: $id);
+		$user = $this->caller->requireReader(id: $id);
 		if ($user instanceof JSONResponse) {
 			return $user;
 		}
@@ -265,46 +266,6 @@ class DocumentReviewController extends Controller {
 
 		return new JSONResponse($review);
 	}//end pagesSeen()
-
-	/**
-	 * The signed-in user when they may read the case, else the refusal.
-	 *
-	 * @param string $id The case.
-	 *
-	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without read access.
-	 */
-	private function caseReader(string $id): IUser|JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
-		}
-
-		return $user;
-	}//end caseReader()
-
-	/**
-	 * The signed-in user when they may change the case, else the refusal.
-	 *
-	 * @param string $id The case.
-	 *
-	 * @return IUser|JSONResponse The user, or 401 without a session user, or 403 without mutation access.
-	 */
-	private function caseWriter(string $id): IUser|JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $id, user: $user) === false) {
-			return $this->noAccess();
-		}
-
-		return $user;
-	}//end caseWriter()
 
 	/**
 	 * The answer for a refused review write: the rule, its sentence and its status.

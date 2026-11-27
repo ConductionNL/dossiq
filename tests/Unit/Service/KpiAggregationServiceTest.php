@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\KpiSources;
 use OCA\Dossiq\Service\KpiAggregationService;
+use OCA\Dossiq\Service\KpiOpenRegisterServices;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Term\DayCount;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
@@ -563,8 +564,11 @@ final class KpiAggregationServiceTest extends TestCase {
 
 		return new KpiAggregationService(
 			appConfig: $appConfig,
-			container: $container,
-			appManager: $appManager,
+			openRegister: new KpiOpenRegisterServices(
+				appManager: $appManager,
+				container: $container,
+				logger: new NullLogger()
+			),
 			sources: new KpiSources(engineTasks: $engineTasks, queueFigures: new QueueFigures(dayCount: new DayCount(), teamCases: $teamCases)),
 			l10n: $l10n,
 			logger: new NullLogger(),
