@@ -33,17 +33,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
-use OCA\Dossiq\Contribution\ContributionContractRegistrar;
-use OCA\Dossiq\Integration\IntegrationContractRegistrar;
-use OCA\Dossiq\Notification\NotificationContractRegistrar;
-use OCA\Dossiq\Portal\PortalContractRegistrar;
-use OCA\Dossiq\Review\ReviewContractRegistrar;
-use OCA\Dossiq\Lifecycle\LifecycleRegistrar;
-use OCA\Dossiq\Listener\Registrar\ListenerRegistrar;
-use OCA\Dossiq\Service\Registrar\ServiceRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\WiringRegistrar;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Mcp\DossiqScannableServices;
-use OCA\Dossiq\Woo\WooContractRegistrar;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -94,6 +86,8 @@ class Application extends App implements IBootstrap {
 	 * @return void
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function register(IRegistrationContext $context): void {
 
@@ -138,16 +132,8 @@ class Application extends App implements IBootstrap {
 		// App config keys read with a default, such as the top bar's search words.
 		$context->registerConfigLexicon(ConfigLexicon::class);
 
-		// What this app hands to OpenRegister's lifecycle engine.
-		(new LifecycleRegistrar())->register(context: $context);
-		(new ServiceRegistrar())->register(context: $context);
-		(new ContributionContractRegistrar())->register(context: $context);
-		(new IntegrationContractRegistrar())->register(context: $context);
-		(new NotificationContractRegistrar())->register(context: $context);
-		(new PortalContractRegistrar())->register(context: $context);
-		(new ReviewContractRegistrar())->register(context: $context);
-		(new WooContractRegistrar())->register(context: $context);
-		(new ListenerRegistrar())->register(context: $context);
+		// The lifecycle, service, component contract and listener registrars, in that order.
+		(new WiringRegistrar())->register(context: $context);
 	}//end register()
 
 	/**
