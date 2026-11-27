@@ -62,7 +62,7 @@ class SessionService implements SessionServiceInterface {
 	 * @param SettingsService $settingsService Register, schema keys and the object service.
 	 * @param ITimeFactory       $timeFactory     The clock.
 	 * @param CaseDateNormaliser $caseDates       The one reader of a date.
-	 * @param SessionMeeting|null $meetings       Opens a planned session as a meeting in the decision app.
+	 * @param SessionFollowUps|null $followUps    Opens the meeting, records the history and logs a refusal.
 	 *
 	 * @return void
 	 */
@@ -70,7 +70,7 @@ class SessionService implements SessionServiceInterface {
 		private readonly SettingsService $settingsService,
 		private readonly ITimeFactory $timeFactory,
 		private readonly CaseDateNormaliser $caseDates,
-		private readonly ?SessionMeeting $meetings = null,
+		private readonly ?SessionFollowUps $followUps = null,
 	) {
 	}//end __construct()
 
@@ -135,7 +135,10 @@ class SessionService implements SessionServiceInterface {
 		$write->payload = $payload;
 		$write->invitees = $invitees;
 
-		return $this->plan(write: $write, scheduledDate: $scheduledDate);
+		$session = $this->plan(write: $write, scheduledDate: $scheduledDate);
+		$this->followUps?->recordPlanned(write: $write, session: $session);
+
+		return $session;
 	}//end schedule()
 
 	/**
@@ -174,12 +177,12 @@ class SessionService implements SessionServiceInterface {
 	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-a-planned-session-opens-as-a-meeting-in-the-decision-app-req-css-6
 	 */
 	private function openAsMeeting(SessionWrite $write, array $saved): array {
-		if ($this->meetings === null) {
+		if ($this->followUps === null) {
 			return $saved;
 		}
 
 		$schema    = $this->reads()->schemaKey(key: 'hearing_session_schema');
-		$meetingId = $this->meetings->open(session: $saved, location: [$write->register, $schema]);
+		$meetingId = $this->followUps->openMeeting(session: $saved, location: [$write->register, $schema]);
 		$sessionId = (string)($saved['id'] ?? ($saved['@self']['id'] ?? ''));
 		if ($meetingId === '' || $sessionId === '') {
 			return $saved;
@@ -609,6 +612,7 @@ class SessionService implements SessionServiceInterface {
 				]
 			);
 		} catch (Throwable $e) {
+			$this->followUps?->saveRefused(caseId: $write->caseId, error: $e);
 			throw new RuntimeException('The session could not be saved: ' . $e->getMessage(), 0, $e);
 		}
 	}//end save()

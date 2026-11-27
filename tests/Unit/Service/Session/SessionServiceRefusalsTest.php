@@ -29,19 +29,23 @@ namespace OCA\Dossiq\Tests\Unit\Service\Session;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use OCA\Dossiq\Service\Session\SessionFollowUps;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\AppFramework\Utility\ITimeFactory;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\Session\SessionService
  * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
+ * @uses   \OCA\Dossiq\Service\Session\SessionFollowUps
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
  * @uses   \OCA\Dossiq\Service\Session\SessionRules
  * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
@@ -118,6 +122,13 @@ class SessionServiceRefusalsTest extends TestCase {
 	private SessionService $service;
 
 	/**
+	 * The logger the service's follow-ups write to.
+	 *
+	 * @var LoggerInterface&MockObject
+	 */
+	private LoggerInterface $logger;
+
+	/**
 	 * Load the merged register once.
 	 *
 	 * @return void
@@ -160,7 +171,13 @@ class SessionServiceRefusalsTest extends TestCase {
 		$clock     = $this->createMock(ITimeFactory::class);
 		$clock->method('now')->willReturnCallback(fn (): DateTimeImmutable => $this->now);
 
-		$this->service = new SessionService(settingsService: $settings, timeFactory: $clock, caseDates: $this->caseDates(zone: 'UTC', clock: $clock));
+		$this->logger  = $this->createMock(originalClassName: LoggerInterface::class);
+		$this->service = new SessionService(
+			settingsService: $settings,
+			timeFactory: $clock,
+			caseDates: $this->caseDates(zone: 'UTC', clock: $clock),
+			followUps: new SessionFollowUps(logger: $this->logger)
+		);
 	}//end setUp()
 
 	/**
@@ -268,6 +285,13 @@ class SessionServiceRefusalsTest extends TestCase {
 	 */
 	public function testARefusedSaveSaysTheSessionWasNotSaved(): void {
 		$this->store->refuseSaves = true;
+		$this->logger->expects($this->once())->method('error')->with(
+			$this->anything(),
+			$this->callback(
+				callback: fn (array $context): bool => $context['caseId'] === self::CASE_ID
+					&& $context['exception'] === 'object store refused the save'
+			),
+		);
 
 		try {
 			$this->service->schedule(caseId: self::CASE_ID, sessionKey: 'hearing', scheduledDate: '2026-10-20T10:00:00+00:00', chairpersonId: self::CHAIR, invitees: [['role' => 'applicant']]);

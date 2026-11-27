@@ -173,6 +173,13 @@ interface TimelineKindsInterface {
 	public const ASSIGNMENT = 'toewijzing';
 
 	/**
+	 * A session the case type declares (a hearing, a committee sitting) planned, held or waived.
+	 * @var string
+	 * @spec openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md
+	 */
+	public const SESSION = 'sessie';
+
+	/**
 	 * Every declaration, in the shape `TimelineKindService::declareKind()` takes.
 	 *
 	 * @var array<int, array<string, mixed>>
@@ -426,6 +433,22 @@ interface TimelineKindsInterface {
 				],
 				'from' => ['type' => 'string'],
 				'to' => ['type' => 'string'],
+			],
+			'required' => ['act'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::SESSION,
+			'title' => 'Sessies',
+			'description' => 'A session the case type declares, such as a hearing, planned, held or waived.',
+			'properties' => [
+				'act' => [
+					'type' => 'string',
+					'enum' => ['planned', 'held', 'waived'],
+				],
+				'sessionId' => ['type' => 'string'],
+				'sessionKey' => ['type' => 'string'],
+				'scheduledDate' => ['type' => 'string'],
 			],
 			'required' => ['act'],
 			'followUp' => false,

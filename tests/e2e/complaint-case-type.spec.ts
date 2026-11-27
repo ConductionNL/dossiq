@@ -27,6 +27,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	getRequestToken,
@@ -36,7 +37,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
-import { dismissSupportDialog, openHeaderActionsMenu, PAGE_LOAD, PAGE_LOAD_MS } from './helpers/nav.ts'
+import { clickHeaderAction, dismissSupportDialog, PAGE_LOAD, PAGE_LOAD_MS } from './helpers/nav.ts'
 import { CasesSavedView } from './helpers/page-components.ts'
 
 /** The complaint case type's identifier in the register. */
@@ -46,6 +47,9 @@ const IDENTIFIER = 'klacht-behandeling'
 const RECEIVED_AT = '2021-03-01T09:00:00+01:00'
 const TERM_START = '2021-03-01'
 const TERM_END = '2021-04-12'
+
+/** When the hearing is planned, typed in the picker's own display format. */
+const WHEN_TYPED = 'Jan 15, 2027, 10:00 AM'
 
 let api: APIRequestContext
 let token = ''
@@ -105,8 +109,6 @@ test.describe('A complaint is a case of the shipped complaint case type', () => 
 
 	// @e2e openspec/changes/complaints-are-a-case-type/specs/complaint-management/spec.md#scenario-the-hearing-is-a-session-on-the-case
 	test('the handler plans the hearing and a session with the parties is linked to the case', async ({ page }) => {
-		test.fixme(true, 'task 2.3: the case page does not offer a declared session (hoorgesprek) as an action yet; SessionService has no route')
-
 		const hearing = ((complaintType.sessions ?? []) as any[]).find((s) => s.key === 'hoorgesprek')
 		expect(hearing, 'the case type declares the hearing as a session').toBeTruthy()
 		expect(hearing.inviteeRoles).toEqual(expect.arrayContaining(['Klager', 'Betrokken medewerker']))
@@ -119,15 +121,50 @@ test.describe('A complaint is a case of the shipped complaint case type', () => 
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		// No action id exists yet; the entry is found by the label the case type declares.
-		await openHeaderActionsMenu(page)
-		await page.getByRole('menuitem', { name: new RegExp(hearing.label) }).first().click()
-		const dialog = page.getByRole('dialog')
-		await dialog.getByText('Klager').first().click()
-		await dialog.getByText('Betrokken medewerker').first().click()
-		await dialog.getByRole('button', { name: /Plan|Opslaan|Save/ }).click()
-		await expect(dialog).toBeHidden()
+		// Task 2.3: the case page offers the declared session as the header
+		// action "Plan a session" (session-schedule), on any case type whose
+		// `sessions` is not empty; nothing in it is complaint code.
+		await clickHeaderAction(page, 'cn-action-session-schedule')
+		const dialog = page.getByTestId('session-schedule')
+		await expect(dialog).toBeVisible({ timeout: 20_000 })
 
-		await expect(page.getByText(hearing.label).first(), 'the session appears in the case history').toBeVisible()
+		// One declared session, so the dialog picks it; the parties are named
+		// per invitee role the case type declares.
+		const complainant = `${RUN_PREFIX} Klager`
+		const employee = `${RUN_PREFIX} Medewerker`
+		await dialog.getByTestId('session-schedule-invitee-Klager').fill(complainant)
+		await dialog.getByTestId('session-schedule-invitee-Betrokken medewerker').fill(employee)
+		await dialog.getByTestId('session-schedule-location').fill('Stadhuis, kamer 2')
+		const when = dialog.getByTestId('session-schedule-when').locator('input').first()
+		await when.fill(WHEN_TYPED)
+		await when.press('Enter')
+		await expect(when).toHaveValue(WHEN_TYPED)
+
+		const planned = page.waitForResponse(
+			(r) => r.request().method() === 'POST' && r.url().includes(`/api/cases/${caseId}/sessions`),
+		)
+		await dialog.getByTestId('session-schedule-submit').click()
+		const answer = await planned
+		expect(answer.ok(), `plan the hearing -> ${answer.status()} ${await answer.text()} sent ${answer.request().postData()}`).toBeTruthy()
+		await expect(dialog).toBeHidden({ timeout: 15_000 })
+
+		// The session is linked to the case, with those parties.
+		const read = await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/sessions`, {
+			headers: { requesttoken: token },
+		})
+		expect(read.status(), await read.text()).toBe(200)
+		const sessions = ((await read.json()).sessions ?? []) as any[]
+		const session = sessions.find((s) => (s.sessionKey ?? s.key) === 'hoorgesprek')
+		expect(session, `the case holds the hearing: ${JSON.stringify(sessions)}`).toBeTruthy()
+		const invitees = JSON.stringify(session.invitees ?? session)
+		expect(invitees).toContain(complainant)
+		expect(invitees).toContain(employee)
+
+		// And it appears in the case history.
+		await openCaseTab(page, /^(History|Historie)\b/)
+		await expect(
+			page.getByTestId('cn-timeline-entry').filter({ hasText: new RegExp(hearing.label, 'i') }).first(),
+			'the session appears in the case history',
+		).toBeVisible({ timeout: PAGE_LOAD_MS })
 	})
 })
