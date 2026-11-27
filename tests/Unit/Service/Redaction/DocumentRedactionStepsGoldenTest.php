@@ -25,6 +25,7 @@ use OCA\Dossiq\Review\DocumentText;
 use OCA\Dossiq\Service\FilinqRedactionClient;
 use OCA\Dossiq\Service\Redaction\DocumentRedactionService;
 use OCA\Dossiq\Service\Redaction\RedactedCopyRecorder;
+use OCA\Dossiq\Service\Redaction\RedactionOriginal;
 use OCA\Dossiq\Service\Redaction\RedactionEntities;
 use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
@@ -98,8 +99,11 @@ class DocumentRedactionStepsGoldenTest extends TestCase {
 			$this->double(FilinqRedactionClient::class, ['detect', 'markChecked', 'anonymize']),
 			$this->double(WOOAnonymisationAssistService::class, ['spansFor']),
 			$this->double(DocumentText::class, ['extracted']),
-			$this->double(WooCaseDocuments::class, ['meta']),
-			$this->double(ZgwDocumentService::class, ['getFileId']),
+			new RedactionOriginal(
+				$this->double(WooCaseDocuments::class, ['meta']),
+				$this->double(ZgwDocumentService::class, ['getFileId']),
+				$l10n
+			),
 			$this->double(RedactedCopyRecorder::class, ['recordFile', 'storeUpload']),
 			$this->double(RedactionEntities::class, ['fromFilinq', 'fromSpans', 'fromOfficer', 'merge']),
 			$l10n

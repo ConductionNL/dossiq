@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Actions;
 
+use OCA\Dossiq\Service\Actions\ActionFlowSteps;
 use OCA\Dossiq\Service\Actions\AutomaticActionFlowMigrator;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IL10N;
@@ -262,13 +263,13 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			fn (string $app, string $key, string $default = ''): string => $this->appValues[$key] ?? (($key === 'register') ? '17' : '115')
 		);
 
+		$logger = $this->createMock(LoggerInterface::class);
 		return new AutomaticActionFlowMigrator(
 			$settings,
 			$container,
 			$appConfig,
-			$this->createMock(LoggerInterface::class),
-			new RetiredNodeMap(),
-			new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)),
+			$logger,
+			new ActionFlowSteps(new RetiredNodeMap(), new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)), $container, $logger),
 		);
 	}
 
@@ -776,13 +777,13 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			static fn (string $app, string $key, string $default = ''): string => ($key === 'register') ? '17' : '115'
 		);
 		$syntax = new RetiredTemplateSyntax();
+		$logger = $this->createMock(LoggerInterface::class);
 		$migrator = new AutomaticActionFlowMigrator(
 			$settings,
 			$container,
 			$appConfig,
-			$this->createMock(LoggerInterface::class),
-			new RetiredNodeMap(),
-			new RetiredNodeTranslator($settings, $container, $this->createMock(IL10N::class), $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)),
+			$logger,
+			new ActionFlowSteps(new RetiredNodeMap(), new RetiredNodeTranslator($settings, $container, $this->createMock(IL10N::class), $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)), $container, $logger),
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);

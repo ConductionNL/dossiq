@@ -2104,6 +2104,52 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         findings on both files under both rulesets.
         Characterisation, green before and after: every `Termijn` and `Term` suite (1,058 tests, the one
         `StubApiDriftTest` failure as on development). Own test: `tests/Unit/Service/Term/TermStartsTest` (4).
+  - [x] 8dy `TenantOnboardingService` (1, unsuppressed: CouplingBetweenObjects 15 against 13). What onboarding reads from
+        the registers without writing (the mandates step done once the mandate register confirms an active mandate,
+        never over a step already completed or skipped; the tier on the tenant's audit anchor, `basic` without one; one
+        row of a schema for the tenant, a failed read counting none) moved to `Service/Onboarding/OnboardingRegisterReads`
+        (`withMandatesSet()`, `tierOf()`, `countSchemaRows()`; bodies moved unchanged, the object service passed in). The
+        service keeps the steps, their completion, the go-live decision and the billing line. It builds the reads in its
+        constructor from the normaliser and the mandate check it was given, so its constructor and the container are
+        unchanged. Coupling 15 to 12 (reads 7); phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after: `TenantOnboardingServiceTest`, `TenantOnboardingMandatesSetTest`,
+        `TenantOnboardingLegacyRowsTest`, `OnboardingStepsTest`, `ServiceCatchReturnsNullTest` and
+        `NoConstructorCycleTest`. Own test: `tests/Unit/Service/Onboarding/OnboardingRegisterReadsTest` (3).
+  - [x] 8dz `Listener/DeadlineCaseCreatedListener` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Binding the
+        terms of a received case (the statutory term from receipt under the resolved definition, then the planned end and
+        the internal target; a case type without a definition warned about and its other clocks still bound; any other
+        failure an error that binds nothing further; a failing other clock a warning) moved to
+        `Listener/Support/NewCaseTermBinding` (`bind()`; bodies moved unchanged, the term context handed in). The listener
+        keeps telling a receipt from a draft and reading the case's identity and context, with its `ReferencedUuid` copy,
+        which `ReferencedIdCopiesTest` reads. It builds the binding in its constructor, so its constructor and the
+        container are unchanged. Coupling 15 to 13 (binding 9); phpmd: no new findings (the StaticAccess in
+        `referenced()` was there on development, on an untouched line).
+        Characterisation, green before and after: `DeadlineCaseCreatedListenerTest`, `...GuardsTest`, `...RefusalsTest`,
+        `DeadlineCaseCreatedShippedDataTest`, `DraftIsNotReceivedRegistrationTest`, `ReceiptDatesRegistrationTest`,
+        `ReferencedIdCopiesTest` and `CaseRecordImportTest`. Own test:
+        `tests/Unit/Listener/Support/NewCaseTermBindingTest` (4).
+  - [x] 8ea `Actions/AutomaticActionFlowMigrator` (1, unsuppressed: CouplingBetweenObjects 15 against 13). What one stored
+        action becomes as flow steps (its config read, its type looked up in the retired-node table and translated, a
+        refusal when it cannot become a step or names a node nothing implements) moved to `Service/Actions/ActionFlowSteps`
+        (`resolveSteps()`; bodies and the node prefix moved unchanged). The migrator keeps reading the actions, the run,
+        the dry run and the flow write. It takes the steps in place of `RetiredNodeMap` and `RetiredNodeTranslator`; the
+        container autowires it. Not final, because `FlowMigrationSummaryCopiesTest` doubles every constructor parameter.
+        Coupling 15 to 13 (steps 8); phpmd: no new findings (the three StaticAccess on `FlowMigrationSummary` were there
+        on development, on untouched lines).
+        Characterisation, green before and after: `AutomaticActionFlowMigratorTest`,
+        `AutomaticActionFlowMigratorUnavailableTest`, `FlowMigrationSummaryCopiesTest` and the retired-node suites, the
+        migrator built over the same map, translator, container and logger through `ActionFlowSteps`. Own test:
+        `tests/Unit/Service/Actions/ActionFlowStepsTest` (3).
+  - [x] 8eb `Redaction/DocumentRedactionService` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Reading the
+        original of a document being redacted (its informatieobject, refused as `document-unreadable`; its file by id,
+        else a legacy file by name, else refused as `file-unresolved` with the cause attached) moved to
+        `Service/Redaction/RedactionOriginal` (`meta()`, `read()`, `fileIdOf()`; bodies moved unchanged). The service keeps
+        the assessment, the detection, the check, the redaction and the upload. It takes the original in place of the
+        case documents and `ZgwDocumentService`; the container autowires it. Coupling 15 to 13 (original 5); phpmd: zero
+        findings on both files under both rulesets.
+        Characterisation, green before and after: `DocumentRedactionServiceTest`, `DocumentRedactionStepsGoldenTest` and
+        `DocumentRedactionControllerTest`, built over the same doubles through `RedactionOriginal`. Own test:
+        `tests/Unit/Service/Redaction/RedactionOriginalTest` (3).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
