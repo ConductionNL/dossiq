@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
-use OCA\Dossiq\Listener\Support\ReceivedCaseRead;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -53,7 +52,6 @@ use Psr\Log\LoggerInterface;
  * a term is bound and a timer armed.
  *
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
- * @uses   \OCA\Dossiq\Listener\Support\ReceivedCaseRead
  * @covers \OCA\Dossiq\Service\CaseTypeSlugResolver
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Intake\ReceiptMoment
@@ -169,7 +167,8 @@ class DeadlineCaseCreatedShippedDataTest extends TestCase {
 
 		$listener = new DeadlineCaseCreatedListener(
 			new TermijnService($settings, $logger, $timers),
-			new ReceivedCaseRead($schemaSlugs, new CaseTypeSlugResolver($settings, $logger), $logger),
+			$schemaSlugs,
+			new CaseTypeSlugResolver($settings, $logger),
 			$logger,
 		);
 
@@ -275,7 +274,8 @@ class DeadlineCaseCreatedShippedDataTest extends TestCase {
 
 		$listener = new DeadlineCaseCreatedListener(
 			new TermijnService($settings, $this->createMock(LoggerInterface::class)),
-			new ReceivedCaseRead($schemaSlugs, new CaseTypeSlugResolver($settings, $logger), $logger),
+			$schemaSlugs,
+			new CaseTypeSlugResolver($settings, $logger),
 			$logger,
 		);
 

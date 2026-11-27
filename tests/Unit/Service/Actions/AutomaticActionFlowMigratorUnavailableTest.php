@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Actions;
 
+use OCA\Dossiq\Service\Actions\ActionFlowSteps;
 use OCA\Dossiq\Service\Actions\AutomaticActionFlowMigrator;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
@@ -80,14 +81,22 @@ class AutomaticActionFlowMigratorUnavailableTest extends TestCase {
 			$container,
 			$this->createMock(IAppConfig::class),
 			$logger,
-			new RetiredNodeMap(),
-			new RetiredNodeTranslator(
-				$settings,
-				$container,
-				$this->createMock(IL10N::class),
-				$syntax,
-				new RetiredDocumentSteps($syntax),
-				new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)
+			new ActionFlowSteps(
+				container: $container,
+				logger: $logger,
+				map: new RetiredNodeMap(),
+				translator: new RetiredNodeTranslator(
+					settingsService: $settings,
+					container: $container,
+					l10n: $this->createMock(originalClassName: IL10N::class),
+					syntax: $syntax,
+					documents: new RetiredDocumentSteps(syntax: $syntax),
+					webhooks: new RetiredWebhookSteps(
+						dispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+						userSession: $this->createMock(originalClassName: IUserSession::class),
+						syntax: $syntax
+					)
+				),
 			),
 		);
 	}

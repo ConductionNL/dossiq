@@ -36,7 +36,6 @@ use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CaseTypeIntakeListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
-use OCA\Dossiq\Listener\Support\ReceivedCaseRead;
 use OCA\Dossiq\Listener\IntakeObligationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
 use OCA\Dossiq\Service\CaseNumberService;
@@ -70,7 +69,6 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\CasePlanProjectionListener
  * @covers \OCA\Dossiq\Listener\CaseTypeIntakeListener
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
- * @uses   \OCA\Dossiq\Listener\Support\ReceivedCaseRead
  * @covers \OCA\Dossiq\Listener\ReportGroupingOnCreateListener
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
  * @uses   \OCA\Dossiq\Listener\Registrar\TaskListenerRegistrar
@@ -331,7 +329,7 @@ class DraftIsNotReceivedRegistrationTest extends TestCase {
 			new ReportGroupingOnCreateListener($groupingJobs, $this->caseResolver(), $receipt),
 			new CasePlanProjectionListener($projection, $this->caseResolver(), $logger, $receipt),
 			new AcknowledgementOnCreateListener($acknowledgementJobs, $this->caseResolver(), $logger, $receipt),
-			new DeadlineCaseCreatedListener($terms, new ReceivedCaseRead($this->caseResolver(), $caseTypes, $logger, $receipt), $logger),
+			new DeadlineCaseCreatedListener($terms, $this->caseResolver(), $caseTypes, $logger, null, null, null, $receipt),
 			new IntakeObligationListener($receipt, $this->caseResolver(), $intakeObligations),
 			new CaseTypeIntakeListener($settings, $intakeTypes, $logger, $links, new CaseTypeIntake(), $receipt),
 		];

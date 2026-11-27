@@ -21,7 +21,6 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
-use OCA\Dossiq\Listener\Support\ReceivedCaseRead;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
@@ -35,7 +34,6 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
- * @uses   \OCA\Dossiq\Listener\Support\ReceivedCaseRead
  * @uses   \OCA\Dossiq\Service\Term\TermResolution
  * @uses   \OCA\Dossiq\Service\TermKind
  * @uses   \OCA\Dossiq\Service\Intake\ReceiptMoment
@@ -102,7 +100,8 @@ class DeadlineCaseCreatedListenerPlannedTest extends TestCase {
 
 		return new DeadlineCaseCreatedListener(
 			termService: $terms,
-			receivedCases: new ReceivedCaseRead(slugResolver: $schemaSlugs, caseTypeSlugs: $caseTypeSlugs, logger: new NullLogger()),
+			slugResolver: $schemaSlugs,
+			caseTypeSlugs: $caseTypeSlugs,
 			logger: new NullLogger(),
 			caseTerms: $caseTerms,
 			resolution: new TermResolution(terms: $terms),

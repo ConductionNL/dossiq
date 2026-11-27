@@ -25,20 +25,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser;
-use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\TenantOnboardingServiceInterface;
 use OCA\Dossiq\Service\Onboarding\LegacyStepRows;
+use OCA\Dossiq\Service\Onboarding\OnboardingRegisterReads;
 use OCA\Dossiq\Service\Support\ResolvesInstalledObjectService;
 use OCA\Dossiq\Service\Task\OnboardingSteps;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\App\IAppManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Onboarding workflow service.
@@ -69,6 +66,13 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	private readonly LegacyStepRows $legacyRows;
 
 	/**
+	 * The register reads behind the checklist and go-live.
+	 *
+	 * @var OnboardingRegisterReads
+	 */
+	private readonly OnboardingRegisterReads $registerReads;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IAppManager $appManager App manager.
@@ -80,6 +84,8 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	 * @param IUserSession $userSession The acting user.
 	 * @param OpenRegisterRowNormaliser $rowNormaliser Reads a findAll() row, entity or array, as an array.
 	 * @param MandaatCheckService|null $mandates Answers whether the tenant has an active mandate.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -89,10 +95,11 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		private readonly TenantService $tenantService,
 		private readonly OnboardingSteps $steps,
 		private readonly IUserSession $userSession,
-		private readonly OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
-		private readonly ?MandaatCheckService $mandates = null,
+		OpenRegisterRowNormaliser $rowNormaliser = new OpenRegisterRowNormaliser(),
+		?MandaatCheckService $mandates = null,
 	) {
 		$this->legacyRows = new LegacyStepRows(steps: $steps, logger: $logger, rowNormaliser: $rowNormaliser);
+		$this->registerReads = new OnboardingRegisterReads(rowNormaliser: $rowNormaliser, mandates: $mandates);
 	}//end __construct()
 
 	/**
@@ -153,37 +160,6 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		return $created;
 	}//end openMissingSteps()
 
-	/**
-	 * The steps with "Mandates set" done once the tenant has an active mandate.
-	 *
-	 * Read when the checklist is shown, so the step follows the mandate
-	 * register without a write on a read. A step already completed or skipped
-	 * keeps its own state, and so does one the register cannot confirm.
-	 *
-	 * @param string                              $tenantId The tenant (organisation) UUID.
-	 * @param array<string, array<string, mixed>> $steps    The steps, keyed by step.
-	 *
-	 * @return array<string, array<string, mixed>> The steps.
-	 *
-	 * @spec openspec/changes/case-type-rights-enforced/specs/case-types/spec.md#requirement-the-overview-reads-decisions-from-the-mandate-register
-	 */
-	private function withMandatesSet(string $tenantId, array $steps): array {
-		$step = ($steps['mandate_import'] ?? null);
-		if ($step === null || $this->mandates === null) {
-			return $steps;
-		}
-
-		if (in_array((string) ($step['status'] ?? ''), ['completed', 'skipped'], true) === true) {
-			return $steps;
-		}
-
-		if ($this->mandates->hasActiveMandateFor(organisation: $tenantId, date: new DateTimeImmutable()) === false) {
-			return $steps;
-		}
-
-		$steps['mandate_import']['status'] = 'completed';
-		return $steps;
-	}//end withMandatesSet()
 
 	/**
 	 * Get the per-step progress and overall completion fraction.
@@ -193,10 +169,11 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	 * @return array{steps: array<int, array<string, mixed>>, completed: int, total: int, fraction: float}
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function getProgress(string $tenantId): array {
 		$steps = array_values(
-			$this->withMandatesSet(
+			$this->registerReads->withMandatesSet(
 				tenantId: $tenantId,
 				steps: $this->stepsCarryingLegacyRows(tenantId: $tenantId, actor: $this->actor())
 			)
@@ -307,6 +284,7 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	 * @return array{ready: bool, missing: array<int, string>}
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md#requirement-onboarding-checklist-and-progress-dashboard-req-003-a-req-003-d
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function validateGoLive(string $tenantId): array {
 		$objectService = $this->getObjectService();
@@ -315,15 +293,15 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		}
 
 		$missing = [];
-		if ($this->countSchemaRows(objectService: $objectService, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
+		if ($this->registerReads->countSchemaRows(objectService: $objectService, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
 			$missing[] = 'caseType';
 		}
 
-		if ($this->countSchemaRows(objectService: $objectService, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {
+		if ($this->registerReads->countSchemaRows(objectService: $objectService, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {
 			$missing[] = 'mandate';
 		}
 
-		if ($this->countSchemaRows(
+		if ($this->registerReads->countSchemaRows(
 			objectService: $objectService,
 			schema: 'tenantUser',
 			filters: ['tenantRef' => $tenantId, 'role' => 'tenant_admin']
@@ -349,6 +327,7 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 	 *
 	 * @spec openspec/specs/tenant-onboarding/spec.md
 	 * @spec openspec/changes/tenancy-onto-openregister-organisation/specs/tenant-organisation-boundary/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function activate(string $tenantId): array {
 		$check = $this->validateGoLive(tenantId: $tenantId);
@@ -359,7 +338,7 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		// Go-live emits the first billing line (the tier subscription). Without
 		// a real usage event no invoice ever has a non-zero amount — this is
 		// the wiring the metered-billing pipeline lacked (procest#223 finding 2).
-		$tier = $this->tierOf(tenantId: $tenantId);
+		$tier = $this->registerReads->tierOf(objectService: $this->getObjectService(), tenantId: $tenantId);
 		$unitPrice = $this->billingService->tierMonthlyPrice(tier: $tier);
 		$this->billingService->emitEvent(
 			tenantId: $tenantId,
@@ -372,76 +351,5 @@ class TenantOnboardingService implements TenantOnboardingServiceInterface {
 		return ['activated' => true];
 	}//end activate()
 
-	/**
-	 * The tenant's subscription tier, read, never written.
-	 *
-	 * A migrated tenant's tier is on its stored tenant object, the read-only
-	 * audit anchor. A tenant onboarded after the migration has an anchor
-	 * without one and bills at `basic` until its tier is set (decision 2a puts
-	 * the tier on `tenantConfiguration`).
-	 *
-	 * @param string $tenantId Tenant UUID.
-	 *
-	 * @return string The tier.
-	 */
-	private function tierOf(string $tenantId): string {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return 'basic';
-		}
 
-		try {
-			$anchor = $objectService->find(
-				$tenantId,
-				new ObjectFindOptions(register: AppIdentity::REGISTER_SLUG, schema: 'tenant'),
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			return 'basic';
-		}
-
-		$tier = (string)($this->rowNormaliser->normalise(row: $anchor)['data']['tier'] ?? '');
-		if ($tier === '') {
-			return 'basic';
-		}
-
-		return $tier;
-	}//end tierOf()
-
-	/**
-	 * Count rows in a schema with a filter.
-	 *
-	 * @param mixed $objectService Object service.
-	 * @param string $schema Schema slug.
-	 * @param array<string,mixed> $filters Filters.
-	 *
-	 * @return int
-	 */
-	private function countSchemaRows($objectService, string $schema, array $filters): int {
-		try {
-			// ObjectService::findAll() takes a single $config array — see the
-			// note in getProgress(); register/schema live inside `filters`.
-			$rows = $objectService->findAll(
-				[
-					'filters' => array_merge(
-						[
-							'register' => AppIdentity::REGISTER_SLUG,
-							'schema' => $schema,
-						],
-						$filters
-					),
-					'limit' => 1,
-					'offset' => 0,
-				]
-			);
-			if (is_array($rows) === true) {
-				return count($rows);
-			}
-
-			return 0;
-		} catch (Throwable $e) {
-			return 0;
-		}//end try
-	}//end countSchemaRows()
 }//end class
