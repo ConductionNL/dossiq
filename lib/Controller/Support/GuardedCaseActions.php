@@ -9,7 +9,7 @@
  * forward is handed to its service. Split out of
  * {@see \OCA\Dossiq\Controller\DsoController}, which keeps the session check,
  * the input refusals, the dashboard filters and the mapping of outcomes onto
- * responses; the samenwerkverzoek writes are {@see DsoSamenwerkingActions}.
+ * responses; the samenwerkverzoek writes are {@see CooperationRequestActions}.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller\Support
@@ -43,7 +43,7 @@ use OCP\IUser;
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  * @spec openspec/changes/method-decomposition/tasks.md
  */
-class DsoCaseActions {
+class GuardedCaseActions {
 
 	/**
 	 * Reads optional fields of the request body.

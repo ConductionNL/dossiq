@@ -10,8 +10,8 @@
  *
  * The dashboard read and the guarded case writes (the per-object guard, then
  * the status transition, beschikking or doorsturen event) are delegated to
- * {@see DsoCaseActions}, the samenwerkverzoek writes to
- * {@see DsoSamenwerkingActions} (ADR-022), so this controller only validates
+ * {@see GuardedCaseActions}, the samenwerkverzoek writes to
+ * {@see CooperationRequestActions} (ADR-022), so this controller only validates
  * input and maps outcomes onto responses.
  *
  * All endpoints require authentication (@NoAdminRequired) and carry per-object
@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\DsoCaseActions;
-use OCA\Dossiq\Controller\Support\DsoSamenwerkingActions;
+use OCA\Dossiq\Controller\Support\GuardedCaseActions;
+use OCA\Dossiq\Controller\Support\CooperationRequestActions;
 use OCA\Dossiq\Controller\Support\RequestBodyFields;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -71,8 +71,8 @@ class DsoController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param DsoCaseActions $cases The dashboard read and the guarded writes on a case
-	 * @param DsoSamenwerkingActions $samenwerking The samenwerkverzoek writes
+	 * @param GuardedCaseActions $cases The dashboard read and the guarded writes on a case
+	 * @param CooperationRequestActions $samenwerking The samenwerkverzoek writes
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
 	 *
@@ -81,8 +81,8 @@ class DsoController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DsoCaseActions $cases,
-		private readonly DsoSamenwerkingActions $samenwerking,
+		private readonly GuardedCaseActions $cases,
+		private readonly CooperationRequestActions $samenwerking,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {

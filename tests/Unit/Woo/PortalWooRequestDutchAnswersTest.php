@@ -108,7 +108,11 @@ class PortalWooRequestDutchAnswersTest extends TestCase {
 			request: $request,
 			verifier: new PortalAssertionVerifier(config: null, secretOverride: 'a-dedicated-portaliq-secret-0123'),
 			submissions: new SubmissionMadeOnce(
-				intake: new WooRequestIntake(settingsService: $settings, urlGenerator: $urls, logger: $this->createMock(originalClassName: LoggerInterface::class))
+				intake: new WooRequestIntake(
+					settingsService: $settings,
+					urlGenerator: $urls,
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				)
 			),
 			throttler: $this->createMock(IThrottler::class),
 			logger: $this->createMock(LoggerInterface::class),

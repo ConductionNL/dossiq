@@ -2191,17 +2191,17 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8eg `Controller/DsoController` (1, unsuppressed: CouplingBetweenObjects 15 against 13). The dashboard read and
         the guarded writes on a DSO case (the case the caller may change looked up and authorised, then the status
         transition with its optional besluitdatum and notes, the beschikking, and the doorsturen event) moved to
-        `Controller/Support/DsoCaseActions` (`dashboard()`, `mutableCase()`, `transition()`, `beschikking()`, `forward()`);
+        `Controller/Support/GuardedCaseActions` (`dashboard()`, `mutableCase()`, `transition()`, `beschikking()`, `forward()`);
         the samenwerkverzoek writes (the one the caller may answer looked up and authorised, starting one, answering one)
-        to `Controller/Support/DsoSamenwerkingActions` (`mutableSamenwerk()`, `startSamenwerking()`,
+        to `Controller/Support/CooperationRequestActions` (`mutableSamenwerk()`, `startSamenwerking()`,
         `answerSamenwerking()`). Bodies moved unchanged; two classes, so neither constructor reaches gate-122's five
         parameters. The controller keeps the session check, the input refusals, the dashboard filters and the mapping of
         outcomes onto responses. It takes the two in place of the repository, the case, beschikking and samenwerking
         services and the notifier, so its constructor goes from eight parameters to six; the container autowires both.
-        Coupling 15 to 12 (case actions 6, samenwerking actions 3); phpmd: zero findings on the three files under both
+        Coupling 15 to 12 (case actions 6, cooperation request actions 3); phpmd: zero findings on the three files under both
         rulesets. Characterisation, green before and after: `DsoControllerTest`, `DsoControllerContractTest` and
         `DsoCaseMutationsGoldenTest` (its golden files unchanged), built over the same doubles through the two classes.
-        Own test: `tests/Unit/Controller/Support/DsoCaseActionsTest` (5).
+        Own test: `tests/Unit/Controller/Support/GuardedCaseActionsTest` (5).
   - [x] 8eh `Controller/PortalWooRequestController` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Making a
         portal submission once (the relayed key, the replay of a first send's answer or the 409 while it is being made, the
         case opened through the intake with its answer kept, and the key let go when the intake threw) moved to

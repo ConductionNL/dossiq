@@ -1,7 +1,7 @@
 <?php
 
 /**
- * DsoCaseActions and DsoSamenwerkingActions Unit Tests
+ * GuardedCaseActions and CooperationRequestActions Unit Tests
  *
  * A case or samenwerkverzoek that does not exist is null and is never
  * authorised; one that exists is authorised before it is handed back; the
@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller\Support;
 
-use OCA\Dossiq\Controller\Support\DsoCaseActions;
-use OCA\Dossiq\Controller\Support\DsoSamenwerkingActions;
+use OCA\Dossiq\Controller\Support\GuardedCaseActions;
+use OCA\Dossiq\Controller\Support\CooperationRequestActions;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
@@ -39,12 +39,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for DsoCaseActions.
+ * Unit tests for GuardedCaseActions.
  *
- * @covers \OCA\Dossiq\Controller\Support\DsoCaseActions
- * @covers \OCA\Dossiq\Controller\Support\DsoSamenwerkingActions
+ * @covers \OCA\Dossiq\Controller\Support\GuardedCaseActions
+ * @covers \OCA\Dossiq\Controller\Support\CooperationRequestActions
  */
-final class DsoCaseActionsTest extends TestCase {
+final class GuardedCaseActionsTest extends TestCase {
 
 	/**
 	 * The read collaborator.
@@ -84,16 +84,16 @@ final class DsoCaseActionsTest extends TestCase {
 	/**
 	 * The case actions under test.
 	 *
-	 * @var DsoCaseActions
+	 * @var GuardedCaseActions
 	 */
-	private DsoCaseActions $writes;
+	private GuardedCaseActions $writes;
 
 	/**
 	 * The samenwerking actions under test.
 	 *
-	 * @var DsoSamenwerkingActions
+	 * @var CooperationRequestActions
 	 */
-	private DsoSamenwerkingActions $samenwerkingen;
+	private CooperationRequestActions $samenwerkingen;
 
 	/**
 	 * Set up the doubles and the writes over them.
@@ -107,13 +107,13 @@ final class DsoCaseActionsTest extends TestCase {
 		$this->samenwerk = $this->createMock(originalClassName: SamenwerkverzoekServiceInterface::class);
 		$this->decisions = $this->createMock(originalClassName: BeschikkingGenerationServiceInterface::class);
 		$this->notifier = $this->createMock(originalClassName: DsoDoorsturenNotifierInterface::class);
-		$this->writes = new DsoCaseActions(
+		$this->writes = new GuardedCaseActions(
 			repository: $this->repository,
 			dsoCaseService: $this->cases,
 			decisionService: $this->decisions,
 			doorsturenNotifier: $this->notifier,
 		);
-		$this->samenwerkingen = new DsoSamenwerkingActions(repository: $this->repository, samenwerkService: $this->samenwerk);
+		$this->samenwerkingen = new CooperationRequestActions(repository: $this->repository, samenwerkService: $this->samenwerk);
 	}//end setUp()
 
 	/**

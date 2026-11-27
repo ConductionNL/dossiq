@@ -7,7 +7,7 @@
  * a case, and answering one behind the per-object guard (the samenwerkverzoek
  * the caller may answer is looked up and authorised first). Split out of
  * {@see \OCA\Dossiq\Controller\DsoController}; guarding the case a
- * samenwerkverzoek starts on is {@see DsoCaseActions}.
+ * samenwerkverzoek starts on is {@see GuardedCaseActions}.
  *
  * @category Controller
  * @package  OCA\Dossiq\Controller\Support
@@ -39,7 +39,7 @@ use OCP\IUser;
  * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  * @spec openspec/changes/method-decomposition/tasks.md
  */
-class DsoSamenwerkingActions {
+class CooperationRequestActions {
 
 	/**
 	 * Constructor.
