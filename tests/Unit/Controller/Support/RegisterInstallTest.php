@@ -94,10 +94,10 @@ final class RegisterInstallTest extends TestCase {
 	public function testReadyNeedsOpenRegisterTheRegisterAndTheCaseTypeSchema(): void {
 		$both = ['register' => 'dossiq', 'case_type_schema' => 'caseType'];
 
-		$this->assertTrue($this->install(config: $both)->isReady());
-		$this->assertFalse($this->install(config: $both, online: false)->isReady());
-		$this->assertFalse($this->install(config: ['register' => 'dossiq'])->isReady());
-		$this->assertFalse($this->install(config: ['case_type_schema' => 'caseType'])->isReady());
+		$this->assertTrue(condition: $this->install(config: $both)->isReady());
+		$this->assertFalse(condition: $this->install(config: $both, online: false)->isReady());
+		$this->assertFalse(condition: $this->install(config: ['register' => 'dossiq'])->isReady());
+		$this->assertFalse(condition: $this->install(config: ['case_type_schema' => 'caseType'])->isReady());
 	}//end testReadyNeedsOpenRegisterTheRegisterAndTheCaseTypeSchema()
 
 	/**
@@ -111,8 +111,8 @@ final class RegisterInstallTest extends TestCase {
 
 		$response = $this->install(settings: $settings)->initialise();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertTrue($response->getData()['success']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertTrue(condition: $response->getData()['success']);
 	}//end testInitialiseForcesTheRegisterImport()
 
 	/**
@@ -125,9 +125,9 @@ final class RegisterInstallTest extends TestCase {
 			$outcome  = ['status' => $status, 'message' => 'ok'];
 			$response = $this->install(outcome: $outcome)->installSeedPackage();
 
-			$this->assertSame(Http::STATUS_OK, $response->getStatus());
-			$this->assertSame(['success' => true, 'message' => 'ok', 'detail' => $outcome], $response->getData());
-			$this->assertSame(['setup_seed_done' => '1'], $this->written);
+			$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+			$this->assertSame(expected: ['success' => true, 'message' => 'ok', 'detail' => $outcome], actual: $response->getData());
+			$this->assertSame(expected: ['setup_seed_done' => '1'], actual: $this->written);
 		}
 	}//end testInstalledOrCurrentRecordsTheSeed()
 
@@ -141,9 +141,9 @@ final class RegisterInstallTest extends TestCase {
 			$outcome  = ['status' => $status, 'message' => 'no'];
 			$response = $this->install(outcome: $outcome)->installSeedPackage();
 
-			$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
-			$this->assertSame(['success' => false, 'message' => 'no', 'detail' => $outcome], $response->getData());
-			$this->assertSame([], $this->written);
+			$this->assertSame(expected: Http::STATUS_UNPROCESSABLE_ENTITY, actual: $response->getStatus());
+			$this->assertSame(expected: ['success' => false, 'message' => 'no', 'detail' => $outcome], actual: $response->getData());
+			$this->assertSame(expected: [], actual: $this->written);
 		}
 	}//end testARefusalAnswers422AndRecordsNothing()
 }//end class
