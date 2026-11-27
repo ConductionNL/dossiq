@@ -35,6 +35,7 @@ use OCA\Dossiq\Review\PagesSeen;
 use OCA\Dossiq\Review\RecallSamples;
 use OCA\Dossiq\Review\ReviewBatches;
 use OCA\Dossiq\Review\ReviewContractRegistrar;
+use OCA\Dossiq\Review\ReviewPlanContractRegistrar;
 use OCA\Dossiq\Review\ReviewSummary;
 use OCA\Dossiq\Review\ReviewWrites;
 use OCA\Dossiq\Review\StoppingRules;
@@ -44,26 +45,27 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Review\ReviewContractRegistrar
+ * @covers \OCA\Dossiq\Review\ReviewPlanContractRegistrar
  *
  * @spec exclude Composition root wiring, no functional requirement.
  */
 class ReviewContractRegistrarTest extends TestCase {
 
 	/**
-	 * The aliases the registrar must register, in order.
+	 * The aliases the registrar must register, in order: reviewing one document, then planning and measuring a review.
 	 *
 	 * @var array<int, array{0: class-string, 1: class-string}>
 	 */
 	private const EXPECTED = [
-		[BatchSelectionInterface::class, BatchSelection::class],
 		[DocumentRelevanceInterface::class, DocumentRelevance::class],
 		[DocumentTextInterface::class, DocumentText::class],
 		[DocumentVerdictsInterface::class, DocumentVerdicts::class],
 		[PagesSeenInterface::class, PagesSeen::class],
+		[ReviewWritesInterface::class, ReviewWrites::class],
+		[BatchSelectionInterface::class, BatchSelection::class],
 		[RecallSamplesInterface::class, RecallSamples::class],
 		[ReviewBatchesInterface::class, ReviewBatches::class],
 		[ReviewSummaryInterface::class, ReviewSummary::class],
-		[ReviewWritesInterface::class, ReviewWrites::class],
 		[StoppingRulesInterface::class, StoppingRules::class],
 		[TriageRulesInterface::class, TriageRules::class],
 	];
@@ -89,6 +91,30 @@ class ReviewContractRegistrarTest extends TestCase {
 
 		$this->assertSame(expected: self::EXPECTED, actual: $aliases);
 	}//end testRegistersEachContractAliasOnce()
+
+	/**
+	 * The plan registrar binds only its six contracts, in order, and nothing else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testThePlanRegistrarBindsItsSix(): void {
+		$aliases = [];
+		$context = $this->createMock(originalClassName: IRegistrationContext::class);
+		$context->expects($this->exactly(count: 6))
+			->method(constraint: 'registerServiceAlias')
+			->willReturnCallback(
+				callback: function (string $alias, string $target) use (&$aliases): void {
+					$aliases[] = [$alias, $target];
+				}
+			);
+		$context->expects($this->never())->method(constraint: 'registerService');
+
+		(new ReviewPlanContractRegistrar())->register(context: $context);
+
+		$this->assertSame(expected: array_slice(array: self::EXPECTED, offset: 5), actual: $aliases);
+	}//end testThePlanRegistrarBindsItsSix()
 
 	/**
 	 * Each aliased implementation actually implements the contract it is bound to.

@@ -2217,6 +2217,24 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         aliases, same order, and `Application` is unchanged. Coupling 15 to 10 (resident acts 7); phpmd: zero findings.
         Own test, pinning every alias in order and that each target implements its contract:
         `tests/Unit/Portal/PortalContractRegistrarTest` (3).
+  - [x] 8ek `Review/ReviewContractRegistrar` (1, unsuppressed: CouplingBetweenObjects 23 against 13). The contracts that
+        plan and measure a review (batch selection, recall samples, review batches, the case summary, the stopping rule
+        and the triage rules) moved to `Review/ReviewPlanContractRegistrar`, which the registrar calls after binding the
+        five for reviewing one document. Same aliases, and `Application` is unchanged; the order of registration changes,
+        which a container alias does not depend on. Coupling 23 to 12 (plan 13); phpmd: zero findings.
+        `ReviewContractRegistrarTest` now pins every alias in the new order, that the plan registrar binds only its six,
+        and that each target implements its contract (3).
+  - [x] 8el `Controller/CaseFederationController` (1, unsuppressed: CouplingBetweenObjects 16 against 13). What the
+        token-authenticated endpoints share (resolving a transfer token to its live share, accepting or rejecting the
+        transfer as the remote party, counting a rejected token with the throttler and logging a throttler that fails)
+        moved to `Controller/Support/FederatedTokenCalls` (`verifiedTransfer()`, `answerTransfer()`,
+        `registerFailedToken()`; bodies moved unchanged). The throttle action and the `#[BruteForceProtection]` attributes
+        that enforce it stay on the controller, which hands the action to the count. It takes the calls in place of the
+        transfer service, the throttler and the logger, so its constructor goes from seven parameters to five; the
+        container autowires it. Coupling 16 to 13 (calls 5); phpmd: zero findings on both files; gate-7 has no finding on
+        the controller, before or after. Characterisation, green before and after: `CaseSharingControllerFederationTest`,
+        `CaseTransferActingUserTest`, `CaseFederationShareGateGoldenTest`, `FederatedShareCreateGoldenTest` and
+        `FederatedShareNeedsConsentTest`. Own test: `tests/Unit/Controller/Support/FederatedTokenCallsTest` (2).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

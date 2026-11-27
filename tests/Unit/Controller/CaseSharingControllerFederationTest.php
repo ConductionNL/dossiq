@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseFederationController;
+use OCA\Dossiq\Controller\Support\FederatedTokenCalls;
 use OCA\Dossiq\Controller\CaseSharingController;
 use OCA\Dossiq\Service\CaseCollaborationService;
 use OCA\Dossiq\Service\CaseSharingService;
@@ -81,11 +82,13 @@ class CaseSharingControllerFederationTest extends TestCase {
 		$this->federationController = new CaseFederationController(
 			request: $this->request,
 			caseSharingService: $this->sharingService,
-			caseTransferService: $this->transferService,
 			collabService: $this->collaborationService,
 			userSession: $this->userSession,
-			throttler: $this->createMock(IThrottler::class),
-			logger: $this->createMock(LoggerInterface::class),
+			tokens: new FederatedTokenCalls(
+				caseTransferService: $this->transferService,
+				throttler: $this->createMock(IThrottler::class),
+				logger: $this->createMock(LoggerInterface::class),
+			),
 		);
 	}//end setUp()
 

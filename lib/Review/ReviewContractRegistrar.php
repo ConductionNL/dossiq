@@ -19,22 +19,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Review;
 
-use OCA\Dossiq\Kernel\Contracts\BatchSelectionInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentTextInterface;
 use OCA\Dossiq\Kernel\Contracts\DocumentVerdictsInterface;
 use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
-use OCA\Dossiq\Kernel\Contracts\RecallSamplesInterface;
-use OCA\Dossiq\Kernel\Contracts\ReviewBatchesInterface;
-use OCA\Dossiq\Kernel\Contracts\ReviewSummaryInterface;
 use OCA\Dossiq\Kernel\Contracts\ReviewWritesInterface;
-use OCA\Dossiq\Kernel\Contracts\StoppingRulesInterface;
-use OCA\Dossiq\Kernel\Contracts\TriageRulesInterface;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Binds the Kernel contracts the Review component implements, so callers in
- * other components get the same shared instance through the contract.
+ * other components get the same shared instance through the contract. The
+ * contracts that plan and measure a review are bound by
+ * {@see ReviewPlanContractRegistrar}, which this one calls.
  *
  * @category Review
  * @package  OCA\Dossiq\Review
@@ -52,19 +48,14 @@ class ReviewContractRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec exclude Composition root wiring, no functional requirement.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		$context->registerServiceAlias(BatchSelectionInterface::class, BatchSelection::class);
 		$context->registerServiceAlias(DocumentRelevanceInterface::class, DocumentRelevance::class);
 		$context->registerServiceAlias(DocumentTextInterface::class, DocumentText::class);
 		$context->registerServiceAlias(DocumentVerdictsInterface::class, DocumentVerdicts::class);
 		$context->registerServiceAlias(PagesSeenInterface::class, PagesSeen::class);
-		$context->registerServiceAlias(RecallSamplesInterface::class, RecallSamples::class);
-		$context->registerServiceAlias(ReviewBatchesInterface::class, ReviewBatches::class);
-		$context->registerServiceAlias(ReviewSummaryInterface::class, ReviewSummary::class);
 		$context->registerServiceAlias(ReviewWritesInterface::class, ReviewWrites::class);
-		$context->registerServiceAlias(StoppingRulesInterface::class, StoppingRules::class);
-		$context->registerServiceAlias(TriageRulesInterface::class, TriageRules::class);
+		(new ReviewPlanContractRegistrar())->register(context: $context);
 	}//end register()
 }//end class

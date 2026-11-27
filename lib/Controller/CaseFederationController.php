@@ -38,10 +38,10 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Controller\Support\AnswersFlaggedRefusals;
 use OCA\Dossiq\Controller\Support\AnswersUnassignedCaller;
+use OCA\Dossiq\Controller\Support\FederatedTokenCalls;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,8 +52,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
-use OCP\Security\Bruteforce\IThrottler;
-use Psr\Log\LoggerInterface;
 
 /**
  * Controller for federated case shares and the shared activity stream.
@@ -89,18 +87,11 @@ class CaseFederationController extends Controller {
 	 * nothing reads. See ADR-082.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function registerFailedShareToken(): void {
-		try {
-			$this->throttler->registerAttempt(
-				action: self::THROTTLE_ACTION,
-				ip: $this->request->getRemoteAddress()
-			);
-		} catch (\Throwable $throttlerFailure) {
-			$this->logger->warning(
-				'CaseFederationController: registerAttempt failed: ' . $throttlerFailure->getMessage()
-			);
-		}
+		$this->tokens->registerFailedToken(request: $this->request, action: self::THROTTLE_ACTION);
 	}//end registerFailedShareToken()
 
 	/**
@@ -108,22 +99,20 @@ class CaseFederationController extends Controller {
 	 *
 	 * @param IRequest $request The request object
 	 * @param CaseSharingServiceInterface $caseSharingService The sharing service
-	 * @param CaseTransferServiceInterface $caseTransferService The transfer service
 	 * @param CaseCollaborationServiceInterface $collabService The federated activity service
 	 * @param IUserSession $userSession The user session
-	 * @param IThrottler $throttler The brute-force throttler counting rejected share tokens
-	 * @param LoggerInterface $logger The logger
+	 * @param FederatedTokenCalls $tokens The transfer token, the transfer answer and the count of rejected tokens
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private CaseSharingServiceInterface $caseSharingService,
-		private CaseTransferServiceInterface $caseTransferService,
 		private CaseCollaborationServiceInterface $collabService,
 		private IUserSession $userSession,
-		private IThrottler $throttler,
-		private LoggerInterface $logger,
+		private FederatedTokenCalls $tokens,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -251,29 +240,21 @@ class CaseFederationController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/federated-case-collaboration/spec.md#a-remote-org-accepts-a-transfer-addressed-to-it-via-its-scoped-token
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function handleFederatedTransfer(string $shareToken, string $transferId): JSONResponse {
-		$verified = $this->caseTransferService->resolveFederatedTransferShare($shareToken, $transferId);
+		$verified = $this->tokens->verifiedTransfer(shareToken: $shareToken, transferId: $transferId);
 		if ($verified === null) {
 			$this->registerFailedShareToken();
 			return new JSONResponse(['success' => false, 'error' => 'Invalid or unauthorized transfer token'], Http::STATUS_FORBIDDEN);
 		}
 
-		$action = $this->request->getParam('action');
-
-		$result = match ($action) {
-			'accept' => $this->caseTransferService->acceptTransfer($transferId, $verified['sharedWith']),
-			'reject' => $this->caseTransferService->rejectTransfer(
-				$transferId,
-				$this->request->getParam('reason', ''),
-				$verified['sharedWith']
-			),
-			default => null,
-		};
+		$result = $this->tokens->answerTransfer(request: $this->request, transferId: $transferId, sharedWith: $verified['sharedWith']);
 
 		if ($result === null) {
 			return new JSONResponse(['success' => false, 'error' => 'Action must be accept or reject'], 400);
