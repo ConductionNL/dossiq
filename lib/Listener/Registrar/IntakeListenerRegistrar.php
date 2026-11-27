@@ -30,12 +30,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener\Registrar;
 
 use OCA\Dossiq\Listener\WooStartFromListener;
-use OCA\Dossiq\Listener\IntakeRequirementsListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\MailCreateDialogListener;
-use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
-use OCA\Dossiq\Listener\SpecialCategoryProcessingLogListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
@@ -84,12 +81,12 @@ class IntakeListenerRegistrar {
 	 * @return void
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$this->registerCaseIntakeListeners(context: $context);
 		$this->registerReportGroupingListeners(context: $context);
-		$this->registerBagValidationListeners(context: $context);
-		$this->registerIntakeRequirementsListeners(context: $context);
+		(new IntakeValidationListenerRegistrar())->register(context: $context);
 		// The forms that open a case: a case type's own Forms binding, the
 		// forms of other apps bound to a case type, and dossiq's answer when
 		// OpenRegister asks which forms write into the case schema.
@@ -156,62 +153,7 @@ class IntakeListenerRegistrar {
 		);
 	}//end registerReportGroupingListeners()
 
-	/**
-	 * Register the pre-persist BAG location validation.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
-	 */
-	private function registerBagValidationListeners(IRegistrationContext $context): void {
-		// Bag-location-save-validation: pre-persist location source=bag
-		// enforcement (closes bag-register-adapter tasks.md item 4.1).
-		$context->registerEventListener(
-			event: ObjectCreatingEvent::class,
-			listener: LocationBagValidationListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: LocationBagValidationListener::class
-		);
-	}//end registerBagValidationListeners()
 
-	/**
-	 * Register the intake requirements check on the creating and updating events.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
-	 */
-	private function registerIntakeRequirementsListeners(IRegistrationContext $context): void {
-		// Intake-triage-and-refusal: a case type declares what must be answered
-		// before a case exists, and who may hold it. Enforced here rather than
-		// in the create form, because the form is one of five ways a case is
-		// written and the other four would walk past it.
-		$context->registerEventListener(
-			event: ObjectCreatingEvent::class,
-			listener: IntakeRequirementsListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatingEvent::class,
-			listener: IntakeRequirementsListener::class
-		);
-
-		// The special categories a case processes go to the processing log
-		// once they are saved (social-domain-consent-and-safeguards 3.1).
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: SpecialCategoryProcessingLogListener::class
-		);
-		$context->registerEventListener(
-			event: ObjectUpdatedEvent::class,
-			listener: SpecialCategoryProcessingLogListener::class
-		);
-	}//end registerIntakeRequirementsListeners()
 
 	/**
 	 * Register the receipt and start dates, set before the case is stored.

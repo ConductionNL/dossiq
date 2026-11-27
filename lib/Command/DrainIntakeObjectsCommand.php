@@ -45,10 +45,6 @@ namespace OCA\Dossiq\Command;
 use OCA\Dossiq\Kernel\Contracts\IntakeObjectDrainInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
-use OCA\OpenRegister\Service\Form\FormSubmission;
-use OCA\OpenRegister\Service\Form\FormSubmitter;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -158,6 +154,7 @@ class DrainIntakeObjectsCommand extends Command {
 	 * @return int 0 when nothing is pending, 1 otherwise.
 	 *
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$apply = (bool)$input->getOption('apply');
@@ -193,12 +190,13 @@ class DrainIntakeObjectsCommand extends Command {
 			schema: $sourceSchema,
 			filters: ['_limit' => 10000]
 		);
+		$calls = new PortalDrainCalls(setup: $setup, deliveredField: (string)self::PLAN['deliveredField']);
 		$report = $this->drain->drain(
 			sources: $sources,
 			plan: self::PLAN,
-			existing: $this->existingCaseOf(setup: $setup),
-			submit: $this->submitterOf(setup: $setup),
-			markSource: $this->sourceMarker(setup: $setup),
+			existing: $calls->existingCase(),
+			submit: $calls->submitter(),
+			markSource: $calls->sourceMarker(),
 			apply: $apply
 		);
 
@@ -217,40 +215,8 @@ class DrainIntakeObjectsCommand extends Command {
 			|| $setup->register === '' || $setup->caseSchema === '');
 	}//end prerequisitesMet()
 
-	/**
-	 * The callback that names the case already holding a source.
-	 *
-	 * @param PortalDrainSetup $setup The object service, register and case schema.
-	 *
-	 * @return callable(array): string
-	 */
-	private function existingCaseOf(PortalDrainSetup $setup): callable {
-		return fn (array $source): string => $this->caseHolding(setup: $setup, source: $source);
-	}//end existingCaseOf()
 
-	/**
-	 * The callback that submits one case.
-	 *
-	 * @param PortalDrainSetup $setup The form submit, register, case schema and admin.
-	 *
-	 * @return callable(array): array
-	 */
-	private function submitterOf(PortalDrainSetup $setup): callable {
-		return fn (array $case): array => $this->submit(setup: $setup, case: $case);
-	}//end submitterOf()
 
-	/**
-	 * The callback that marks a source with the case it became.
-	 *
-	 * @param PortalDrainSetup $setup The object service, register and source schema.
-	 *
-	 * @return callable(array, string): void
-	 */
-	private function sourceMarker(PortalDrainSetup $setup): callable {
-		return function (array $source, string $caseId) use ($setup): void {
-			$this->markSource(setup: $setup, source: $source, caseId: $caseId);
-		};
-	}//end sourceMarker()
 
 	/**
 	 * Print the report.
@@ -312,78 +278,8 @@ class DrainIntakeObjectsCommand extends Command {
 		}
 	}//end printRows()
 
-	/**
-	 * Submit one case through OpenRegister's form submit.
-	 *
-	 * @param PortalDrainSetup     $setup The form submit, register, case schema and the subject the case is written for.
-	 * @param array<string, mixed> $case  The case.
-	 *
-	 * @return array<string, mixed> `id`, or `findings`.
-	 */
-	private function submit(PortalDrainSetup $setup, array $case): array {
-		try {
-			$answer = $setup->submitter->submit(
-				new FormSubmission(
-					writes: [['register' => $setup->register, 'schema' => $setup->caseSchema, 'mapping' => null]],
-					payload: $case,
-					submitter: new FormSubmitter(subject: $setup->admin)
-				)
-			);
-		} catch (Throwable $e) {
-			$findings = [['property' => '', 'code' => 'refused', 'message' => $e->getMessage()]];
-			if (method_exists($e, 'getFindings') === true && $e->getFindings() !== []) {
-				$findings = $e->getFindings();
-			}
 
-			return ['findings' => $findings];
-		}
 
-		return ['id' => (string)($answer['id'] ?? '')];
-	}//end submit()
-
-	/**
-	 * The id of a case that already carries this source's id as its earlier reference.
-	 *
-	 * @param PortalDrainSetup     $setup  The object service, register and case schema.
-	 * @param array<string, mixed> $source The source object.
-	 *
-	 * @return string The case id, or the empty string.
-	 */
-	private function caseHolding(PortalDrainSetup $setup, array $source): string {
-		$sourceId = trim((string)($source['id'] ?? ''));
-		if ($sourceId === '') {
-			return '';
-		}
-
-		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $setup->objectService,
-			register: $setup->register,
-			schema: $setup->caseSchema,
-			filters: ['externalReference' => $sourceId, '_limit' => 1]
-		);
-
-		return trim((string)(($rows[0] ?? [])['id'] ?? ''));
-	}//end caseHolding()
-
-	/**
-	 * Record the case id on the source, so the next run skips it.
-	 *
-	 * @param PortalDrainSetup     $setup  The object service, register and source schema.
-	 * @param array<string, mixed> $source The source object.
-	 * @param string               $caseId The case id.
-	 *
-	 * @return void
-	 */
-	private function markSource(PortalDrainSetup $setup, array $source, string $caseId): void {
-		$sourceId = (string)($source['id'] ?? '');
-		$payload = array_merge($source, [(string)self::PLAN['deliveredField'] => $caseId]);
-		unset($payload['@self'], $payload['id'], $payload['uuid']);
-
-		$setup->objectService->saveObject(
-			object: $payload,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $setup->register, schema: $setup->sourceSchema), uuid: $sourceId)
-		);
-	}//end markSource()
 
 	/**
 	 * OpenRegister's form submit, or null on an OpenRegister without it.
