@@ -34,14 +34,11 @@ use InvalidArgumentException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\PublicationServiceInterface;
 use OCA\Dossiq\Service\Publication\PublicationDateRule;
+use OCA\Dossiq\Service\Publication\PublishedCase;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -77,17 +74,27 @@ class PublicationService implements PublicationServiceInterface {
 	private const DELIVERY_KIND = 'besluit-publication';
 
 	/**
+	 * Reads the case to publish and saves it back.
+	 *
+	 * @var PublishedCase
+	 */
+	private readonly PublishedCase $cases;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param IEventDispatcher $eventDispatcher Dispatches the integriq delivery request (ADR-041).
 	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->cases = new PublishedCase(logger: $logger);
 	}//end __construct()
 
 	/**
@@ -113,6 +120,7 @@ class PublicationService implements PublicationServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-besluitvorming-workflow/tasks.md#task-7
 	 * @spec openspec/specs/contract-decision-delegation/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function publish(string $caseId, array $payload): array {
 		$channel = (string)($payload['channel'] ?? 'website');
@@ -123,7 +131,7 @@ class PublicationService implements PublicationServiceInterface {
 		$objectService = $this->requireObjectService();
 
 		$entry = $this->entryFor(caseId: $caseId, channel: $channel);
-		$case = $this->loadCase(objectService: $objectService, entry: $entry);
+		$case = $this->cases->load(objectService: $objectService, entry: $entry);
 		$entry += $this->stampOf(payload: $payload);
 
 		// Hand the outbound leg to integriq (ADR-041 seam): dossiq composes
@@ -135,10 +143,7 @@ class PublicationService implements PublicationServiceInterface {
 		$case['publications'] = $this->publicationsWith(case: $case, entry: $entry);
 		$case['publishedAt'] = $entry['publishedAt'];
 
-		$objectService->saveObject(
-			object: $case,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $entry['register'], schema: $entry['schema']))
-		);
+		$this->cases->save(objectService: $objectService, case: $case, entry: $entry);
 
 		return [
 			'caseId' => $caseId,
@@ -325,41 +330,6 @@ class PublicationService implements PublicationServiceInterface {
 
 		return $publications;
 	}//end attachDelivery()
-
-	/**
-	 * Load a case from OpenRegister and normalise it to its array form.
-	 *
-	 * @param object $objectService The OpenRegister ObjectService.
-	 * @param array<string, mixed> $entry The entry: the case id, and the configured register and case schema ids.
-	 *
-	 * @return array<string, mixed> The case data.
-	 *
-	 * @throws \RuntimeException When the case cannot be loaded or does not exist.
-	 */
-	private function loadCase(object $objectService, array $entry): array {
-		$caseId = $entry['caseId'];
-		try {
-			$obj = $objectService->find(id: $caseId, options: new ObjectFindOptions(register: $entry['register'], schema: $entry['schema']));
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'PublicationService::publish find failed',
-				['app' => AppIdentity::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
-			);
-			throw new RuntimeException('Case not found: ' . $caseId);
-		}
-
-		if ($obj === null) {
-			throw new RuntimeException('Case not found: ' . $caseId);
-		}
-
-		// An array casts to itself, so the cast doubles as the plain-object fallback.
-		$case = (array)$obj;
-		if (is_array($obj) === false && method_exists($obj, 'jsonSerialize') === true) {
-			$case = $obj->jsonSerialize();
-		}
-
-		return $case;
-	}//end loadCase()
 
 	/**
 	 * Upsert a publication record by channel — an existing record for the same

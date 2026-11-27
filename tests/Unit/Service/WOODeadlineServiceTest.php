@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -68,6 +69,7 @@ interface WOODeadlineObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WOODeadlineService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Notification\DeadlineWarningNotice
  */
 class WOODeadlineServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -374,5 +376,72 @@ class WOODeadlineServiceTest extends TestCase {
 		$this->assertLessThan(expected: 0, actual: $result['daysRemaining']);
 		$this->assertTrue(condition: $result['warned']);
 	}//end testCheckAndWarnCountsAPassedDeadlineAsOverdue()
+
+	/**
+	 * The overdue notice goes to the handler, about the case, with the days and the overdue subject.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testTheOverdueNoticeNamesTheHandlerTheCaseAndTheDays(): void {
+		$this->overdueCase();
+		$set = [];
+		$notification = $this->createMock(originalClassName: INotification::class);
+		foreach (['setApp', 'setUser', 'setDateTime', 'setObject', 'setSubject'] as $setter) {
+			$notification->method($setter)->willReturnCallback(
+				static function (mixed ...$args) use (&$set, $setter, $notification): INotification {
+					$set[$setter] = $args;
+					return $notification;
+				}
+			);
+		}
+
+		$this->notificationManager->method('createNotification')->willReturn($notification);
+		$this->notificationManager->expects($this->once())->method('notify')->with($notification);
+
+		$result = $this->service->checkAndWarn('case-uuid-001', 'j.dejong');
+
+		$this->assertSame(expected: ['dossiq'], actual: $set['setApp']);
+		$this->assertSame(expected: ['j.dejong'], actual: $set['setUser']);
+		$this->assertSame(expected: ['woo_deadline', 'case-uuid-001'], actual: $set['setObject']);
+		$this->assertSame(
+			expected: ['woo_deadline_overdue', ['caseId' => 'case-uuid-001', 'daysRemaining' => $result['daysRemaining']]],
+			actual: $set['setSubject']
+		);
+		$this->assertInstanceOf(expected: \DateTime::class, actual: $set['setDateTime'][0]);
+	}//end testTheOverdueNoticeNamesTheHandlerTheCaseAndTheDays()
+
+	/**
+	 * A notice the manager will not send is logged, and the warning still stands.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function testANoticeThatCannotBeSentIsLogged(): void {
+		$this->overdueCase();
+		$this->notificationManager->method('notify')->willThrowException(new \RuntimeException('no notifier'));
+		$this->logger->expects($this->once())->method('error')->with(
+			'Failed to send WOO deadline notification: no notifier',
+			['app' => 'dossiq', 'caseId' => 'case-uuid-001']
+		);
+
+		$result = $this->service->checkAndWarn('case-uuid-001', 'j.dejong');
+
+		$this->assertTrue(condition: $result['warned']);
+	}//end testANoticeThatCannotBeSentIsLogged()
+
+	/**
+	 * A case whose deadline passed long ago.
+	 *
+	 * @return void
+	 */
+	private function overdueCase(): void {
+		$objectServiceMock = $this->createMock(originalClassName: WOODeadlineObjectServiceStub::class);
+		$objectServiceMock->method('find')->willReturn(['id' => 'case-uuid-001', 'deadline' => '2000-01-01']);
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturnMap([['register', '', 'dossiq'], ['case_schema', '', 'case']]);
+	}//end overdueCase()
 
 }//end class

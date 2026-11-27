@@ -66,6 +66,7 @@ interface PublicationObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Service\PublicationService
  * @uses \OCA\Dossiq\Service\Publication\PublicationDateRule
+ * @uses \OCA\Dossiq\Service\Publication\PublishedCase
  */
 class PublicationServiceTest extends TestCase {
 

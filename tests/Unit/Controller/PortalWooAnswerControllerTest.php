@@ -37,6 +37,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Controller\PortalWooAnswerController
  * @uses   \OCA\Dossiq\Portal\WooAnswerSubmission
+ * @uses   \OCA\Dossiq\Controller\Support\PortalAnswerRead
  */
 class PortalWooAnswerControllerTest extends TestCase {
 

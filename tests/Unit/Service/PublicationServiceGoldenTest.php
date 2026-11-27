@@ -40,6 +40,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  *
  * @covers \OCA\Dossiq\Service\PublicationService
  * @uses \OCA\Dossiq\Service\Publication\PublicationDateRule
+ * @uses \OCA\Dossiq\Service\Publication\PublishedCase
  */
 class PublicationServiceGoldenTest extends TestCase {
 	use MatchesGoldenFiles;
