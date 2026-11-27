@@ -25,6 +25,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * The register and schema a publication object is read from or written to.
  *
@@ -45,4 +49,28 @@ final class PublicationTarget {
 		public readonly string $schema,
 	) {
 	}//end __construct()
+
+	/**
+	 * Where OpenRegister finds an object of this register and schema.
+	 *
+	 * @return ObjectFindOptions
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function findOptions(): ObjectFindOptions {
+		return new ObjectFindOptions(register: $this->register, schema: $this->schema);
+	}//end findOptions()
+
+	/**
+	 * Where OpenRegister saves an object of this register and schema.
+	 *
+	 * @param string|null $uuid The uuid to update, or null to create.
+	 *
+	 * @return ObjectSaveOptions
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function saveOptions(?string $uuid): ObjectSaveOptions {
+		return new ObjectSaveOptions(target: new ObjectFindTarget(register: $this->register, schema: $this->schema), uuid: $uuid);
+	}//end saveOptions()
 }//end class

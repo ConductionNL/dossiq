@@ -46,6 +46,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
  * The destroying role, the two clocks and the open window, each a refusal.
  *
  * @covers \OCA\Dossiq\Service\Recycle\CaseDestructionService
+ * @uses \OCA\Dossiq\Service\Recycle\CasePurge
  * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
  */
 class CaseDestructionTest extends TestCase {
@@ -402,6 +403,11 @@ class CaseDestructionTest extends TestCase {
 		$this->assertSame('case-type-destroying-role', $record['rule']);
 		$this->assertSame('case-9', $record['objectUuid']);
 		$this->assertNotSame('', (string)$record['destroyedAt']);
+		$this->assertMatchesRegularExpression(
+			pattern: '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
+			string: (string)$record['destroyedAt']
+		);
+		$this->assertSame(expected: (new \DateTimeImmutable())->format('P'), actual: substr(string: (string)$record['destroyedAt'], offset: -6));
 	}//end testTheRecordNamesWhoDecided()
 
 	/**
