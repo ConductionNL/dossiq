@@ -97,6 +97,7 @@ interface RoundTripObjectStoreStub {
  * @covers \OCA\Dossiq\Service\ComplaintService
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
  * @covers \OCA\Dossiq\Service\WOODeadlineService
+ * @uses \OCA\Dossiq\Service\Notification\DeadlineWarningNotice
  * @uses \OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard
  * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository

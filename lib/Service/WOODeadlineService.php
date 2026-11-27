@@ -30,15 +30,14 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\WOODeadlineServiceInterface;
+use OCA\Dossiq\Service\Notification\DeadlineWarningNotice;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCP\Notification\IManager as INotificationManager;
-use OCP\Notification\INotification;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -63,6 +62,13 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	private const WARNING_THRESHOLD_DAYS = 7;
 
 	/**
+	 * Sends the warning, or the overdue notice, to the handler.
+	 *
+	 * @var DeadlineWarningNotice
+	 */
+	private readonly DeadlineWarningNotice $notices;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -75,15 +81,17 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 *        ceiling and its roll. Required for {@see extendDeadline()}.
 	 *
 	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly INotificationManager $notificationManager,
+		INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermDefinitions $definitions = null,
 		private readonly ?DeadlineExtensionService $extensions = null,
 	) {
+		$this->notices = new DeadlineWarningNotice(notificationManager: $notificationManager, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -268,6 +276,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	 * @return array<string, mixed> Warning status with daysRemaining and isOverdue flags
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function checkAndWarn(string $caseId, string $handler): array {
 		$resolved = $this->resolveWarningDeadline(caseId: $caseId);
@@ -285,7 +294,7 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 		$warned = false;
 
 		if ($daysRemaining === self::WARNING_THRESHOLD_DAYS || $warning['isOverdue'] === true) {
-			$this->sendDeadlineNotification(userId: $handler, warning: $warning);
+			$this->notices->send(userId: $handler, warning: $warning);
 			$warned = true;
 		}
 
@@ -367,77 +376,5 @@ class WOODeadlineService implements WOODeadlineServiceInterface {
 	private function signedDaysUntil(DateTimeImmutable $deadline): int {
 		return $this->dates->signedDaysBetween(from: $this->dates->today(), to: $deadline);
 	}//end signedDaysUntil()
-
-	/**
-	 * Send a deadline notification to the behandelaar.
-	 *
-	 * @param string                                                     $userId  The user to notify
-	 * @param array{caseId: string, daysRemaining: int, isOverdue: bool} $warning The case UUID, the days remaining
-	 *                                                                            (negative if overdue) and whether
-	 *                                                                            the deadline has passed
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
-	 */
-	private function sendDeadlineNotification(string $userId, array $warning): void {
-		try {
-			$notification = $this->deadlineNotification(userId: $userId, warning: $warning);
-
-			$this->notificationManager->notify($notification);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Failed to send WOO deadline notification: ' . $e->getMessage(),
-				['app' => AppIdentity::APP_ID, 'caseId' => $warning['caseId']],
-			);
-		}//end try
-	}//end sendDeadlineNotification()
-
-	/**
-	 * The notification subject: overdue, or a warning.
-	 *
-	 * @param bool $isOverdue Whether the deadline has passed
-	 *
-	 * @return string The subject.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
-	 */
-	private function deadlineSubject(bool $isOverdue): string {
-		$subject = 'woo_deadline_warning';
-		if ($isOverdue === true) {
-			$subject = 'woo_deadline_overdue';
-		}
-
-		return $subject;
-	}//end deadlineSubject()
-
-	/**
-	 * The deadline notification for the behandelaar.
-	 *
-	 * @param string                                                     $userId  The user to notify
-	 * @param array{caseId: string, daysRemaining: int, isOverdue: bool} $warning The case UUID, the days remaining
-	 *                                                                            (negative if overdue) and whether
-	 *                                                                            the deadline has passed
-	 *
-	 * @return INotification The notification.
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-4
-	 */
-	private function deadlineNotification(string $userId, array $warning): INotification {
-		$subject = $this->deadlineSubject(isOverdue: $warning['isOverdue']);
-		$caseId = $warning['caseId'];
-
-		$notification = $this->notificationManager->createNotification();
-		$notification->setApp(AppIdentity::APP_ID)
-			->setUser($userId)
-			->setDateTime(new DateTime())
-			->setObject('woo_deadline', $caseId)
-			->setSubject(
-				$subject,
-				['caseId' => $caseId, 'daysRemaining' => $warning['daysRemaining']]
-			);
-
-		return $notification;
-	}//end deadlineNotification()
 
 }//end class
