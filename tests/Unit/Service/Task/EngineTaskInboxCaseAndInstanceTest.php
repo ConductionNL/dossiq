@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Task\EngineTaskInbox
  * @uses \OCA\Dossiq\Service\Task\EngineInboxQuery
+ * @uses \OCA\Dossiq\Service\Task\InboxCriteria
  */
 class EngineTaskInboxCaseAndInstanceTest extends TestCase {
 

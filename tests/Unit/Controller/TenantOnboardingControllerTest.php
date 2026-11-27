@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\TenantService
  * @uses \OCA\Dossiq\Service\TenantOrganisationResolver
  * @uses \OCA\Dossiq\Service\Task\EngineInboxQuery
+ * @uses \OCA\Dossiq\Service\Task\InboxCriteria
  * @uses \OCA\Dossiq\Service\Task\OnboardingSteps
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
  * @uses \OCA\Dossiq\Service\Tenant\OnboardingStepGuide
