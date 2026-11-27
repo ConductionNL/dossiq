@@ -26,6 +26,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+
 /**
  * The object service, register and schema one step of a copy works on.
  *
@@ -59,4 +63,38 @@ final class CaseTypeCopyTarget {
 	public function forSchema(string $schema): self {
 		return new self(objectService: $this->objectService, register: $this->register, schema: $schema);
 	}//end forSchema()
+
+	/**
+	 * Save an object into this register and schema, as the object service answers it.
+	 *
+	 * A refusal of the object service is not caught here: each step of the
+	 * copy decides what a failed write means for it.
+	 *
+	 * @param array<string, mixed> $payload The object to save.
+	 *
+	 * @return mixed What the object service answers.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function save(array $payload): mixed {
+		return $this->objectService->saveObject(
+			object: $payload,
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $this->register, schema: $this->schema))
+		);
+	}//end save()
+
+	/**
+	 * Find an object by id in this register and schema, as the object service answers it.
+	 *
+	 * A refusal of the object service is not caught here, as for {@see save()}.
+	 *
+	 * @param string $id The object id.
+	 *
+	 * @return mixed What the object service answers, null when it found nothing.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function find(string $id): mixed {
+		return $this->objectService->find($id, new ObjectFindOptions(register: $this->register, schema: $this->schema));
+	}//end find()
 }//end class
