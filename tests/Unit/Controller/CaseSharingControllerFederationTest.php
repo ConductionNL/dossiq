@@ -86,8 +86,8 @@ class CaseSharingControllerFederationTest extends TestCase {
 			userSession: $this->userSession,
 			tokens: new FederatedTokenCalls(
 				caseTransferService: $this->transferService,
-				throttler: $this->createMock(IThrottler::class),
-				logger: $this->createMock(LoggerInterface::class),
+				throttler: $this->createMock(originalClassName: IThrottler::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
 			),
 		);
 	}//end setUp()

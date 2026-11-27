@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseVersionController;
+use OCA\Dossiq\Controller\Support\CaseVersionMoves;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
@@ -146,10 +147,8 @@ class CaseVersionControllerTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->request,
 			chain: $this->chain,
-			move: $this->move,
+			moves: new CaseVersionMoves(move: $this->move, accessGuard: $this->guard, userSession: $this->userSession),
 			window: $this->window,
-			accessGuard: $this->guard,
-			userSession: $this->userSession,
 			logger: new NullLogger(),
 		);
 	}//end controller()

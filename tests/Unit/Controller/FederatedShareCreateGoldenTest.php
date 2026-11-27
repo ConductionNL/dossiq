@@ -127,9 +127,9 @@ class FederatedShareCreateGoldenTest extends TestCase {
 			collabService: $this->createMock(CaseCollaborationService::class),
 			userSession: $session,
 			tokens: new FederatedTokenCalls(
-				caseTransferService: $this->createMock(CaseTransferService::class),
-				throttler: $this->createMock(IThrottler::class),
-				logger: $this->createMock(LoggerInterface::class),
+				caseTransferService: $this->createMock(originalClassName: CaseTransferService::class),
+				throttler: $this->createMock(originalClassName: IThrottler::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
 			),
 		);
 	}//end controllerFor()

@@ -40,13 +40,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\CaseCaller;
+use OCA\Dossiq\Controller\Support\CaseVersionMoves;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionChainInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionWindowInterface;
-use OCA\Dossiq\Kernel\Contracts\CaseVersionMoveInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -55,7 +53,6 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -73,27 +70,24 @@ class CaseVersionController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                 $appName        The app name.
-	 * @param IRequest               $request        The request.
-	 * @param CaseTypeVersionChainInterface   $chain          The versions of one case type.
-	 * @param CaseVersionMoveInterface        $move           What a move would change, and the move.
-	 * @param CaseTypeVersionWindowInterface  $window         When a version starts and stops being offered.
-	 * @param CaseAccessGuardInterface        $accessGuard    Per-case authorization, failing closed.
-	 * @param IUserSession           $userSession    The session.
-	 * @param LoggerInterface        $logger         The logger.
+	 * @param string                         $appName The app name.
+	 * @param IRequest                       $request The request.
+	 * @param CaseTypeVersionChainInterface  $chain   The versions of one case type.
+	 * @param CaseVersionMoves               $moves   Who may move a case, its options, and the move.
+	 * @param CaseTypeVersionWindowInterface $window  When a version starts and stops being offered.
+	 * @param LoggerInterface                $logger  The logger.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly CaseTypeVersionChainInterface $chain,
-		private readonly CaseVersionMoveInterface $move,
+		private readonly CaseVersionMoves $moves,
 		private readonly CaseTypeVersionWindowInterface $window,
-		private readonly CaseAccessGuardInterface $accessGuard,
-		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -174,6 +168,8 @@ class CaseVersionController extends Controller {
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function options(string $caseId): JSONResponse {
@@ -182,14 +178,9 @@ class CaseVersionController extends Controller {
 		}
 
 		try {
-			$answer = $this->move->options(caseId: $caseId);
-
 			$target = trim((string)$this->request->getParam('target', ''));
-			if ($target !== '') {
-				$answer['preview'] = $this->move->preview(caseId: $caseId, targetCaseTypeId: $target);
-			}
 
-			return new JSONResponse($answer);
+			return new JSONResponse($this->moves->options(caseId: $caseId, target: $target));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'version-options', e: $e);
 		} catch (Throwable $e) {
@@ -205,6 +196,8 @@ class CaseVersionController extends Controller {
 	 * @return JSONResponse What was applied, or the refusal naming the status.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function moveToVersion(string $caseId): JSONResponse {
@@ -215,11 +208,11 @@ class CaseVersionController extends Controller {
 
 		try {
 			return new JSONResponse(
-				$this->move->move(
+				$this->moves->move(
 					caseId: $caseId,
-					targetCaseTypeId: trim((string)$this->request->getParam('target', '')),
+					target: trim((string)$this->request->getParam('target', '')),
 					reason: (string)$this->request->getParam('reason', ''),
-					actorUid: $user->getUID(),
+					actor: $user,
 				)
 			);
 		} catch (RefusedException $e) {
@@ -241,9 +234,11 @@ class CaseVersionController extends Controller {
 	 * @return IUser|null The caller, or null when they may not.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function writerOf(string $caseId): ?IUser {
-		return (new CaseCaller(userSession: $this->userSession, accessGuard: $this->accessGuard))->writer(caseId: $caseId);
+		return $this->moves->writer(caseId: $caseId);
 	}//end writerOf()
 
 	/**

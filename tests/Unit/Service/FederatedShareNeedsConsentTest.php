@@ -150,8 +150,8 @@ class FederatedShareNeedsConsentTest extends TestCase {
 			collabService: $this->createMock(CaseCollaborationServiceInterface::class),
 			userSession: $session,
 			tokens: new FederatedTokenCalls(
-				caseTransferService: $this->createMock(CaseTransferServiceInterface::class),
-				throttler: $this->createMock(IThrottler::class),
+				caseTransferService: $this->createMock(originalClassName: CaseTransferServiceInterface::class),
+				throttler: $this->createMock(originalClassName: IThrottler::class),
 				logger: new NullLogger(),
 			),
 		);

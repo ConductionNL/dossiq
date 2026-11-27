@@ -279,8 +279,8 @@ class CaseTransferActingUserTest extends TestCase {
 			userSession: $this->session(uid: null),
 			tokens: new FederatedTokenCalls(
 				caseTransferService: $this->recordedTransferService(behaviour: $behaviour + ['find' => ['t-1' => self::PENDING]]),
-				throttler: $this->createMock(IThrottler::class),
-				logger: $this->createMock(LoggerInterface::class),
+				throttler: $this->createMock(originalClassName: IThrottler::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
 			),
 		);
 	}//end federation()

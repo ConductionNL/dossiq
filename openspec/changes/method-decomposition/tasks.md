@@ -2217,6 +2217,16 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         aliases, same order, and `Application` is unchanged. Coupling 15 to 10 (resident acts 7); phpmd: zero findings.
         Own test, pinning every alias in order and that each target implements its contract:
         `tests/Unit/Portal/PortalContractRegistrarTest` (3).
+  - [x] 8ej `Controller/CaseVersionController` (1, unsuppressed: CouplingBetweenObjects 16 against 13). The case side
+        of a case type's versions (who may move a case, through the generic `CaseCaller`; the versions it could move to,
+        with the preview of a named target; the move as the caller's uid) moved to `Controller/Support/CaseVersionMoves`
+        (`writer()`, `options()`, `move()`; bodies moved unchanged). The controller keeps the version chain, closing a
+        version, the refusals and the answers, and its own `writerOf()` guard helper, now over the moves. It takes the moves
+        in place of the move service, the access guard and the session, so its constructor goes from eight parameters to
+        six; the container autowires it. Coupling 16 to 13 (moves 5); phpmd: zero findings on both files under both
+        rulesets; gate-7 reports the same two methods as on development (`chain`, deliberately unguarded, and
+        `moveToVersion`), `options` still passes. Characterisation, green before and after: `CaseVersionControllerTest`
+        (11). Own test: `tests/Unit/Controller/Support/CaseVersionMovesTest` (3).
   - [x] 8ek `Review/ReviewContractRegistrar` (1, unsuppressed: CouplingBetweenObjects 23 against 13). The contracts that
         plan and measure a review (batch selection, recall samples, review batches, the case summary, the stopping rule
         and the triage rules) moved to `Review/ReviewPlanContractRegistrar`, which the registrar calls after binding the
