@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Settings;
 
 use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Controller\Support\SurfaceLoadEvents;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\AppFramework\Services\IInitialState;
@@ -148,7 +149,7 @@ final class MenuStructureTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$this->createMock(IInitialState::class),
 			$appConfig,
-			$this->createMock(originalClassName: IEventDispatcher::class),
+			new SurfaceLoadEvents(eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class)),
 		);
 
 		$method = new ReflectionMethod(DashboardController::class, 'menuStructure');

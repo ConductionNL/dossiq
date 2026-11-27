@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Controller\Support\SurfaceLoadEvents;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -64,7 +65,7 @@ class DashboardControllerServiceWorkerTest extends TestCase {
 			request: $request,
 			initialState: $this->createMock(originalClassName: IInitialState::class),
 			appConfig: $this->createMock(originalClassName: IAppConfig::class),
-			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+			surfaces: new SurfaceLoadEvents(eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class)),
 		);
 	}//end setUp()
 
