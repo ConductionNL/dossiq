@@ -2027,13 +2027,18 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation, green before and after: `AdviceControllerContractTest` (27, every answer of every route),
         `AdviceServiceAuthorizationTest` and `OneDateWritePathTest`. Own test:
         `tests/Unit/Controller/Support/AdviceWritesTest` (4).
-  - [ ] 8dq The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
-        `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
-        `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
-        green, but it was dropped before push. Each renamed call site of the six static helpers carries a development
-        StaticAccess finding on that line, and the diff check counts a finding on a touched line as new: 29 phpmd
-        findings that block. The static helpers have to become injected collaborators first, which is the StaticAccess
-        work (150 findings), not a rename.
+  - [x] 8dq `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
+        of a payout (the payable amount of a calculation, definitive before cumulative; saving a payout row; the row a
+        finance callback names by its reference; the refusal when either schema is not configured, and one sentence
+        with the cause per failing read or write) moved to `Money/PayoutStore` (`payableAmount()`, `save()`,
+        `byReference()`; bodies and refusal texts moved unchanged). The service keeps the decisions: the IBAN check, the
+        deadline, the finance handoff, withdrawing and raising again, and the callback fields. It no longer names
+        `MoneyStore` or `\Throwable`. The service builds the store in its constructor, so its constructor and the
+        container are unchanged. Coupling 14 to 12 (store 5); phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after but for one `@uses` line in five: `PayoutServiceTest`,
+        `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `AmountObjectionServiceTest`,
+        `AmountObjectionServiceFailuresTest` and `MigratePayoutRowsToFinanceEdgesTest`.
+        Own test: `tests/Unit/Service/Money/PayoutStoreTest` (8).
   - [x] 8dr `Controller/DocumentReviewController` (1, unsuppressed: CouplingBetweenObjects 14 against 13). The signed-in
         caller when they may read or change the case (401 `not-authenticated` without a session user, the translated
         `no-case-access` 403 without access) moved to `Controller/Support/ReviewCaseCaller` (`requireReader()`,
@@ -2055,3 +2060,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         Characterisation, green before and after: `KpiAggregationServiceTest` and `TranslatableTypeNamesReadAsTextTest`
         (the translation switch put back after the read), plus the controller suites that mock the service. Own test:
         `tests/Unit/Service/KpiOpenRegisterServicesTest` (4).
+  - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
+        `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
+        `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
+        green, but it was dropped before push. Each renamed call site of the six static helpers carries a development
+        StaticAccess finding on that line, and the diff check counts a finding on a touched line as new: 29 phpmd
+        findings that block. The static helpers have to become injected collaborators first, which is the StaticAccess
+        work (150 findings), not a rename.
