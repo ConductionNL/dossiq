@@ -2017,14 +2017,3 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `AmountObjectionServiceTest`,
         `AmountObjectionServiceFailuresTest` and `MigratePayoutRowsToFinanceEdgesTest`.
         Own test: `tests/Unit/Service/Money/PayoutStoreTest` (8).
-  - [x] 8dp `CaseEmailService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Recording a mail that went out
-        about a case (the message stored as a case document, then its public timeline line with the recipient, the
-        subject, the document, the delivery and the sender), which dossiq's own send and an OpenRegister flow step's
-        mail both pass through, moved to `Email/SentCaseMailRecorder` (`record()`; `recordSent()` and `recordMailOut()`
-        moved unchanged). `recordSentEmail()` stays on the service and its interface and hands over. The service no
-        longer names `SentCaseMail` or `TimelineKinds`. It builds the recorder in its constructor from the repository
-        and the timeline, so its constructor and the container are unchanged. Coupling 14 to 13 (recorder 4); phpmd:
-        zero findings on both files under both rulesets.
-        Characterisation, green before and after but for one `@uses` line in five: `CaseEmailSentRecordGoldenTest`,
-        `CaseEmailServiceTest`, `CaseEmailInboundGoldenTest`, `SendFromTemplateRefusesTest`, `FlowEmailSentListenerTest`
-        and the `EmailController` suites. Own test: `tests/Unit/Service/Email/SentCaseMailRecorderTest` (2).

@@ -53,7 +53,6 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\EmailTemplateService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\CaseEmailService
- * @uses \OCA\Dossiq\Service\Email\SentCaseMailRecorder
  * @uses \OCA\Dossiq\Service\Email\OutboundMailRules
  */
 class SendFromTemplateRefusesTest extends TestCase {
