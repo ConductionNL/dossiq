@@ -50,10 +50,8 @@ use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
 use OCA\Dossiq\Service\Queue\QueueOldestNote;
 use OCA\Dossiq\Service\Support\NormalisesObjectRows;
 use OCA\Dossiq\Service\Zgw\SchemaFilter;
-use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use OCP\IL10N;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -109,18 +107,18 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service.
-	 * @param ContainerInterface $container The DI container.
-	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
+	 * @param KpiOpenRegisterServices $openRegister OpenRegister's object and language services, when it is installed.
 	 * @param KpiSources $sources The engine task inbox, the queue figures, the translatable text reader and the day count.
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private IAppConfig $appConfig,
-		private ContainerInterface $container,
-		private IAppManager $appManager,
+		private readonly KpiOpenRegisterServices $openRegister,
 		private readonly KpiSources $sources,
 		private IL10N $l10n,
 		private LoggerInterface $logger,
@@ -348,10 +346,12 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * @param array $filters The filter criteria.
 	 *
 	 * @return int The count, or 0 when OpenRegister cannot answer.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function countCases(array $ids, array $filters): int {
 		$schema = $ids['case'];
-		$objectService = $this->objectService();
+		$objectService = $this->openRegister->objectService();
 		if ($objectService === null) {
 			return 0;
 		}
@@ -387,11 +387,13 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * @param SchemaFilter          $query The schema id to read and the filter criteria.
 	 *
 	 * @return array<int, array> The rows, as plain arrays.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function rows(array $ids, SchemaFilter $query): array {
 		$schema = $query->schema;
 		$filters = $query->filters;
-		$objectService = $this->objectService();
+		$objectService = $this->openRegister->objectService();
 		if ($objectService === null) {
 			return [];
 		}
@@ -572,9 +574,11 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 	 * @return array The read's rows.
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function withAllTranslations(callable $read): array {
-		$language = $this->languageService();
+		$language = $this->openRegister->languageService();
 		if ($language === null) {
 			return $read();
 		}
@@ -587,61 +591,4 @@ class KpiAggregationService implements KpiAggregationServiceInterface {
 			$language->setReturnAllTranslations($before);
 		}
 	}//end withAllTranslations()
-
-	/**
-	 * OpenRegister's request-scoped language service, or null when OpenRegister
-	 * is absent or the service cannot answer for all translations.
-	 *
-	 * @return object|null
-	 *
-	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
-	 */
-	private function languageService(): ?object {
-		if ($this->appManager->isInstalled('openregister') === false) {
-			return null;
-		}
-
-		$serviceId = 'OCA\OpenRegister\Service\LanguageService';
-		if ($this->container->has($serviceId) === false) {
-			return null;
-		}
-
-		$service = $this->container->get($serviceId);
-		if (is_object($service) === false
-			|| method_exists($service, 'setReturnAllTranslations') === false
-			|| method_exists($service, 'shouldReturnAllTranslations') === false
-		) {
-			return null;
-		}
-
-		return $service;
-	}//end languageService()
-
-	/**
-	 * OpenRegister's ObjectService, or null when the app is absent.
-	 *
-	 * A runtime lookup guarded by isInstalled(), per ADR-083: naming the class in
-	 * a constructor property would make PHP resolve it on every construction, so
-	 * an instance without OpenRegister would fail with an error about a class
-	 * nobody mentioned.
-	 *
-	 * @return object|null The ObjectService.
-	 *
-	 * @psalm-return \OCA\OpenRegister\Service\ObjectService|null
-	 */
-	private function objectService(): ?object {
-		if ($this->appManager->isInstalled('openregister') === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'[KpiAggregationService] OpenRegister is installed but its ObjectService did not resolve',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end objectService()
 }//end class

@@ -732,17 +732,17 @@
     },
     {
       "file": "lib/Service/KpiAggregationService.php",
-      "method": "objectService",
-      "occurrence": 1,
-      "class": "degradation",
-      "reason": "`objectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"[KpiAggregationService] OpenRegister is installed but its ObjectService did not resolve\") and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/KpiAggregationService.php",
       "method": "rows",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`rows()` answers `return []` when the read fails; the catch logs at warning (\"[KpiAggregationService] Read failed, reporting an empty set for this metric\"), so a failed read and an absent record are the same answer."
+    },
+    {
+      "file": "lib/Service/KpiOpenRegisterServices.php",
+      "method": "objectService",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`objectService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at warning (\"[KpiAggregationService] OpenRegister is installed but its ObjectService did not resolve\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/LhsLookupService.php",

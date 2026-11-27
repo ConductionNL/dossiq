@@ -28,6 +28,7 @@ use OCA\Dossiq\Service\KpiSources;
 use OCA\Dossiq\Service\DemoCaseloadGateway;
 use OCA\Dossiq\Service\DemoCaseloadSeedDataService;
 use OCA\Dossiq\Service\KpiAggregationService;
+use OCA\Dossiq\Service\KpiOpenRegisterServices;
 use OCA\Dossiq\Service\Queue\QueueFigures;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
@@ -44,6 +45,7 @@ use ReflectionMethod;
  * Tests for the type-name readers that cast a translatable field.
  *
  * @covers \OCA\Dossiq\Service\KpiAggregationService
+ * @uses \OCA\Dossiq\Service\KpiOpenRegisterServices
  * @covers \OCA\Dossiq\Service\DemoCaseloadSeedDataService
  * @covers \OCA\Dossiq\Service\KpiSources
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
@@ -80,8 +82,11 @@ class TranslatableTypeNamesReadAsTextTest extends TestCase {
 
 		$service = new KpiAggregationService(
 			appConfig: $appConfig,
-			container: $container,
-			appManager: $appManager,
+			openRegister: new KpiOpenRegisterServices(
+				appManager: $appManager,
+				container: $container,
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			),
 			sources: new KpiSources(
 				engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
 				queueFigures: $this->createMock(originalClassName: QueueFigures::class),
@@ -174,8 +179,11 @@ class TranslatableTypeNamesReadAsTextTest extends TestCase {
 
 		$service = new KpiAggregationService(
 			appConfig: $appConfig,
-			container: $container,
-			appManager: $appManager,
+			openRegister: new KpiOpenRegisterServices(
+				appManager: $appManager,
+				container: $container,
+				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			),
 			sources: new KpiSources(
 				engineTasks: $this->createMock(originalClassName: EngineTaskInbox::class),
 				queueFigures: $this->createMock(originalClassName: QueueFigures::class),
