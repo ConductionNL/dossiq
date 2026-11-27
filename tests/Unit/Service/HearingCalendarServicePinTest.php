@@ -46,6 +46,7 @@ interface HearingWritableCalendar extends ICreateFromString, ICalendarIsWritable
 /**
  * @covers \OCA\Dossiq\Service\HearingCalendarService
  * @uses \OCA\Dossiq\Service\Calendar\PlannedEventFields
+ * @uses \OCA\Dossiq\Service\Calendar\HearingCalendarWriter
  * @uses \OCA\Dossiq\Service\HearingCalendarEvent
  */
 class HearingCalendarServicePinTest extends TestCase {
