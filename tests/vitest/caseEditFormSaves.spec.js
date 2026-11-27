@@ -220,7 +220,9 @@ describe('Edit case saves the case', () => {
 		expect(writes[0].method).toBe('PATCH')
 		expect(writes[0].url).toBe('/apps/openregister/api/objects/dossiq/case/case-1')
 		expect(writes[0].body).toEqual({ assignee: 'thomas' })
-		expect(dialog.loading, 'Save stops spinning').toBe(false)
+		// The dialog has closed by now, and nc-vue >= 2.234 loads it lazily, so the
+		// ref no longer reads its state once it unmounts: only a Save still spinning fails.
+		expect(dialog.loading === true, 'Save stops spinning').toBe(false)
 		expect(wrapper.vm.editFormOpen, 'the dialog closes').toBe(false)
 		expect(wrapper.vm.$refs.editFormDialog).toBeFalsy()
 		expect(axios.post).toHaveBeenCalledWith('/apps/openregister/api/objects/dossiq/case/case-1/unlock')
