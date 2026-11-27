@@ -228,7 +228,10 @@ class BespokeServiceRegistrarTest extends TestCase {
 					'OCP\\IRequest' => $this->createMock(IRequest::class),
 					'OCP\\App\\IAppManager' => $this->createMock(IAppManager::class),
 					SettingsService::class => $this->createMock(SettingsService::class),
-					AdminCaller::class => new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
+					AdminCaller::class => new AdminCaller(
+						userSession: $this->createMock(originalClassName: IUserSession::class),
+						groupManager: $this->createMock(originalClassName: IGroupManager::class)
+					),
 					'OCP\\IL10N' => $this->createMock(IL10N::class),
 				],
 				asked: $asked

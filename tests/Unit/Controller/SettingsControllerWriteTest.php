@@ -80,7 +80,10 @@ class SettingsControllerWriteTest extends TestCase {
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
+			adminCaller: new AdminCaller(
+				userSession: $this->createMock(originalClassName: IUserSession::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class)
+			),
 			l10n: $this->createMock(originalClassName: IL10N::class)
 		);
 	}//end controller()
@@ -243,7 +246,10 @@ class SettingsControllerWriteTest extends TestCase {
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
+			adminCaller: new AdminCaller(
+				userSession: $this->createMock(originalClassName: IUserSession::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class)
+			),
 			l10n: $l10n
 		);
 		$response = $controller->update();
@@ -282,7 +288,10 @@ class SettingsControllerWriteTest extends TestCase {
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			appManager: $this->createMock(originalClassName: IAppManager::class),
 			settingsService: $this->settingsService,
-			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
+			adminCaller: new AdminCaller(
+				userSession: $this->createMock(originalClassName: IUserSession::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class)
+			),
 			l10n: $l10n
 		);
 		$response = $controller->update();

@@ -286,7 +286,10 @@ class IntegrationProbesRecordTest extends TestCase {
 			container: $container,
 			appManager: $this->createMock(IAppManager::class),
 			settingsService: $settingsService,
-			adminCaller: new AdminCaller(userSession: $this->createMock(originalClassName: IUserSession::class), groupManager: $this->createMock(originalClassName: IGroupManager::class)),
+			adminCaller: new AdminCaller(
+				userSession: $this->createMock(originalClassName: IUserSession::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class)
+			),
 			l10n: $this->createMock(IL10N::class)
 		);
 	}//end settingsController()
