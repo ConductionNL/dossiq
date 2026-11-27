@@ -44,6 +44,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\People\FileRequestService
  * @uses \OCA\Dossiq\Service\People\PartyIndicatorReader
  * @uses \OCA\Dossiq\Service\People\UploadRequest
+ * @uses \OCA\Dossiq\Service\People\UploadShareWrite
  */
 class FileRequestServiceRefusalsTest extends TestCase {
 

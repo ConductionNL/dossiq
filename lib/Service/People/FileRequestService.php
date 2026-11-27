@@ -17,14 +17,11 @@ use DateTime;
 use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
 use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
-use OCP\Constants;
 use OCP\Files\Folder;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
-use OCP\Share\IShare;
 use RuntimeException;
-use Throwable;
 
 /**
  * Asks a party of a case for a file.
@@ -45,23 +42,33 @@ class FileRequestService implements FileRequestServiceInterface {
 	public const DEFAULT_DAYS = 14;
 
 	/**
+	 * Creates the e-mail share the party uploads through.
+	 *
+	 * @var UploadShareWrite
+	 */
+	private readonly UploadShareWrite $uploads;
+
+	/**
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param DocumentProjectionService $folders The case's own folder.
 	 * @param PartyIndicatorReader $indicators What the party's indicators refuse.
 	 * @param IShareManager $shares Creates the share Nextcloud mails.
 	 * @param IUserSession $userSession The handler making the request.
 	 * @param PartyRefusalReader|null $refusals Joins pipelinq's refusal to this app's own.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly PersonLinkReader $people,
 		private readonly DocumentProjectionService $folders,
 		private readonly PartyIndicatorReader $indicators,
-		private readonly IShareManager $shares,
+		IShareManager $shares,
 		private readonly IUserSession $userSession,
 		// Nullable and last: pipelinq is optional, and every existing
 		// construction of this service keeps working unchanged.
 		private readonly ?PartyRefusalReader $refusals = null,
 	) {
+		$this->uploads = new UploadShareWrite(shares: $shares);
 	}//end __construct()
 
 	/**
@@ -122,14 +129,16 @@ class FileRequestService implements FileRequestServiceInterface {
 	 * @param array<string, mixed> $person  The party.
 	 *
 	 * @return array<string, mixed> The recipient, the token and when it expires.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function sent(UploadRequest $request, array $person): array {
-		$created = $this->createdShare(share: $this->uploadShare(request: $request));
+		$token = $this->uploads->send(request: $request);
 
 		return [
 			'recipient' => $request->email,
 			'recipientName' => $this->people->nameOf(link: $person),
-			'token' => (string)$created->getToken(),
+			'token' => $token,
 			'expiresAt' => $request->expires->format('Y-m-d'),
 		];
 	}//end sent()
@@ -212,49 +221,6 @@ class FileRequestService implements FileRequestServiceInterface {
 
 		return $user;
 	}//end caller()
-
-	/**
-	 * The create-only email share of the case folder.
-	 *
-	 * Create and nothing else: the party may put a file in, and can neither
-	 * read nor change what is already in the case folder.
-	 *
-	 * @param UploadRequest $request The checked request.
-	 *
-	 * @return IShare
-	 */
-	private function uploadShare(UploadRequest $request): IShare {
-		$share = $this->shares->newShare();
-		$share->setNode($request->folder);
-		$share->setShareType(IShare::TYPE_EMAIL);
-		$share->setSharedWith($request->email);
-		$share->setSharedBy($request->user->getUID());
-		$share->setShareOwner($request->folder->getOwner()?->getUID() ?? $request->user->getUID());
-		$share->setPermissions(Constants::PERMISSION_CREATE);
-		$share->setExpirationDate($request->expires);
-		if ($request->note !== '') {
-			$share->setNote($request->note);
-		}
-
-		return $share;
-	}//end uploadShare()
-
-	/**
-	 * Create the share; a refusal of the share manager is reported.
-	 *
-	 * @param IShare $share The share.
-	 *
-	 * @return IShare The created share.
-	 *
-	 * @throws RuntimeException When the share could not be created (500).
-	 */
-	private function createdShare(IShare $share): IShare {
-		try {
-			return $this->shares->createShare($share);
-		} catch (Throwable $e) {
-			throw new RuntimeException('The file request could not be sent: ' . $e->getMessage(), 500, $e);
-		}
-	}//end createdShare()
 
 	/**
 	 * The indicator refusing a send to this party, or null when nothing refuses.
