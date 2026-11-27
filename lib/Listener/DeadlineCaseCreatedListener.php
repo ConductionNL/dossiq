@@ -88,7 +88,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		private readonly CaseTypeSlugResolverInterface $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
 		?CaseTermsServiceInterface $caseTerms = null,
-		?TermResolutionInterface $resolution = null,
+		private readonly ?TermResolutionInterface $resolution = null,
 		?IntakeTermStartInterface $intake = null,
 		private readonly ReceiptMoment $receipt = new ReceiptMoment(),
 	) {
@@ -96,7 +96,6 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			termService: $termService,
 			logger: $logger,
 			caseTerms: $caseTerms,
-			resolution: $resolution,
 			intake: $intake,
 		);
 	}//end __construct()
@@ -136,12 +135,38 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			return;
 		}
 
-		$this->terms->bind(identity: $identity, payload: $payload, context: $this->termContext(payload: $payload));
+		$this->terms->bind(
+			identity: $identity,
+			payload: $payload,
+			resolved: $this->resolvedTerms(caseType: $identity->caseType, context: $this->termContext(payload: $payload))
+		);
 	}//end handle()
 
 
 
 
+
+	/**
+	 * The statutory term and the service norm this case gets, resolved by the case's own values.
+	 *
+	 * The service norm is resolved by the same rule. A case type with no
+	 * statutory term (a melding, a demo type) still has a clock the team
+	 * works to, and it is bound beside the statutory term rather than as it.
+	 *
+	 * @param string                $caseType The case type slug.
+	 * @param array<string, string> $context  The organisation, service, priority and case type.
+	 *
+	 * @return array{statutory: array<string, mixed>|null, planned: array<string, mixed>|null}
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function resolvedTerms(string $caseType, array $context): array {
+		return [
+			'statutory' => $this->resolution?->resolve(caseType: $caseType, context: $context),
+			'planned' => $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context),
+		];
+	}//end resolvedTerms()
 
 	/**
 	 * The payload of a created (or sent) case, or null for anything else.

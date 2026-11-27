@@ -32,7 +32,6 @@ use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\Dossiq\Listener\NewCaseIdentity;
 use OCA\Dossiq\Listener\Support\NewCaseTermBinding;
 use PHPUnit\Framework\TestCase;
@@ -56,18 +55,6 @@ final class NewCaseTermBindingTest extends TestCase {
 	private function identity(): NewCaseIdentity {
 		return new NewCaseIdentity(caseId: 'case-1', caseTypeRef: 'ct-uuid', caseType: 'omgevingsvergunning');
 	}//end identity()
-
-	/**
-	 * A resolution answering the given statutory and planned definitions.
-	 *
-	 * @return TermResolutionInterface
-	 */
-	private function resolution(): TermResolutionInterface {
-		$resolution = $this->createMock(originalClassName: TermResolutionInterface::class);
-		$resolution->method('resolve')->willReturn(['definition' => ['id' => 'def-1']]);
-		$resolution->method('plannedDefinitionFor')->willReturn(['id' => 'planned-1']);
-		return $resolution;
-	}//end resolution()
 
 	/**
 	 * An intake that starts every term on the given day.
@@ -102,10 +89,13 @@ final class NewCaseTermBindingTest extends TestCase {
 			termService: $terms,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			caseTerms: $caseTerms,
-			resolution: $this->resolution(),
 			intake: $this->intake(day: $day),
 		);
-		$binding->bind(identity: $this->identity(), payload: ['plannedStartDate' => ' 2026-12-01 '], context: ['organisation' => '']);
+		$binding->bind(
+			identity: $this->identity(),
+			payload: ['plannedStartDate' => ' 2026-12-01 '],
+			resolved: ['statutory' => ['definition' => ['id' => 'def-1']], 'planned' => ['id' => 'planned-1']]
+		);
 	}//end testTheTermStartsAtReceiptAndTheOtherClocksFollow()
 
 	/**
@@ -124,7 +114,7 @@ final class NewCaseTermBindingTest extends TestCase {
 		$logger->expects($this->never())->method('error');
 
 		$binding = new NewCaseTermBinding(termService: $terms, logger: $logger, caseTerms: $caseTerms);
-		$binding->bind(identity: $this->identity(), payload: [], context: []);
+		$binding->bind(identity: $this->identity(), payload: [], resolved: ['statutory' => null, 'planned' => null]);
 	}//end testNoDefinitionWarnsAndStillBindsTheOtherClocks()
 
 	/**
@@ -142,7 +132,7 @@ final class NewCaseTermBindingTest extends TestCase {
 			->with($this->stringContains(string: 'could not bind a term to case case-1: store down'));
 
 		$binding = new NewCaseTermBinding(termService: $terms, logger: $logger, caseTerms: $caseTerms);
-		$binding->bind(identity: $this->identity(), payload: [], context: []);
+		$binding->bind(identity: $this->identity(), payload: [], resolved: ['statutory' => null, 'planned' => null]);
 	}//end testAnyOtherFailureIsAnErrorAndBindsNothingFurther()
 
 	/**
@@ -160,6 +150,6 @@ final class NewCaseTermBindingTest extends TestCase {
 			->with($this->stringContains(string: 'the planned end and the internal target could not be bound to case case-1'));
 
 		$binding = new NewCaseTermBinding(termService: $terms, logger: $logger, caseTerms: $caseTerms);
-		$binding->bind(identity: $this->identity(), payload: [], context: []);
+		$binding->bind(identity: $this->identity(), payload: [], resolved: ['statutory' => null, 'planned' => null]);
 	}//end testAFailingOtherClockIsAWarning()
 }//end class

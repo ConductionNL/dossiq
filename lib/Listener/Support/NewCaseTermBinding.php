@@ -33,7 +33,6 @@ use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Kernel\Contracts\CaseTermsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\IntakeTermStartInterface;
 use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\TermResolutionInterface;
 use OCA\Dossiq\Listener\CreatedCase;
 use OCA\Dossiq\Listener\NewCaseIdentity;
 use Psr\Log\LoggerInterface;
@@ -52,7 +51,6 @@ final class NewCaseTermBinding {
 	 * @param TermijnServiceInterface        $termService Creates the statutory term instance.
 	 * @param LoggerInterface                $logger      Says when a case runs without a term or a binding failed.
 	 * @param CaseTermsServiceInterface|null $caseTerms   Binds the planned end and the internal target.
-	 * @param TermResolutionInterface|null   $resolution  Picks which of a case type's terms applies.
 	 * @param IntakeTermStartInterface|null  $intake      When the term starts: at receipt.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
@@ -61,7 +59,6 @@ final class NewCaseTermBinding {
 		private readonly TermijnServiceInterface $termService,
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseTermsServiceInterface $caseTerms = null,
-		private readonly ?TermResolutionInterface $resolution = null,
 		private readonly ?IntakeTermStartInterface $intake = null,
 	) {
 	}//end __construct()
@@ -69,23 +66,21 @@ final class NewCaseTermBinding {
 	/**
 	 * Bind the statutory term and the other clocks to a new case.
 	 *
-	 * @param NewCaseIdentity      $identity The case id, case type reference and slug.
-	 * @param array<string, mixed> $payload  The case payload.
-	 * @param array<string, string> $context The organisation, service, priority and case type the term is resolved by.
+	 * The resolved terms are the statutory term resolution and the planned
+	 * (service norm) definition the listener resolved for this case.
+	 *
+	 * @param NewCaseIdentity                                                         $identity The case id, case type reference and slug.
+	 * @param array<string, mixed>                                                    $payload  The case payload.
+	 * @param array{statutory: array<string, mixed>|null, planned: array<string, mixed>|null} $resolved The resolved terms.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/termijn-binding/spec.md
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	public function bind(NewCaseIdentity $identity, array $payload, array $context): void {
-		$caseType = $identity->caseType;
-		$resolution = $this->resolution?->resolve(caseType: $caseType, context: $context);
-
-		// The service norm, resolved by the same rule. A case type with no
-		// statutory term (a melding, a demo type) still has a clock the team
-		// works to, and it is bound beside the statutory term rather than as it.
-		$plannedDefinition = $this->resolution?->plannedDefinitionFor(caseType: $caseType, context: $context);
+	public function bind(NewCaseIdentity $identity, array $payload, array $resolved): void {
+		$resolution = $resolved['statutory'];
+		$plannedDefinition = $resolved['planned'];
 
 		$created = new CreatedCase(identity: $identity, payload: $payload);
 		try {

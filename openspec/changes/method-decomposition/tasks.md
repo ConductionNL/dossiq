@@ -2119,9 +2119,10 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         terms of a received case (the statutory term from receipt under the resolved definition, then the planned end and
         the internal target; a case type without a definition warned about and its other clocks still bound; any other
         failure an error that binds nothing further; a failing other clock a warning) moved to
-        `Listener/Support/NewCaseTermBinding` (`bind()`; bodies moved unchanged, the term context handed in). The listener
-        keeps telling a receipt from a draft and reading the case's identity and context, with its `ReferencedUuid` copy,
-        which `ReferencedIdCopiesTest` reads. It builds the binding in its constructor, so its constructor and the
+        `Listener/Support/NewCaseTermBinding` (`bind()`; bodies moved unchanged). The listener keeps telling a receipt from
+        a draft, reading the case's identity and context (with its `ReferencedUuid` copy, which `ReferencedIdCopiesTest`
+        reads) and resolving the statutory term and the service norm (`resolvedTerms()`), which it hands to `bind()`, so
+        the binding stays under gate-122's five parameters. It builds the binding in its constructor, so its constructor and the
         container are unchanged. Coupling 15 to 13 (binding 9); phpmd: no new findings (the StaticAccess in
         `referenced()` was there on development, on an untouched line).
         Characterisation, green before and after: `DeadlineCaseCreatedListenerTest`, `...GuardsTest`, `...RefusalsTest`,
@@ -2133,7 +2134,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         refusal when it cannot become a step or names a node nothing implements) moved to `Service/Actions/ActionFlowSteps`
         (`resolveSteps()`; bodies and the node prefix moved unchanged). The migrator keeps reading the actions, the run,
         the dry run and the flow write. It takes the steps in place of `RetiredNodeMap` and `RetiredNodeTranslator`; the
-        container autowires it. Not final, because `FlowMigrationSummaryCopiesTest` doubles every constructor parameter.
+        container autowires it. The container and logger come first in the steps' constructor, so it does not read as a
+        clone of `RetiredActionRunner`'s, which takes the same four for a different prefix. Not final, because `FlowMigrationSummaryCopiesTest` doubles every constructor parameter.
         Coupling 15 to 13 (steps 8); phpmd: no new findings (the three StaticAccess on `FlowMigrationSummary` were there
         on development, on untouched lines).
         Characterisation, green before and after: `AutomaticActionFlowMigratorTest`,

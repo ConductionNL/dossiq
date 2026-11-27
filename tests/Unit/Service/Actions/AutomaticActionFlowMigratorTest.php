@@ -263,13 +263,29 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			fn (string $app, string $key, string $default = ''): string => $this->appValues[$key] ?? (($key === 'register') ? '17' : '115')
 		);
 
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		return new AutomaticActionFlowMigrator(
 			$settings,
 			$container,
 			$appConfig,
 			$logger,
-			new ActionFlowSteps(new RetiredNodeMap(), new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)), $container, $logger),
+			new ActionFlowSteps(
+				container: $container,
+				logger: $logger,
+				map: new RetiredNodeMap(),
+				translator: new RetiredNodeTranslator(
+					settingsService: $settings,
+					container: $container,
+					l10n: $l10n,
+					syntax: $syntax,
+					documents: new RetiredDocumentSteps(syntax: $syntax),
+					webhooks: new RetiredWebhookSteps(
+						dispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+						userSession: $this->createMock(originalClassName: IUserSession::class),
+						syntax: $syntax
+					)
+				),
+			),
 		);
 	}
 
@@ -777,13 +793,29 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			static fn (string $app, string $key, string $default = ''): string => ($key === 'register') ? '17' : '115'
 		);
 		$syntax = new RetiredTemplateSyntax();
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$migrator = new AutomaticActionFlowMigrator(
 			$settings,
 			$container,
 			$appConfig,
 			$logger,
-			new ActionFlowSteps(new RetiredNodeMap(), new RetiredNodeTranslator($settings, $container, $this->createMock(IL10N::class), $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)), $container, $logger),
+			new ActionFlowSteps(
+				container: $container,
+				logger: $logger,
+				map: new RetiredNodeMap(),
+				translator: new RetiredNodeTranslator(
+					settingsService: $settings,
+					container: $container,
+					l10n: $this->createMock(originalClassName: IL10N::class),
+					syntax: $syntax,
+					documents: new RetiredDocumentSteps(syntax: $syntax),
+					webhooks: new RetiredWebhookSteps(
+						dispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+						userSession: $this->createMock(originalClassName: IUserSession::class),
+						syntax: $syntax
+					)
+				),
+			),
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);

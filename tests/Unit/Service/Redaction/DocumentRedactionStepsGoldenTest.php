@@ -100,9 +100,9 @@ class DocumentRedactionStepsGoldenTest extends TestCase {
 			$this->double(WOOAnonymisationAssistService::class, ['spansFor']),
 			$this->double(DocumentText::class, ['extracted']),
 			new RedactionOriginal(
-				$this->double(WooCaseDocuments::class, ['meta']),
-				$this->double(ZgwDocumentService::class, ['getFileId']),
-				$l10n
+				documents: $this->double(class: WooCaseDocuments::class, methods: ['meta']),
+				zgw: $this->double(class: ZgwDocumentService::class, methods: ['getFileId']),
+				l10n: $l10n
 			),
 			$this->double(RedactedCopyRecorder::class, ['recordFile', 'storeUpload']),
 			$this->double(RedactionEntities::class, ['fromFilinq', 'fromSpans', 'fromOfficer', 'merge']),

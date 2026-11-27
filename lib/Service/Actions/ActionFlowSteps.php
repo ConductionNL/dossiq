@@ -57,18 +57,18 @@ class ActionFlowSteps {
 	/**
 	 * Constructor.
 	 *
+	 * @param ContainerInterface    $container  Service container, for the flow node registry.
+	 * @param LoggerInterface       $logger     Says which node no registry answers to.
 	 * @param RetiredNodeMap        $map        What each retired action type became.
 	 * @param RetiredNodeTranslator $translator Turns an action's config into its replacement's.
-	 * @param ContainerInterface    $container  Service container, for the flow node registry.
-	 * @param LoggerInterface       $logger     Logger.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly RetiredNodeMap $map,
-		private readonly RetiredNodeTranslator $translator,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly RetiredNodeMap $map,
+		private readonly RetiredNodeTranslator $translator,
 	) {
 	}//end __construct()
 
