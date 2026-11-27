@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Controller\CaseFederationController;
+use OCA\Dossiq\Controller\Support\FederatedTokenCalls;
 use OCA\Dossiq\Kernel\Contracts\CaseCollaborationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseSharingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\CaseTransferServiceInterface;
@@ -146,11 +147,13 @@ class FederatedShareNeedsConsentTest extends TestCase {
 		$controller = new CaseFederationController(
 			request: $request,
 			caseSharingService: $sharing,
-			caseTransferService: $this->createMock(CaseTransferServiceInterface::class),
 			collabService: $this->createMock(CaseCollaborationServiceInterface::class),
 			userSession: $session,
-			throttler: $this->createMock(IThrottler::class),
-			logger: new NullLogger(),
+			tokens: new FederatedTokenCalls(
+				caseTransferService: $this->createMock(originalClassName: CaseTransferServiceInterface::class),
+				throttler: $this->createMock(originalClassName: IThrottler::class),
+				logger: new NullLogger(),
+			),
 		);
 
 		$refused = $controller->createFederatedShare();

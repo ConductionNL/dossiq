@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseFederationController;
+use OCA\Dossiq\Controller\Support\FederatedTokenCalls;
 use OCA\Dossiq\Service\CaseCollaborationService;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\CaseTransferService;
@@ -100,11 +101,13 @@ class CaseFederationShareGateGoldenTest extends TestCase {
 		return new CaseFederationController(
 			request: $request,
 			caseSharingService: $sharing,
-			caseTransferService: $this->createMock(originalClassName: CaseTransferService::class),
 			collabService: $collab,
 			userSession: $session,
-			throttler: $this->createMock(originalClassName: IThrottler::class),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			tokens: new FederatedTokenCalls(
+				caseTransferService: $this->createMock(originalClassName: CaseTransferService::class),
+				throttler: $this->createMock(originalClassName: IThrottler::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+			),
 		);
 	}//end controller()
 
