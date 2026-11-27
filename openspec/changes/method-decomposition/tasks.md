@@ -2265,6 +2265,19 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `ConfigLexiconTest`, `DsoIntakeCheckTest` and `DossiqScannableServicesTest`. Own test:
         `tests/Unit/AppInfo/WiringRegistrarTest` (2: each composite records exactly the registrations its registrars make
         when run one by one, in order).
+  - [x] 8eo `Controller/DashboardController` (1, unsuppressed: CouplingBetweenObjects 16 against 13). The load events a
+        page dispatches (the Viewer's on every page; the Files app's `init` script and additional-scripts event on the
+        bare files page; an event whose app is not installed skipped) moved to `Controller/Support/SurfaceLoadEvents`
+        (`forPage()`, `forFiles()`, with the two event lists, which the controller keeps as aliases); the PWA's two
+        bundled assets as downloads (the service worker with its app scope and the policy its fetches need, the web
+        manifest, each a 404 when missing) to `Controller/Support/PublicAssetDownloads` (`serviceWorker()`,
+        `webManifest()`). Bodies moved unchanged; the `Util` StaticAccess suppression moved with `Util::addScript`, so the
+        suppression count is unchanged. The controller keeps the pages, their initial state and the public routes with
+        their rate limits. It takes the load events in place of the event dispatcher; the explicit factory in
+        `BespokeServiceRegistrar` builds them. Coupling 16 to 13 (load events 3, assets 3); phpmd: zero findings on the
+        four files. Characterisation, green before and after: `DashboardControllerFilesSurfacesTest`,
+        `...ServiceWorkerTest`, `...AppConfigTest`, `...InstalledVersionTest`, `...ContractTest` and `MenuStructureTest`.
+        Own test: `tests/Unit/Controller/Support/SurfaceLoadEventsTest` (3).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Registrar;
 
 use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Controller\Support\SurfaceLoadEvents;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Repair\InitializeSettings;
 use OCA\Dossiq\Sections\SettingsSection;
@@ -88,7 +89,7 @@ class BespokeServiceRegistrar {
 					request: $c->get('OCP\\IRequest'),
 					initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
 					appConfig: $c->get('OCP\\IAppConfig'),
-					eventDispatcher: $c->get('OCP\\EventDispatcher\\IEventDispatcher')
+					surfaces: new SurfaceLoadEvents(eventDispatcher: $c->get('OCP\\EventDispatcher\\IEventDispatcher'))
 				);
 			}
 		);

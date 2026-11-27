@@ -40,23 +40,20 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\PublicAssetDownloads;
+use OCA\Dossiq\Controller\Support\SurfaceLoadEvents;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDownloadResponse;
-use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
-use OCP\EventDispatcher\Event;
-use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IRequest;
-use OCP\Util;
 
 /**
  * Controller for the main Dossiq dashboard page plus the PWA assets.
@@ -86,9 +83,7 @@ class DashboardController extends Controller {
 	 *
 	 * @var list<string> Class names, looked up at run time because the Viewer app is not a dependency.
 	 */
-	public const PAGE_SURFACE_EVENTS = [
-		'OCA\\Viewer\\Event\\LoadViewer',
-	];
+	public const PAGE_SURFACE_EVENTS = SurfaceLoadEvents::PAGE_SURFACE_EVENTS;
 
 	/**
 	 * The load event behind the files browser's actions, served by {@see filesSurfaces()}.
@@ -107,16 +102,7 @@ class DashboardController extends Controller {
 	 *
 	 * @var list<string> Class names, looked up at run time because the Files app is not a dependency.
 	 */
-	public const FILES_SURFACE_EVENTS = [
-		'OCA\\Files\\Event\\LoadAdditionalScriptsEvent',
-	];
-
-	/**
-	 * App-root-relative location of the bundled PWA assets.
-	 *
-	 * @var string
-	 */
-	private const PUBLIC_DIR = __DIR__ . '/../../public';
+	public const FILES_SURFACE_EVENTS = SurfaceLoadEvents::FILES_SURFACE_EVENTS;
 
 	/**
 	 * The committed feature list the Features & roadmap page reads (ADR-018).
@@ -124,6 +110,13 @@ class DashboardController extends Controller {
 	 * @var string
 	 */
 	private const FEATURES_JSON = __DIR__ . '/../../docs/features.json';
+
+	/**
+	 * The bundled PWA assets as downloads.
+	 *
+	 * @var PublicAssetDownloads
+	 */
+	private readonly PublicAssetDownloads $assets;
 
 	/**
 	 * Constructor.
@@ -134,15 +127,18 @@ class DashboardController extends Controller {
 	 * @param IRequest      $request      HTTP request.
 	 * @param IInitialState $initialState Page initial state, for the roadmap feature list.
 	 * @param IAppConfig    $appConfig    App configuration.
-	 * @param IEventDispatcher $eventDispatcher The dispatcher the Files and Viewer load events go through.
+	 * @param SurfaceLoadEvents $surfaces The Files and Viewer load events a page dispatches.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IInitialState $initialState,
 		private readonly IAppConfig $appConfig,
-		private readonly IEventDispatcher $eventDispatcher,
+		private readonly SurfaceLoadEvents $surfaces,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
+		$this->assets = new PublicAssetDownloads();
 	}//end __construct()
 
 	/**
@@ -187,9 +183,11 @@ class DashboardController extends Controller {
 	 * @return TemplateResponse The rendered dossiq index template.
 	 *
 	 * @spec openspec/changes/archive/2026-06-16-adopt-apphost/tasks.md#task-2.1
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function renderIndex(): TemplateResponse {
-		$this->dispatchLoadEvents(eventClasses: $this->surfaceEvents(which: 'page'));
+		$this->surfaces->forPage();
 		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
 		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 		$this->initialState->provideInitialState('version', $this->installedVersion());
@@ -258,75 +256,16 @@ class DashboardController extends Controller {
 	 *
 	 * @return TemplateResponse The base-layout page carrying the Files app's additional scripts.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
-	 *
 	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	public function filesSurfaces(): TemplateResponse {
-		// The Files app's own actions (download, delete, rename, favourite,
-		// move and copy, open in Files) are registered by its `init` script,
-		// which only the Files page loads; every other app's arrive on the
-		// additional-scripts event. Guarded on the server's script pipeline:
-		// `Util::addScript` reaches into `OC\AppScriptDependency`, which a unit
-		// test process does not autoload.
-		if (class_exists('OC\\AppScriptDependency') === true) {
-			Util::addScript('files', 'init');
-		}
-
-		$this->dispatchLoadEvents(eventClasses: $this->surfaceEvents(which: 'files'));
+		$this->surfaces->forFiles();
 
 		return new TemplateResponse($this->appName, 'surfaces', [], TemplateResponse::RENDER_AS_BASE);
 	}//end filesSurfaces()
-
-	/**
-	 * Dispatch each named load event whose class exists on this instance.
-	 *
-	 * Looked up by name because neither the Viewer nor the Files app is a
-	 * dependency: an instance without them renders the page all the same.
-	 *
-	 * @param list<string> $eventClasses Class names of the load events.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/document-zaakdossier/spec.md
-	 */
-	private function dispatchLoadEvents(array $eventClasses): void {
-		foreach ($eventClasses as $eventClass) {
-			if (class_exists($eventClass) === false) {
-				continue;
-			}
-
-			$event = new $eventClass();
-			if ($event instanceof Event) {
-				$this->eventDispatcher->dispatchTyped($event);
-			}
-		}
-	}//end dispatchLoadEvents()
-
-	/**
-	 * The event classes to look up, as a run-time list.
-	 *
-	 * Read through a method rather than straight off the constants so the
-	 * lookup is a real one: phpstan folds the constants' literal strings,
-	 * finds neither class in this app's tree and calls `class_exists()` on
-	 * them impossible, while on an instance with the Files and Viewer apps
-	 * both exist.
-	 *
-	 * @param string $which `page` for every page's events, `files` for the files browser's.
-	 *
-	 * @return list<string> Class names, present or not on this instance.
-	 *
-	 * @spec openspec/specs/document-zaakdossier/spec.md
-	 */
-	private function surfaceEvents(string $which): array {
-		if ($which === 'files') {
-			return self::FILES_SURFACE_EVENTS;
-		}
-
-		return self::PAGE_SURFACE_EVENTS;
-	}//end surfaceEvents()
 
 	/**
 	 * Which structure this instance shows: `simple` or `full`.
@@ -404,29 +343,14 @@ class DashboardController extends Controller {
 	 * @return DataDownloadResponse The service-worker JavaScript.
 	 *
 	 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoCSRFRequired]
 	#[PublicPage]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function serviceWorker(): DataDownloadResponse {
-		$body = $this->readPublicAsset(name: 'service-worker.js');
-		$status = Http::STATUS_OK;
-		if ($body === '') {
-			$status = Http::STATUS_NOT_FOUND;
-		}
-
-		$response = new DataDownloadResponse($body, 'service-worker.js', 'application/javascript', $status);
-		$response->addHeader('Service-Worker-Allowed', '/');
-
-		$csp = new EmptyContentSecurityPolicy();
-		// The offline sync strategy talks back to this Nextcloud.
-		$csp->addAllowedConnectDomain('\'self\'');
-		// The tile strategy talks to the BRT achtergrondkaart WMTS host, which
-		// is the only third-party host public/service-worker.js will fetch.
-		$csp->addAllowedConnectDomain('https://service.pdok.nl');
-		$response->setContentSecurityPolicy($csp);
-
-		return $response;
+		return $this->assets->serviceWorker();
 	}//end serviceWorker()
 
 	/**
@@ -435,37 +359,13 @@ class DashboardController extends Controller {
 	 * @return DataDownloadResponse The web app manifest JSON.
 	 *
 	 * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoCSRFRequired]
 	#[PublicPage]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function webManifest(): DataDownloadResponse {
-		$body = $this->readPublicAsset(name: 'manifest.webmanifest');
-		$status = Http::STATUS_OK;
-		if ($body === '') {
-			$status = Http::STATUS_NOT_FOUND;
-		}
-
-		return new DataDownloadResponse($body, 'manifest.webmanifest', 'application/manifest+json', $status);
+		return $this->assets->webManifest();
 	}//end webManifest()
-
-	/**
-	 * Read a static asset shipped under the app's public directory.
-	 *
-	 * Returns an empty string when the asset is absent or unreadable; callers
-	 * translate that into a 404. Guarding with is_file()/is_readable() keeps
-	 * the missing-asset path free of PHP warnings without an `@` operator.
-	 *
-	 * @param string $name Bare file name inside the public directory.
-	 *
-	 * @return string The asset contents, or '' when it cannot be read.
-	 */
-	private function readPublicAsset(string $name): string {
-		$path = self::PUBLIC_DIR . '/' . $name;
-		if (is_file($path) === false || is_readable($path) === false) {
-			return '';
-		}
-
-		return (string)file_get_contents($path);
-	}//end readPublicAsset()
 }//end class
