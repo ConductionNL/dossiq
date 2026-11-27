@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\Support\RecordedReportRead;
 use OCA\Dossiq\Controller\WooReportController;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\EntityAnsweringRegister;
@@ -187,14 +188,19 @@ class WooReportControllerTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
+		$report = new WooThroughputReport(settingsService: $settings, caseDates: $this->caseDates(), userManager: $users);
+
 		return new WooReportController(
 			request: $request,
 			switches: new WooReportSwitches(appConfig: $appConfig, groupManager: $groups),
-			throughputReport: new WooThroughputReport(settingsService: $settings, caseDates: $this->caseDates(), userManager: $users),
-			readLog: new WooReportReadLog(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
+			throughputReport: $report,
+			reads: new RecordedReportRead(
+				report: $report,
+				readLog: new WooReportReadLog(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class)),
+				dates: $this->caseDates(),
+			),
 			userSession: $session,
 			l10n: $l10n,
-			dates: $this->caseDates(),
 		);
 	}//end controller()
 
