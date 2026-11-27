@@ -51,6 +51,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * @uses \OCA\Dossiq\Service\Money\PayoutReader
  * @uses \OCA\Dossiq\Service\Money\PayoutRequester
  * @uses \OCA\Dossiq\Service\Money\PayoutService
+ * @uses \OCA\Dossiq\Service\Money\PayoutStore
  * @uses \OCA\Dossiq\Service\Money\MoneyStore
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\TermijnService

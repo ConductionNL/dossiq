@@ -43,6 +43,7 @@ use RuntimeException;
  *
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Money\PayoutService
+ * @uses \OCA\Dossiq\Service\Money\PayoutStore
  * @uses \OCA\Dossiq\Service\Money\PayoutRequester
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions

@@ -1969,3 +1969,26 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         still reaches each write's own catch. Coupling 14 to 12; phpmd: zero findings on both files under both rulesets.
         Characterisation, green before and after: `MigrateWorkflowDefinitionsGoldenTest` and
         `MigrateWorkflowDefinitionsLabelsTest`. Own test: `tests/Unit/Service/Workflow/BackfillTargetTest` (3).
+  - [x] 8dk `Money/PayoutService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading and writing the rows
+        of a payout (the payable amount of a calculation, definitive before cumulative; saving a payout row; the row a
+        finance callback names by its reference; the refusal when either schema is not configured, and one sentence
+        with the cause per failing read or write) moved to `Money/PayoutStore` (`payableAmount()`, `save()`,
+        `byReference()`; bodies and refusal texts moved unchanged). The service keeps the decisions: the IBAN check, the
+        deadline, the finance handoff, withdrawing and raising again, and the callback fields. It no longer names
+        `MoneyStore` or `\Throwable`. The service builds the store in its constructor, so its constructor and the
+        container are unchanged. Coupling 14 to 12 (store 5); phpmd: zero findings on both files under both rulesets.
+        Characterisation, green before and after but for one `@uses` line in five: `PayoutServiceTest`,
+        `PayoutServiceGoldenTest`, `PayoutServiceRaiseAgainTest`, `AmountObjectionServiceTest`,
+        `AmountObjectionServiceFailuresTest` and `MigratePayoutRowsToFinanceEdgesTest`.
+        Own test: `tests/Unit/Service/Money/PayoutStoreTest` (8).
+  - [x] 8dl `CaseEmailService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Recording a mail that went out
+        about a case (the message stored as a case document, then its public timeline line with the recipient, the
+        subject, the document, the delivery and the sender), which dossiq's own send and an OpenRegister flow step's
+        mail both pass through, moved to `Email/SentCaseMailRecorder` (`record()`; `recordSent()` and `recordMailOut()`
+        moved unchanged). `recordSentEmail()` stays on the service and its interface and hands over. The service no
+        longer names `SentCaseMail` or `TimelineKinds`. It builds the recorder in its constructor from the repository
+        and the timeline, so its constructor and the container are unchanged. Coupling 14 to 13 (recorder 4); phpmd:
+        zero findings on both files under both rulesets.
+        Characterisation, green before and after but for one `@uses` line in five: `CaseEmailSentRecordGoldenTest`,
+        `CaseEmailServiceTest`, `CaseEmailInboundGoldenTest`, `SendFromTemplateRefusesTest`, `FlowEmailSentListenerTest`
+        and the `EmailController` suites. Own test: `tests/Unit/Service/Email/SentCaseMailRecorderTest` (2).

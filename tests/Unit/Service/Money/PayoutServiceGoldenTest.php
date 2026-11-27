@@ -38,6 +38,7 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Money\PayoutService
+ * @uses \OCA\Dossiq\Service\Money\PayoutStore
  * @uses \OCA\Dossiq\Service\Money\PayoutRequest
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Money\MoneyStore

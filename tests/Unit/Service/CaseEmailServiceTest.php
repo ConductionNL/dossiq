@@ -60,6 +60,7 @@ use Psr\Log\NullLogger;
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
  * @covers \OCA\Dossiq\Service\CaseEmailService
+ * @uses \OCA\Dossiq\Service\Email\SentCaseMailRecorder
  * @covers \OCA\Dossiq\Service\Email\OutboundMailRules
  * @covers \OCA\Dossiq\Service\Email\OutboundMailPolicy
  *
