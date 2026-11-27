@@ -17,3 +17,4 @@ Filed 10 Oct 2026 by lane L2 (decision 170, Q-dossiq-L2-2). Replaces `site-resid
 
 - [x] 3.1 Unit test of the modal: the payload it posts, the sentence, a refusal shown verbatim. (UI waits for board DqAanvullingVragen, decision 162)
 - [ ] 3.2 e2e spec for the ask from the case page. (live pass, decision 139)
+  - Written 27 Nov 2026, not run: `tests/e2e/handler-asks-for-missing-information.spec.ts`, both scenarios of REQ-AVR-05 (the form's notice before anything is sent; a request opened meanwhile refused with the server's sentence, the case keeping its one request). Stays open until it has run green against a live instance.
