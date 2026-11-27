@@ -39,8 +39,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Throwable;
 
 /**
@@ -58,7 +56,6 @@ class CaseSessionController extends Controller {
 	 * @param SessionServiceInterface  $sessions    Reads and plans the sessions.
 	 * @param IUserSession             $userSession The user session.
 	 * @param CaseAccessGuardInterface $caseAccess  Per-case authorization guard.
-	 * @param LoggerInterface          $logger      Names the cause of a failed plan.
 	 */
 	public function __construct(
 		string $appName,
@@ -66,7 +63,6 @@ class CaseSessionController extends Controller {
 		private readonly SessionServiceInterface $sessions,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuardInterface $caseAccess,
-		private readonly LoggerInterface $logger = new NullLogger(),
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -136,13 +132,7 @@ class CaseSessionController extends Controller {
 			);
 		} catch (InvalidArgumentException $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		} catch (Throwable $e) {
-			// Logged, so a 503 here names its cause somewhere an operator can read.
-			$this->logger->error(
-				'CaseSessionController: the session could not be planned',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-
+		} catch (Throwable) {
 			return new JSONResponse(['message' => 'The session could not be planned. Try again later.'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 

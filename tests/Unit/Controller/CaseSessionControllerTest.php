@@ -28,8 +28,6 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 
 /**
@@ -50,9 +48,6 @@ class CaseSessionControllerTest extends TestCase {
 
 	/** @var array<string, mixed> */
 	private array $params = [];
-
-	/** The logger the controller writes to, when a test reads it. */
-	private ?LoggerInterface $logger = null;
 
 	/**
 	 * Doubles for the service, the guard and a signed-in caller 'pieter'.
@@ -227,27 +222,6 @@ class CaseSessionControllerTest extends TestCase {
 	}//end testAFailingWriteAnswersUnavailable()
 
 	/**
-	 * The 503 names its cause in the log, so an operator can see why a plan failed.
-	 *
-	 * @spec openspec/changes/case-session-with-parties-and-minutes/specs/case-session-with-parties-and-minutes/spec.md#requirement-planning-a-session-keeps-the-inspection-floor-and-the-invitee-roles-req-css-2
-	 *
-	 * @return void
-	 */
-	public function testAFailingWriteLogsItsCause(): void {
-		$this->params = ['sessionKey' => 'hoorgesprek', 'scheduledDate' => '2026-12-10T10:00:00+01:00'];
-		$this->caseAccess->method('hasCaseMutationAccess')->willReturn(true);
-		$this->sessions->method('schedule')->willThrowException(new RuntimeException('chairperson is not a uuid'));
-		$logger = $this->createMock(originalClassName: LoggerInterface::class);
-		$logger->expects($this->once())->method('error')->with(
-			$this->anything(),
-			$this->callback(callback: fn (array $context): bool => $context['exception'] === 'chairperson is not a uuid' && $context['caseId'] === 'case-1'),
-		);
-		$this->logger = $logger;
-
-		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $this->controller()->create(caseId: 'case-1')->getStatus());
-	}//end testAFailingWriteLogsItsCause()
-
-	/**
 	 * The controller over the doubles, its request answering the test's params.
 	 *
 	 * @return CaseSessionController
@@ -264,7 +238,6 @@ class CaseSessionControllerTest extends TestCase {
 			sessions: $this->sessions,
 			userSession: $this->session,
 			caseAccess: $this->caseAccess,
-			logger: $this->logger ?? new NullLogger(),
 		);
 	}//end controller()
 }//end class

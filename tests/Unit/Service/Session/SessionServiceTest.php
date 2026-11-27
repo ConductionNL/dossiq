@@ -31,9 +31,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\Session;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use OCA\Dossiq\Service\Session\SessionMeeting;
 use OCA\Dossiq\Kernel\Contracts\CaseTimelineInterface;
 use OCA\Dossiq\Kernel\Contracts\TimelineKindsInterface;
+use OCA\Dossiq\Service\Session\SessionFollowUps;
+use OCA\Dossiq\Service\Session\SessionMeeting;
 use OCA\Dossiq\Service\Session\SessionService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
@@ -48,6 +49,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Session\SessionService
  * @covers \OCA\Dossiq\Service\Support\OpensInTheInitialState
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinition
+ * @uses   \OCA\Dossiq\Service\Session\SessionFollowUps
  * @uses   \OCA\Dossiq\Service\Session\SessionMeeting
  * @uses   \OCA\Dossiq\Service\Session\StoredSession
  * @uses   \OCA\Dossiq\Service\Session\SessionDefinitionReader
@@ -205,7 +207,9 @@ class SessionServiceTest extends TestCase {
 			settingsService: $this->settings,
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
-			meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(originalClassName: LoggerInterface::class))
+			followUps: new SessionFollowUps(
+				meetings: new SessionMeeting(eventDispatcher: $dispatcher, logger: $this->createMock(originalClassName: LoggerInterface::class))
+			)
 		);
 
 		$saved = $service->schedule(
@@ -243,7 +247,7 @@ class SessionServiceTest extends TestCase {
 			settingsService: $this->settings,
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
-			timeline: $timeline
+			followUps: new SessionFollowUps(timeline: $timeline)
 		);
 
 		$saved = $service->schedule(
@@ -274,9 +278,11 @@ class SessionServiceTest extends TestCase {
 			settingsService: $this->settings,
 			timeFactory: $this->clock,
 			caseDates: $this->caseDates(zone: 'UTC', clock: $this->clock),
-			meetings: new SessionMeeting(
-				eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
-				logger: $this->createMock(originalClassName: LoggerInterface::class)
+			followUps: new SessionFollowUps(
+				meetings: new SessionMeeting(
+					eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				)
 			)
 		);
 
