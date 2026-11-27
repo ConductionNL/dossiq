@@ -8,11 +8,11 @@
  * workflow actions (status transition, beschikking generation, samenwerking
  * initiation/response, doorsturen) for omgevingsvergunning zaken.
  *
- * OpenRegister reads are delegated to {@see DsoObjectRepository} and the
- * guarded writes (the per-object guard, then the status transition,
- * beschikking, samenwerking or doorsturen event) to {@see DsoCaseWrites}
- * (ADR-022), so this controller only validates input and maps outcomes onto
- * responses.
+ * The dashboard read and the guarded case writes (the per-object guard, then
+ * the status transition, beschikking or doorsturen event) are delegated to
+ * {@see DsoCaseActions}, the samenwerkverzoek writes to
+ * {@see DsoSamenwerkingActions} (ADR-022), so this controller only validates
+ * input and maps outcomes onto responses.
  *
  * All endpoints require authentication (@NoAdminRequired) and carry per-object
  * authorization guards (ADR-005 Rule 3) to prevent IDOR.
@@ -33,9 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Controller\Support\DsoCaseWrites;
+use OCA\Dossiq\Controller\Support\DsoCaseActions;
+use OCA\Dossiq\Controller\Support\DsoSamenwerkingActions;
 use OCA\Dossiq\Controller\Support\RequestBodyFields;
-use OCA\Dossiq\Kernel\Contracts\DsoObjectRepositoryInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -71,8 +71,8 @@ class DsoController extends Controller {
 	 *
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
-	 * @param DsoObjectRepositoryInterface $repository The OpenRegister read collaborator, for the dashboard
-	 * @param DsoCaseWrites $writes The guarded writes on a case and its samenwerkverzoek
+	 * @param DsoCaseActions $cases The dashboard read and the guarded writes on a case
+	 * @param DsoSamenwerkingActions $samenwerking The samenwerkverzoek writes
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
 	 *
@@ -81,8 +81,8 @@ class DsoController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly DsoObjectRepositoryInterface $repository,
-		private readonly DsoCaseWrites $writes,
+		private readonly DsoCaseActions $cases,
+		private readonly DsoSamenwerkingActions $samenwerking,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -102,6 +102,8 @@ class DsoController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function dashboard(): JSONResponse {
@@ -116,11 +118,13 @@ class DsoController extends Controller {
 		$params = $this->dashboardParams();
 
 		try {
-			$outcome = $this->repository->fetchDashboard(
+			$outcome = $this->cases->dashboard(
 				params: $params,
-				activiteitgroep: (string)$activiteitgroep,
-				regelkwalificatie: (string)$regelkwalificatie,
-				location: (string)$location
+				filters: [
+					'activiteitgroep' => (string)$activiteitgroep,
+					'regelkwalificatie' => (string)$regelkwalificatie,
+					'location' => (string)$location,
+				]
 			);
 
 			return $this->dashboardAnswer(outcome: $outcome);
@@ -229,12 +233,12 @@ class DsoController extends Controller {
 	 */
 	private function applyStatusTransition(IUser $user, array $request): JSONResponse {
 		['caseId' => $caseId, 'body' => $body] = $request;
-		$case = $this->writes->mutableCase(caseId: $caseId, user: $user);
+		$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return new JSONResponse($this->writes->transition(caseId: $caseId, body: $body, userId: $user->getUID()));
+		return new JSONResponse($this->cases->transition(caseId: $caseId, body: $body, userId: $user->getUID()));
 	}//end applyStatusTransition()
 
 	/**
@@ -271,12 +275,12 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$case = $this->writes->mutableCase(caseId: $caseId, user: $user);
+			$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return new JSONResponse($this->writes->beschikking(caseId: $caseId, body: $body), Http::STATUS_CREATED);
+			return new JSONResponse($this->cases->beschikking(caseId: $caseId, body: $body), Http::STATUS_CREATED);
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
@@ -314,12 +318,12 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$case = $this->writes->mutableCase(caseId: $caseId, user: $user);
+			$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return new JSONResponse($this->writes->startSamenwerking(caseId: $caseId, body: $body), Http::STATUS_CREATED);
+			return new JSONResponse($this->samenwerking->startSamenwerking(caseId: $caseId, body: $body), Http::STATUS_CREATED);
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
@@ -354,11 +358,11 @@ class DsoController extends Controller {
 		$body = $this->fields->read(request: $this->request);
 
 		try {
-			if ($this->writes->mutableSamenwerk(samenwerkId: $samenwerkId, user: $user) === null) {
+			if ($this->samenwerking->mutableSamenwerk(samenwerkId: $samenwerkId, user: $user) === null) {
 				return new JSONResponse(['error' => 'Samenwerkverzoek not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return new JSONResponse($this->writes->answerSamenwerking(samenwerkId: $samenwerkId, body: $body));
+			return new JSONResponse($this->samenwerking->answerSamenwerking(samenwerkId: $samenwerkId, body: $body));
 		} catch (\Exception $e) {
 			return $this->failure(
 				exception: $e,
@@ -419,12 +423,12 @@ class DsoController extends Controller {
 	private function forwardCase(IUser $user, array $request): JSONResponse {
 		['caseId' => $caseId, 'body' => $body] = $request;
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
-		$case = $this->writes->mutableCase(caseId: $caseId, user: $user);
+		$case = $this->cases->mutableCase(caseId: $caseId, user: $user);
 		if ($case === null) {
 			return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$this->writes->forward(case: $case, caseId: $caseId, body: $body, userId: $user->getUID());
+		$this->cases->forward(case: $case, caseId: $caseId, body: $body, userId: $user->getUID());
 
 		return $this->forwarded(caseId: $caseId, targetBevoegdGezag: $targetBevoegdGezag);
 	}//end forwardCase()

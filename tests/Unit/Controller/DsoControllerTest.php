@@ -23,7 +23,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DsoController;
-use OCA\Dossiq\Controller\Support\DsoCaseWrites;
+use OCA\Dossiq\Controller\Support\DsoCaseActions;
+use OCA\Dossiq\Controller\Support\DsoSamenwerkingActions;
 use OCA\Dossiq\Service\BeschikkingGenerationService;
 use OCA\Dossiq\Service\Dso\DsoDoorsturenNotifier;
 use OCA\Dossiq\Service\Dso\DsoObjectRepository;
@@ -438,14 +439,13 @@ class DsoControllerTest extends TestCase {
 		$this->controller = new DsoController(
 			appName: 'dossiq',
 			request: $this->request,
-			repository: $repository,
-			writes: new DsoCaseWrites(
+			cases: new DsoCaseActions(
 				repository: $repository,
 				dsoCaseService: $this->dsoCaseService,
-				samenwerkService: $this->samenwerkService,
 				decisionService: $this->decisionService,
 				doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
 			),
+			samenwerking: new DsoSamenwerkingActions(repository: $repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);
@@ -519,14 +519,13 @@ class DsoControllerTest extends TestCase {
 		$controller = new DsoController(
 			appName: 'dossiq',
 			request: $requestStub,
-			repository: $repository,
-			writes: new DsoCaseWrites(
+			cases: new DsoCaseActions(
 				repository: $repository,
 				dsoCaseService: $this->dsoCaseService,
-				samenwerkService: $this->samenwerkService,
 				decisionService: $this->decisionService,
 				doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
 			),
+			samenwerking: new DsoSamenwerkingActions(repository: $repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);
@@ -561,14 +560,13 @@ class DsoControllerTest extends TestCase {
 		$controller = new DsoController(
 			appName: 'dossiq',
 			request: $requestStub,
-			repository: $repository,
-			writes: new DsoCaseWrites(
+			cases: new DsoCaseActions(
 				repository: $repository,
 				dsoCaseService: $this->dsoCaseService,
-				samenwerkService: $this->samenwerkService,
 				decisionService: $this->decisionService,
 				doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
 			),
+			samenwerking: new DsoSamenwerkingActions(repository: $repository, samenwerkService: $this->samenwerkService),
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);

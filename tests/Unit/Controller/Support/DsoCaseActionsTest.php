@@ -1,12 +1,12 @@
 <?php
 
 /**
- * DsoCaseWrites Unit Tests
+ * DsoCaseActions and DsoSamenwerkingActions Unit Tests
  *
  * A case or samenwerkverzoek that does not exist is null and is never
- * authorised; one that exists is authorised before it is handed back; each
- * write hands the body's fields to its service, with an absent optional field
- * as null.
+ * authorised; one that exists is authorised before it is handed back; the
+ * dashboard hands its filters to the read; each write hands the body's fields
+ * to its service, with an absent optional field as null.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller\Support
@@ -27,7 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller\Support;
 
-use OCA\Dossiq\Controller\Support\DsoCaseWrites;
+use OCA\Dossiq\Controller\Support\DsoCaseActions;
+use OCA\Dossiq\Controller\Support\DsoSamenwerkingActions;
 use OCA\Dossiq\Kernel\Contracts\BeschikkingGenerationServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoCaseServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
@@ -38,11 +39,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Unit tests for DsoCaseWrites.
+ * Unit tests for DsoCaseActions.
  *
- * @covers \OCA\Dossiq\Controller\Support\DsoCaseWrites
+ * @covers \OCA\Dossiq\Controller\Support\DsoCaseActions
+ * @covers \OCA\Dossiq\Controller\Support\DsoSamenwerkingActions
  */
-final class DsoCaseWritesTest extends TestCase {
+final class DsoCaseActionsTest extends TestCase {
 
 	/**
 	 * The read collaborator.
@@ -80,11 +82,18 @@ final class DsoCaseWritesTest extends TestCase {
 	private DsoDoorsturenNotifierInterface $notifier;
 
 	/**
-	 * The writes under test.
+	 * The case actions under test.
 	 *
-	 * @var DsoCaseWrites
+	 * @var DsoCaseActions
 	 */
-	private DsoCaseWrites $writes;
+	private DsoCaseActions $writes;
+
+	/**
+	 * The samenwerking actions under test.
+	 *
+	 * @var DsoSamenwerkingActions
+	 */
+	private DsoSamenwerkingActions $samenwerkingen;
 
 	/**
 	 * Set up the doubles and the writes over them.
@@ -98,13 +107,13 @@ final class DsoCaseWritesTest extends TestCase {
 		$this->samenwerk = $this->createMock(originalClassName: SamenwerkverzoekServiceInterface::class);
 		$this->decisions = $this->createMock(originalClassName: BeschikkingGenerationServiceInterface::class);
 		$this->notifier = $this->createMock(originalClassName: DsoDoorsturenNotifierInterface::class);
-		$this->writes = new DsoCaseWrites(
+		$this->writes = new DsoCaseActions(
 			repository: $this->repository,
 			dsoCaseService: $this->cases,
-			samenwerkService: $this->samenwerk,
 			decisionService: $this->decisions,
 			doorsturenNotifier: $this->notifier,
 		);
+		$this->samenwerkingen = new DsoSamenwerkingActions(repository: $this->repository, samenwerkService: $this->samenwerk);
 	}//end setUp()
 
 	/**
@@ -120,7 +129,7 @@ final class DsoCaseWritesTest extends TestCase {
 		$user = $this->createMock(originalClassName: IUser::class);
 
 		$this->assertNull(actual: $this->writes->mutableCase(caseId: 'case-1', user: $user));
-		$this->assertNull(actual: $this->writes->mutableSamenwerk(samenwerkId: 'sw-1', user: $user));
+		$this->assertNull(actual: $this->samenwerkingen->mutableSamenwerk(samenwerkId: 'sw-1', user: $user));
 	}//end testAMissingObjectIsNullAndNeverAuthorised()
 
 	/**
@@ -140,8 +149,28 @@ final class DsoCaseWritesTest extends TestCase {
 		$this->repository->method('findSamenwerkverzoek')->willReturn($sw);
 		$this->samenwerk->method('authorizeSamenwerkMutation')->willThrowException(new \Exception('Not authorized'));
 		$this->expectExceptionMessage(message: 'Not authorized');
-		$this->writes->mutableSamenwerk(samenwerkId: 'sw-1', user: $user);
+		$this->samenwerkingen->mutableSamenwerk(samenwerkId: 'sw-1', user: $user);
 	}//end testAnExistingCaseIsAuthorisedBeforeItIsHandedBack()
+
+	/**
+	 * The dashboard hands its query and filters to the read, an absent filter as ''.
+	 *
+	 * @return void
+	 */
+	public function testTheDashboardHandsItsFiltersToTheRead(): void {
+		$outcome = ['error' => null, 'results' => [['id' => 'case-1']]];
+		$this->repository->expects($this->once())->method('fetchDashboard')
+			->with(['dsoStatus' => ['granted']], 'bouwen', '', 'Zuiddrecht')
+			->willReturn($outcome);
+
+		$this->assertSame(
+			expected: $outcome,
+			actual: $this->writes->dashboard(
+				params: ['dsoStatus' => ['granted']],
+				filters: ['activiteitgroep' => 'bouwen', 'location' => 'Zuiddrecht']
+			)
+		);
+	}//end testTheDashboardHandsItsFiltersToTheRead()
 
 	/**
 	 * A transition hands an absent besluitdatum and notes on as null.
@@ -176,12 +205,12 @@ final class DsoCaseWritesTest extends TestCase {
 		$this->assertSame(expected: ['id' => 'b-1'], actual: $this->writes->beschikking(caseId: 'case-1', body: ['outcome' => 'refused']));
 		$this->assertSame(
 			expected: ['id' => 'sw-1'],
-			actual: $this->writes->startSamenwerking(
+			actual: $this->samenwerkingen->startSamenwerking(
 				caseId: 'case-1',
 				body: ['requestedCompetentAuthority' => 'provincie', 'rationale' => 'advies nodig']
 			)
 		);
-		$this->assertTrue(condition: $this->writes->answerSamenwerking(samenwerkId: 'sw-1', body: ['accept' => 1])['accepted']);
+		$this->assertTrue(condition: $this->samenwerkingen->answerSamenwerking(samenwerkId: 'sw-1', body: ['accept' => 1])['accepted']);
 		$this->writes->forward(case: ['id' => 'case-1'], caseId: 'case-1', body: ['targetBevoegdGezag' => 'gemeente-b'], userId: 'anna');
 	}//end testEachWriteHandsTheBodysFieldsToItsService()
 }//end class
