@@ -31,8 +31,6 @@ use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 use OCA\Dossiq\Review\Support\ReviewStoreSteps;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\IL10N;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -69,7 +67,14 @@ class ReviewBatches implements ReviewBatchesInterface {
 	/**
 	 * The sentence of a batch that cannot be stored.
 	 */
-	private const UNSTORED = 'The Review batch cannot be stored, so nothing was assigned.';
+	public const UNSTORED = 'The Review batch cannot be stored, so nothing was assigned.';
+
+	/**
+	 * Reads nothing; writes a batch into the batch schema.
+	 *
+	 * @var ReviewBatchStore
+	 */
+	private readonly ReviewBatchStore $store;
 
 	/**
 	 * Constructor.
@@ -85,6 +90,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsServiceInterface $settingsService,
@@ -97,6 +103,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 		private readonly CaseReviewerAccessInterface $reviewerAccess,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->store = new ReviewBatchStore(settingsService: $settingsService, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -149,6 +156,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 * @throws RefusedException When the batch is incomplete, a document is not on the case or in another open batch, or nothing can be stored.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function create(string $caseId, string $name, string $assignee, array $documents, string $userId, array $filter = []): array {
 		$name = trim($name);
@@ -156,7 +164,7 @@ class ReviewBatches implements ReviewBatchesInterface {
 
 		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
 		$fields += ['filter' => $filter, 'assignee' => $assignee, 'status' => 'open'];
-		$batch = $this->save(batch: $fields);
+		$batch = $this->store->save(batch: $fields);
 		$this->stampReviews(caseId: $caseId, batchId: $this->batchIdOf(batch: $batch), documents: $documents);
 		$assigned = $this->assign(batch: $batch, written: ['userId' => $userId] + $fields);
 
@@ -257,11 +265,12 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 * @throws RefusedException When the batch cannot be written.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-batches-are-assigned-to-named-reviewers-before-any-verdict-req-wrt-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function withTask(array $batch, string $taskId): array {
 		if ($taskId !== '') {
 			$batch['task'] = $taskId;
-			$batch = $this->save(batch: $batch);
+			$batch = $this->store->save(batch: $batch);
 		}
 
 		return $batch;
@@ -285,13 +294,14 @@ class ReviewBatches implements ReviewBatchesInterface {
 	 * @throws RefusedException When the batch cannot be stored.
 	 *
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-the-recall-is-estimated-from-an-elusion-sample-with-its-uncertainty-req-wrs-002
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function createSampleBatch(string $caseId, string $sampleId, string $assignee, array $documents, string $userId): array {
 		$name = $this->l10n->t('Recall sample of %d documents', [count($documents)]);
 		$fields = ['case' => $caseId, 'name' => $name, 'documents' => $documents];
 		$fields += ['filter' => ['recallSample' => $sampleId], 'assignee' => $assignee, 'status' => 'open'];
 
-		return $this->assign(batch: $this->save(batch: $fields), written: ['userId' => $userId] + $fields)['batch'];
+		return $this->assign(batch: $this->store->save(batch: $fields), written: ['userId' => $userId] + $fields)['batch'];
 	}//end createSampleBatch()
 
 	/**
@@ -516,58 +526,4 @@ class ReviewBatches implements ReviewBatchesInterface {
 			)
 		);
 	}//end everyRow()
-
-	/**
-	 * Save a batch, creating or replacing it.
-	 *
-	 * @param array<string, mixed> $batch The batch.
-	 *
-	 * @return array<string, mixed> The saved batch.
-	 *
-	 * @throws RefusedException When the batch cannot be written.
-	 */
-	private function save(array $batch): array {
-		$uuid = ($batch['id'] ?? ($batch['uuid'] ?? null));
-		if ($uuid !== null) {
-			$uuid = (string)$uuid;
-		}
-
-		unset($batch['@self'], $batch['id'], $batch['uuid']);
-		$saved = $this->writeBatch(batch: $batch, uuid: $uuid);
-
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			return (array)$saved->jsonSerialize();
-		}
-
-		return (array)$saved;
-	}//end save()
-
-	/**
-	 * Write a batch to OpenRegister.
-	 *
-	 * @param array<string, mixed> $batch The batch, without its identifiers.
-	 * @param string|null          $uuid  The batch's uuid, or null for a new batch.
-	 *
-	 * @return mixed The saved object.
-	 *
-	 * @throws RefusedException When the batch cannot be written.
-	 */
-	private function writeBatch(array $batch, ?string $uuid) {
-		try {
-			return $this->settingsService->getObjectService()->saveObject(
-				object: $batch,
-				options: new ObjectSaveOptions(
-					target: new ObjectFindTarget(
-							register: $this->settingsService->getConfigValue('register'),
-							schema: $this->settingsService->getConfigValue(self::SCHEMA_KEY)
-						),
-					uuid: $uuid
-				)
-			);
-		} catch (Throwable $e) {
-			$context = ['app' => AppIdentity::APP_ID, 'case' => ($batch['case'] ?? ''), 'exception' => $e->getMessage()];
-			$this->logger->error('Dossiq: a Review batch could not be written', $context);
-			throw $this->refusal(rule: 'review-batch-unavailable', sentence: self::UNSTORED, status: RefusedException::STATUS_INDETERMINATE, previous: $e);
-		}
-	}//end writeBatch()
 }//end class

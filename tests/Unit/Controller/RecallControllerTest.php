@@ -55,6 +55,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Review\StoppingRuleMet
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\ReviewBatches
+ * @uses \OCA\Dossiq\Review\ReviewBatchStore
  * @uses \OCA\Dossiq\Review\ReviewConfiguration
  * @uses \OCA\Dossiq\Review\ReviewDepth
  * @uses \OCA\Dossiq\Review\RecallEstimator

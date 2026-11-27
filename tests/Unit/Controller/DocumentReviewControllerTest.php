@@ -47,6 +47,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Review\ReviewSummary
  * @covers \OCA\Dossiq\Review\DocumentRelevance
  * @covers \OCA\Dossiq\Review\ReviewBatches
+ * @uses \OCA\Dossiq\Review\ReviewBatchStore
  * @covers \OCA\Dossiq\Review\PagesSeen
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  *
