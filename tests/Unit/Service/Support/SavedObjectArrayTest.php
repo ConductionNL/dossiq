@@ -89,11 +89,11 @@ final class SavedObjectArrayTest extends TestCase {
 			object: ['status' => 'requested'],
 		);
 
-		$this->assertSame(['id' => 'uuid-1', 'status' => 'requested'], $saved);
-		$this->assertCount(1, $store->saves);
-		$this->assertSame(['status' => 'requested'], $store->saves[0][0]);
-		$this->assertSame('dossiq', $store->saves[0][1]->target->register);
-		$this->assertSame('collaboration', $store->saves[0][1]->target->schema);
-		$this->assertNull($store->saves[0][1]->uuid);
+		$this->assertSame(expected: ['id' => 'uuid-1', 'status' => 'requested'], actual: $saved);
+		$this->assertCount(expectedCount: 1, haystack: $store->saves);
+		$this->assertSame(expected: ['status' => 'requested'], actual: $store->saves[0][0]);
+		$this->assertSame(expected: 'dossiq', actual: $store->saves[0][1]->target->register);
+		$this->assertSame(expected: 'collaboration', actual: $store->saves[0][1]->target->schema);
+		$this->assertNull(actual: $store->saves[0][1]->uuid);
 	}//end testTheObjectIsSavedAndAnsweredAsStored()
 }//end class

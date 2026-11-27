@@ -2062,8 +2062,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `tests/Unit/Service/KpiOpenRegisterServicesTest` (4).
   - [x] 8du `CaseEmailService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Recording a mail that went out
         about a case (the stored message, then its public `mail-uitgaand` line naming the document, the sender and what
-        became of it) moved to `Service/Email/SentMailRecorder` (`record()`; bodies moved unchanged, the `SentCaseMail`
-        built there). The service keeps the checks before a send, the hand-off to the Mail account, the templates and the
+        became of it) moved to `Service/Email/SentMailRecorder` (`record()`, which takes the case and the sent mail as one
+        array, so it stays under gate-122's five parameters; bodies moved unchanged, the `SentCaseMail` built there). The service keeps the checks before a send, the hand-off to the Mail account, the templates and the
         inbound linking, and `recordSentEmail()` stays its public seam for the flow listener. It builds the recorder in
         its constructor, so its constructor and the container are unchanged. Coupling 14 to 13 (recorder 4); phpmd: zero
         findings on both files under both rulesets.
@@ -2074,7 +2074,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
   - [x] 8dv `RoleResolverService` (1, unsuppressed: CouplingBetweenObjects 14 against 13). Reading the stored role
         records of a case (the object service, register and role schema, nothing without one of them, a failing read
         logged and refused as `case-roles-unreadable`) moved to `Service/Routing/CaseRoleSource` (`recordsOf()`; bodies
-        moved unchanged with the `RefusesWhenIndeterminate` trait). The resolver keeps turning the records into rows
+        moved unchanged, the trait's read-or-refuse written out in place: phpstan does not follow a trait's read of the
+        logger and reported it as only written; same log line, same refusal). The resolver keeps turning the records into rows
         (its `ObjectArray` copy, which `ObjectArrayCopiesTest` reads, stays) and everything after. It takes the source in
         place of `SettingsService`; the container autowires it. Removed, not moved: the public `fail()`, which had no
         caller and is not on the interface. Coupling 14 to 12 (source 4); phpmd: no new findings (the StaticAccess on

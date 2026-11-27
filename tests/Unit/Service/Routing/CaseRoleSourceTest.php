@@ -112,10 +112,10 @@ final class CaseRoleSourceTest extends TestCase {
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
-		$this->assertSame([['id' => 'r1']], $source->recordsOf(caseId: 'case-1'));
+		$this->assertSame(expected: [['id' => 'r1']], actual: $source->recordsOf(caseId: 'case-1'));
 		$this->assertSame(
-			[['filters' => ['register' => 'dossiq', 'schema' => 'caseRole', 'case' => 'case-1']]],
-			$store->reads
+			expected: [['filters' => ['register' => 'dossiq', 'schema' => 'caseRole', 'case' => 'case-1']]],
+			actual: $store->reads
 		);
 	}//end testTheRolesOfTheCaseAreReadFromTheRoleSchema()
 
@@ -128,10 +128,16 @@ final class CaseRoleSourceTest extends TestCase {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$store = $this->store(rows: [['id' => 'r1']]);
 
-		$this->assertNull((new CaseRoleSource(settingsService: $this->settings(objectService: null, config: ['register' => 'dossiq', 'role_schema' => 'caseRole']), logger: $logger))->recordsOf(caseId: 'case-1'));
-		$this->assertNull((new CaseRoleSource(settingsService: $this->settings(objectService: $store, config: ['role_schema' => 'caseRole']), logger: $logger))->recordsOf(caseId: 'case-1'));
-		$this->assertNull((new CaseRoleSource(settingsService: $this->settings(objectService: $store, config: ['register' => 'dossiq']), logger: $logger))->recordsOf(caseId: 'case-1'));
-		$this->assertSame([], $store->reads);
+		$withoutService = $this->settings(objectService: null, config: ['register' => 'dossiq', 'role_schema' => 'caseRole']);
+		$withoutRegister = $this->settings(objectService: $store, config: ['role_schema' => 'caseRole']);
+		$withoutSchema = $this->settings(objectService: $store, config: ['register' => 'dossiq']);
+
+		foreach ([$withoutService, $withoutRegister, $withoutSchema] as $settings) {
+			$source = new CaseRoleSource(settingsService: $settings, logger: $logger);
+			$this->assertNull(actual: $source->recordsOf(caseId: 'case-1'));
+		}
+
+		$this->assertSame(expected: [], actual: $store->reads);
 	}//end testNothingIsReadWithoutASource()
 
 	/**
@@ -141,9 +147,12 @@ final class CaseRoleSourceTest extends TestCase {
 	 */
 	public function testAFailingReadIsLoggedAndRefused(): void {
 		$logger = $this->createMock(originalClassName: LoggerInterface::class);
-		$logger->expects($this->once())->method('warning')->with($this->stringContains('the roles on case case-1 could not be read'));
+		$logger->expects($this->once())->method('warning')->with($this->stringContains(string: 'the roles on case case-1 could not be read'));
 		$source = new CaseRoleSource(
-			settingsService: $this->settings(objectService: $this->store(rows: [], throws: true), config: ['register' => 'dossiq', 'role_schema' => 'caseRole']),
+			settingsService: $this->settings(
+				objectService: $this->store(rows: [], throws: true),
+				config: ['register' => 'dossiq', 'role_schema' => 'caseRole']
+			),
 			logger: $logger,
 		);
 
@@ -151,8 +160,8 @@ final class CaseRoleSourceTest extends TestCase {
 			$source->recordsOf(caseId: 'case-1');
 			$this->fail(message: 'a failing read must be refused');
 		} catch (RefusedException $e) {
-			$this->assertSame('case-roles-unreadable', $e->getRule());
-			$this->assertSame(RefusedException::STATUS_INDETERMINATE, $e->getStatus());
+			$this->assertSame(expected: 'case-roles-unreadable', actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $e->getStatus());
 		}
 	}//end testAFailingReadIsLoggedAndRefused()
 }//end class

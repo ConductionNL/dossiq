@@ -301,11 +301,7 @@ class CaseEmailService implements CaseEmailServiceInterface {
 	): string {
 		return $this->recorder->record(
 			caseId: $caseId,
-			fromAddress: $fromAddress,
-			to: $to,
-			subject: $subject,
-			body: $body,
-			delivery: $delivery,
+			sent: ['fromAddress' => $fromAddress, 'to' => $to, 'subject' => $subject, 'body' => $body, 'delivery' => $delivery],
 		);
 	}//end recordSentEmail()
 

@@ -78,16 +78,18 @@ final class SentMailRecorderTest extends TestCase {
 	public function testTheMailIsStoredThenItsLineNamesTheDocument(): void {
 		$id = $this->recorder(messageId: 'msg-1')->record(
 			caseId: 'case-1',
-			fromAddress: 'zaken@gemeente.test',
-			to: 'anna@example.test',
-			subject: 'Uw aanvraag',
-			body: 'Tekst',
-			delivery: 'sent-not-filed',
+			sent: [
+				'fromAddress' => 'zaken@gemeente.test',
+				'to' => 'anna@example.test',
+				'subject' => 'Uw aanvraag',
+				'body' => 'Tekst',
+				'delivery' => 'sent-not-filed',
+			],
 		);
 
-		$this->assertSame('msg-1', $id);
+		$this->assertSame(expected: 'msg-1', actual: $id);
 		$this->assertSame(
-			[
+			expected: [
 				['document', 'case-1', 'zaken@gemeente.test', 'anna@example.test', 'Uw aanvraag', 'Tekst'],
 				[
 					'timeline',
@@ -105,7 +107,7 @@ final class SentMailRecorderTest extends TestCase {
 					[],
 				],
 			],
-			$this->calls
+			actual: $this->calls
 		);
 	}//end testTheMailIsStoredThenItsLineNamesTheDocument()
 
@@ -117,16 +119,12 @@ final class SentMailRecorderTest extends TestCase {
 	public function testAnUnknownSenderIsRecordedEmpty(): void {
 		$id = $this->recorder(messageId: 'msg-2')->record(
 			caseId: 'case-2',
-			fromAddress: '',
-			to: 'b@example.test',
-			subject: 'S',
-			body: 'B',
-			delivery: 'queued',
+			sent: ['fromAddress' => '', 'to' => 'b@example.test', 'subject' => 'S', 'body' => 'B', 'delivery' => 'queued'],
 		);
 
-		$this->assertSame('msg-2', $id);
-		$this->assertSame('msg-2', $this->calls[1][4]['documentId']);
-		$this->assertSame('queued', $this->calls[1][4]['delivery']);
-		$this->assertSame('', $this->calls[1][4]['sender']);
+		$this->assertSame(expected: 'msg-2', actual: $id);
+		$this->assertSame(expected: 'msg-2', actual: $this->calls[1][4]['documentId']);
+		$this->assertSame(expected: 'queued', actual: $this->calls[1][4]['delivery']);
+		$this->assertSame(expected: '', actual: $this->calls[1][4]['sender']);
 	}//end testAnUnknownSenderIsRecordedEmpty()
 }//end class

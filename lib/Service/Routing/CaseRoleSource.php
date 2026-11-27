@@ -30,8 +30,8 @@ namespace OCA\Dossiq\Service\Routing;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * The stored role records of a case.
@@ -40,7 +40,6 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/method-decomposition/tasks.md
  */
 final class CaseRoleSource {
-	use RefusesWhenIndeterminate;
 
 	/**
 	 * Constructor.
@@ -121,11 +120,19 @@ final class CaseRoleSource {
 		// roles were never loaded and rule resolution silently fell through to
 		// its other sources. An empty role list is also how a routing rule
 		// resolves to nobody, which is why the read now refuses instead.
-		return $this->readOrRefuse(
-			read: fn (): mixed => $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema, 'case' => $caseId]]),
-			what: 'the roles on case ' . $caseId,
-			rule: 'case-roles-unreadable',
-			sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
-		);
+		try {
+			return $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema, 'case' => $caseId]]);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the roles on case ' . $caseId . ' could not be read: ' . $e->getMessage(),
+			);
+
+			throw new RefusedException(
+				rule: 'case-roles-unreadable',
+				sentence: 'The roles on this case could not be read, so the routing cannot be worked out right now.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
+		}
 	}//end readRoles()
 }//end class

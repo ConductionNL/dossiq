@@ -73,11 +73,11 @@ final class TermStartsTest extends TestCase {
 
 		$start = $starts->begin(caseId: 'case-1', start: ['caseType' => 'omgevingsvergunning', 'startDate' => $day, 'resolution' => null]);
 
-		$this->assertSame('case-1', $start->caseId);
-		$this->assertSame('omgevingsvergunning', $start->caseType);
-		$this->assertSame($day, $start->startDate);
-		$this->assertSame(['id' => 'def-1', 'standardDurationDays' => 56], $start->definitie);
-		$this->assertSame(56, $start->durationDays);
+		$this->assertSame(expected: 'case-1', actual: $start->caseId);
+		$this->assertSame(expected: 'omgevingsvergunning', actual: $start->caseType);
+		$this->assertSame(expected: $day, actual: $start->startDate);
+		$this->assertSame(expected: ['id' => 'def-1', 'standardDurationDays' => 56], actual: $start->definitie);
+		$this->assertSame(expected: 56, actual: $start->durationDays);
 	}//end testTheCaseTypesActiveDefinitionStartsTheTerm()
 
 	/**
@@ -95,11 +95,11 @@ final class TermStartsTest extends TestCase {
 			caseId: 'case-1',
 			start: ['caseType' => 'x', 'startDate' => null, 'resolution' => ['definition' => ['id' => 'def-r', 'standardDurationDays' => 14]]]
 		);
-		$this->assertSame(14, $start->durationDays);
-		$this->assertInstanceOf(DateTimeImmutable::class, $start->startDate);
+		$this->assertSame(expected: 14, actual: $start->durationDays);
+		$this->assertInstanceOf(expected: DateTimeImmutable::class, actual: $start->startDate);
 
-		$this->expectException(NoTermijnDefinitieException::class);
-		$this->expectExceptionMessage('No active TermijnDefinitie configured for zaaktype "x" (REQ-TERM-001-A)');
+		$this->expectException(exception: NoTermijnDefinitieException::class);
+		$this->expectExceptionMessage(message: 'No active TermijnDefinitie configured for zaaktype "x" (REQ-TERM-001-A)');
 		$starts->begin(caseId: 'case-1', start: ['caseType' => 'x', 'startDate' => null, 'resolution' => null]);
 	}//end testAResolutionWinsAndNoDefinitionIsRefused()
 
@@ -134,11 +134,15 @@ final class TermStartsTest extends TestCase {
 			start: [
 				'caseType' => 'x',
 				'startDate' => new DateTimeImmutable('2026-11-02T09:00:00+01:00'),
-				'resolution' => ['definition' => ['id' => 'def-r', 'standardDurationDays' => 14], 'resolvedFrom' => 'organisation', 'snapshot' => ['rule' => 'r1']],
+				'resolution' => [
+					'definition' => ['id' => 'def-r', 'standardDurationDays' => 14],
+					'resolvedFrom' => 'organisation',
+					'snapshot' => ['rule' => 'r1'],
+				],
 			]
 		);
 
-		$this->assertSame(['id' => 'inst-1'], $starts->store(start: $start));
+		$this->assertSame(expected: ['id' => 'inst-1'], actual: $starts->store(start: $start));
 	}//end testTheInstanceIsStoredAsARunningStatutoryTerm()
 
 	/**
@@ -152,8 +156,8 @@ final class TermStartsTest extends TestCase {
 		$starts = new TermStarts(definitions: $this->definitions(active: ['id' => 'def-1', 'standardDurationDays' => 1]), store: $store);
 		$start = $starts->begin(caseId: 'case-9', start: ['caseType' => 'x', 'startDate' => null, 'resolution' => null]);
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('Failed to persist TermijnInstance for zaak "case-9" (persistence unavailable)');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'Failed to persist TermijnInstance for zaak "case-9" (persistence unavailable)');
 		$starts->store(start: $start);
 	}//end testAnUnsavedInstanceIsRefused()
 }//end class
