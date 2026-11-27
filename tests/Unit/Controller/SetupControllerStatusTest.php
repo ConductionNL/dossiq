@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SetupController;
+use OCA\Dossiq\Controller\Support\RegisterInstall;
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\CaseDefinition\InstalledPackageExamples;
 use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
@@ -50,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Controller\SetupController
  * @uses \OCA\Dossiq\Controller\Support\DatasetLoad
+ * @uses \OCA\Dossiq\Controller\Support\RegisterInstall
  * @uses \OCA\Dossiq\Service\Setup\FirstRunReadiness
  * @uses \OCA\Dossiq\Service\Setup\CaseTypePackageChoice
  */
@@ -178,8 +180,7 @@ class SetupControllerStatusTest extends TestCase {
 			request: $request,
 			appConfig: $appConfig,
 			demoDataService: $demo,
-			settingsService: $settings,
-			packages: $packages,
+			register: new RegisterInstall(appConfig: $appConfig, settingsService: $settings, packages: $packages),
 			readiness: new FirstRunReadiness(settingsService: $settings, appConfig: $appConfig),
 			organisationProfile: ($profile ?? $this->namedOrganisation()),
 			caseTypes: new CaseTypePackageChoice(packages: $packages, appConfig: $appConfig, examples: $examples),
