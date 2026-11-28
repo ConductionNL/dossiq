@@ -2278,6 +2278,23 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         four files. Characterisation, green before and after: `DashboardControllerFilesSurfacesTest`,
         `...ServiceWorkerTest`, `...AppConfigTest`, `...InstalledVersionTest`, `...ContractTest` and `MenuStructureTest`.
         Own test: `tests/Unit/Controller/Support/SurfaceLoadEventsTest` (3).
+  - [x] 8ep `Service/ComplaintService` (1, unsuppressed: CouplingBetweenObjects 15 against 13). Finding, listing,
+        creating and updating the records of the configured complaint schema moved to the generic
+        `Service/Support/ConfiguredSchemaStore` (`find()`, `search()`, `create()`, `update()`; a read answers null or an
+        empty list without OpenRegister or the schema, a create refuses with the same two messages before it prepares
+        the record, an update refuses only without OpenRegister and passes the register and schema as configured, as
+        before). The create also drops the caller's object identity keys (`CallerIdentity::KEYS`), which the service
+        did first, so the forged-id refusal holds for every record created through the store. The declared
+        first-response term in working days, or the Awb fallback, moved to `Service/Term/FirstResponseDays::days()`
+        (body unchanged). The service keeps the validation, the deadlines, the status machine, the extension, the
+        escalation link, the alerts and the MCP tool, and builds both helpers in its constructor, so its constructor,
+        interface and container are unchanged. Coupling 15 to 13; phpmd: zero findings on the three files under both
+        rulesets.
+        Characterisation, green before and after: `ComplaintServiceTest` (25), `CreatesIgnoreCallerIdentityTest`,
+        `OneDateWritePathTest`, `OneDateWritePathRoundTripTest`, `LocalStatusMachineryTest`, `CasePriorityDeclarationTest`
+        and the complaint controller suites. Own tests: `tests/Unit/Service/Support/ConfiguredSchemaStoreTest` (5) and
+        `tests/Unit/Service/Term/FirstResponseDaysTest` (2); dropping the identity-key removal turns
+        `ConfiguredSchemaStoreTest` and `CreatesIgnoreCallerIdentityTest` red (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

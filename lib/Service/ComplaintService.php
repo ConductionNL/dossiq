@@ -26,11 +26,9 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\ComplaintServiceInterface;
 use OCA\Dossiq\Service\Complaint\ComplaintDeadlineAlerts;
-use OCA\Dossiq\Service\Support\CallerIdentity;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Support\ConfiguredSchemaStore;
+use OCA\Dossiq\Service\Term\FirstResponseDays;
 use OCA\Dossiq\Service\Term\TermResolution;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,8 +39,6 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
  */
 class ComplaintService implements ComplaintServiceInterface {
-
-	use SearchesObjects;
 
 	/**
 	 * Valid complaint statuses in lifecycle order.
@@ -105,6 +101,20 @@ class ComplaintService implements ComplaintServiceInterface {
 	private readonly ComplaintDeadlineAlerts $alerts;
 
 	/**
+	 * Where complaints are found, listed, created and updated.
+	 *
+	 * @var ConfiguredSchemaStore
+	 */
+	private readonly ConfiguredSchemaStore $store;
+
+	/**
+	 * The case type's declared first-response term, or the Awb default.
+	 *
+	 * @var FirstResponseDays
+	 */
+	private readonly FirstResponseDays $firstResponse;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service
@@ -120,14 +130,20 @@ class ComplaintService implements ComplaintServiceInterface {
 	 *                                             date path when not given.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly CaseDateNormaliser $dates,
-		private readonly ?TermResolution $resolution = null,
+		?TermResolution $resolution = null,
 		?ComplaintDeadlineAlerts $alerts = null,
 	) {
 		$this->alerts = ($alerts ?? new ComplaintDeadlineAlerts(dates: $this->dates));
+		$this->store  = new ConfiguredSchemaStore(
+			settingsService: $settingsService,
+			schemaKey: 'complaint_schema',
+			notConfigured: 'Complaint schema not configured'
+		);
+		$this->firstResponse = new FirstResponseDays(resolution: $resolution);
 	}//end __construct()
 
 	/**
@@ -143,19 +159,7 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
 	private function acknowledgementDays(): int {
-		$resolved = $this->resolution?->resolve(
-			caseType: self::COMPLAINT_CASE_TYPE,
-			context: [],
-			kind: TermKind::FIRST_RESPONSE
-		);
-
-		$declared = (int)($resolved['definition']['standardDurationDays'] ?? 0);
-
-		if ($declared > 0) {
-			return $declared;
-		}
-
-		return self::AWB_ACK_WORKING_DAYS;
+		return $this->firstResponse->days(caseType: self::COMPLAINT_CASE_TYPE, fallback: self::AWB_ACK_WORKING_DAYS);
 	}//end acknowledgementDays()
 
 	/**
@@ -170,16 +174,17 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function createComplaint(array $data): array {
-		$data = array_diff_key($data, CallerIdentity::KEYS);
 		$this->validateRequired(data: $data, required: ['subject', 'description', 'receiptDate']);
 
-		[$objectService, $register, $schema] = $this->complaintStore();
-
-		$data = $this->received(data: $data);
-
-		$complaint = $objectService->saveObject(
+		// The store refuses a missing OpenRegister or schema before the
+		// deadlines are worked out, as the complaint always was, and drops the
+		// caller's object identity keys before they are.
+		$complaint = $this->store->create(
 			object: $data,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			prepare: function (array $received) use (&$data): array {
+				$data = $this->received(data: $received);
+				return $data;
+			}
 		);
 
 		$saved = $this->savedComplaint(data: $data, complaint: $complaint);
@@ -194,31 +199,6 @@ class ComplaintService implements ComplaintServiceInterface {
 
 		return $saved;
 	}//end createComplaint()
-
-	/**
-	 * The object service, register and complaint schema a complaint is written to.
-	 *
-	 * @return array{0: object, 1: string, 2: string} The object service, register and schema.
-	 *
-	 * @throws \RuntimeException If OpenRegister is unavailable or the schema is not configured
-	 *
-	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
-	 */
-	private function complaintStore(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			throw new RuntimeException('Complaint schema not configured');
-		}
-
-		return [$objectService, $register, $schema];
-	}//end complaintStore()
 
 	/**
 	 * The complaint data as received: its status and its Awb deadlines set.
@@ -280,24 +260,7 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function getComplaint(string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			id: $id
-		);
+		return $this->store->find(id: $id);
 	}//end getComplaint()
 
 	/**
@@ -310,26 +273,7 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function listComplaints(array $filters = []): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return [];
-		}
-
-		$params = array_merge(['_limit' => 100, '_offset' => 0], $filters);
-
-		return $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: $params
-		);
+		return $this->store->search(filters: array_merge(['_limit' => 100, '_offset' => 0], $filters));
 	}//end listComplaints()
 
 	/**
@@ -345,18 +289,7 @@ class ComplaintService implements ComplaintServiceInterface {
 	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function updateComplaint(string $id, array $data): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		$result = $objectService->saveObject(
-			object: $data,
-			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: (string)$id)
-		);
+		$result = $this->store->update(id: $id, object: $data);
 
 		if (is_array($result) === true) {
 			return $result;
