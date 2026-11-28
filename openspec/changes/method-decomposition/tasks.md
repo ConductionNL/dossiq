@@ -2328,6 +2328,22 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `ObjectArrayCopiesTest` and `RowListCopiesTest`. Own test:
         `tests/Unit/Controller/Support/CaseStepRerouteTest` (2); resolving a step without a rule turns both suites red
         (checked).
+  - [x] 8es `Service/WOODocumentAssessmentService` (1, unsuppressed: CouplingBetweenObjects 16 against 13). Storing a
+        batch of assessments on one case (validating, stamping, update-or-create and marking the judged documents in
+        scope) moved to `Service/Assessment/AssessmentBatchWriter::write()`, which also holds the validator (`validate()`).
+        Where the assessments are stored and who may change them moved to `Service/Assessment/AssessmentRecords`: the
+        batch's storage target (`batchTarget()`), the stored row read past the caller (`storedOf()`), the reviewer rule
+        (`refusalOn()`, `reconcileAfterCreate()`), finding a stored assessment, reading the partly public ones (scoped)
+        and tallying those without a redacted copy (unscoped), and changing fields of an existing one (`find()`,
+        `partlyPublic()`, `partlyPublicWithoutCopy()`, `update()`). The writer reads through the records, so it takes
+        four parameters (gate-122). Bodies moved unchanged. The service keeps its public methods, the outstanding list, the bulk-upsert
+        log line and the redaction-proposal log line, and builds both helpers in its constructor, so its constructor,
+        interface and container are unchanged. Coupling 16 to 13 (writer 10, records 8); phpmd: zero findings on the
+        three files under both rulesets.
+        Characterisation, green before and after: `WOODocumentAssessmentServiceTest` (35), `WooAssessmentForgedIdTest`,
+        `DocumentAssessmentGuardRedactedTest`, `DocumentRedactionServiceTest` and the assessment controller suites.
+        Own tests: `tests/Unit/Service/Assessment/AssessmentBatchWriterTest` (6) and `AssessmentRecordsTest` (6); keeping
+        the caller's identity keys turns `AssessmentBatchWriterTest` and `WooAssessmentForgedIdTest` red (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
