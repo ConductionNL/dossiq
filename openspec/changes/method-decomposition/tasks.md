@@ -2318,13 +2318,14 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         is handed in as two closures, so no static call moves. The admin guard goes through `AdminCaller` (8da, 8eq):
         no user a 401, no administrator a 403, as before. The controller keeps the guards, the 503, the refusal and
         failure answers and `route()`. It takes `CaseStepReroute` and `AdminCaller` in place of the role resolver, the
-        settings bridge, the session and the group manager; the container autowires both, and only its own test builds
+        settings bridge, the session and the group manager; the container autowires both, and only its two tests build
         it by hand. Coupling 16 to 13; phpmd: the coupling finding gone and nothing new on both files under both
         rulesets (the two inherited StaticAccess findings stay on their untouched lines).
         Characterisation, written first and green on the untouched controller: `tests/Unit/Controller/RoutingControllerTest`
         (7: 401 and 403 for both acts, the 503, the steps resolved with the reads in order, a case without a workflow,
         the logged 500, a refusal keeping its status, and `route()`'s 400, answer and logged 500), then unchanged but for
-        the constructor; `ObjectArrayCopiesTest` and `RowListCopiesTest`. Own test:
+        the constructor; `RoutingControllerContractTest` (8), unchanged but for the constructor and two `@uses` lines;
+        `ObjectArrayCopiesTest` and `RowListCopiesTest`. Own test:
         `tests/Unit/Controller/Support/CaseStepRerouteTest` (2); resolving a step without a rule turns both suites red
         (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
