@@ -29,10 +29,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
 use OCA\Dossiq\Review\DisclosureAssessmentValidator;
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\AssessmentBatchTarget;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -44,8 +41,6 @@ use RuntimeException;
  * @spec openspec/changes/method-decomposition/tasks.md
  */
 final class AssessmentBatchWriter {
-
-	use SearchesObjects;
 
 	/**
 	 * The keys that name a stored object, dropped from each caller assessment
@@ -63,19 +58,17 @@ final class AssessmentBatchWriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService                 $settingsService Where OpenRegister, the register and the schema are configured.
-	 * @param LoggerInterface                 $logger          Logger.
-	 * @param WooRefusalGrounds               $refusalGrounds  The settled list a cited ground is checked against.
-	 * @param CaseReviewerAccess|null         $reviewerAccess  Who may change an assessment; null lets everyone.
-	 * @param DocumentRelevanceInterface|null $reviews         Each document's relevance and pages seen; null skips both.
+	 * @param AssessmentRecords               $records        Where the assessments are stored and who may change them.
+	 * @param LoggerInterface                 $logger         Logger.
+	 * @param WooRefusalGrounds               $refusalGrounds The settled list a cited ground is checked against.
+	 * @param DocumentRelevanceInterface|null $reviews        Each document's relevance and pages seen; null skips both.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly AssessmentRecords $records,
 		private readonly LoggerInterface $logger,
 		WooRefusalGrounds $refusalGrounds,
-		private readonly ?CaseReviewerAccess $reviewerAccess = null,
 		private readonly ?DocumentRelevanceInterface $reviews = null,
 	) {
 		$this->validator = new DisclosureAssessmentValidator(refusalGrounds: $refusalGrounds);
@@ -112,18 +105,11 @@ final class AssessmentBatchWriter {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function write(string $caseId, array $assessments, string $userId): array {
-		$location = $this->assessmentTarget();
-		$target = new AssessmentBatchTarget(
-			objectService: $location['objectService'],
-			register: $location['register'],
-			schema: $location['schema'],
-			userId: $userId,
-			caseId: $caseId
-		);
+		$target = $this->records->batchTarget(caseId: $caseId, userId: $userId);
 
 		$tally = $this->upsertAll(assessments: $assessments, target: $target);
 
-		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $tally['created']);
+		$this->records->reconcileAfterCreate(caseId: $caseId, created: $tally['created']);
 		$this->markJudgedInScope(target: $target, documentRefs: $tally['judged']);
 
 		return ['saved' => $tally['saved'], 'errors' => $tally['errors']];
@@ -155,29 +141,6 @@ final class AssessmentBatchWriter {
 
 		return $tally;
 	}//end upsertAll()
-
-	/**
-	 * Where assessments are stored: the object service, register and schema.
-	 *
-	 * @return array<string, mixed> The object service, register and schema.
-	 *
-	 * @throws RuntimeException If OpenRegister is unavailable or the schema is not configured.
-	 */
-	private function assessmentTarget(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
-
-		if (empty($register) === true || empty($assessmentSchema) === true) {
-			throw new RuntimeException('WOO assessment schema not configured');
-		}
-
-		return ['objectService' => $objectService, 'register' => $register, 'schema' => $assessmentSchema];
-	}//end assessmentTarget()
 
 	/**
 	 * Validate, stamp and store one assessment.
@@ -222,11 +185,11 @@ final class AssessmentBatchWriter {
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function storeAssessment(array $assessment, AssessmentBatchTarget $target): array {
-		$existing = $this->existingAssessments(assessment: $assessment, target: $target);
+		$existing = $this->records->storedOf(target: $target, documentRef: $assessment['documentRef']);
 
 		$uuid = null;
 		if (count($existing) > 0) {
-			$refusal = $this->refusalOn(record: $existing[0], assessment: $assessment, target: $target);
+			$refusal = $this->records->refusalOn(target: $target, record: $existing[0], reference: (string)$assessment['documentRef']);
 			if ($refusal !== null) {
 				return ['error' => $refusal];
 			}
@@ -236,41 +199,6 @@ final class AssessmentBatchWriter {
 
 		return $target->save(assessment: $assessment, uuid: $uuid);
 	}//end storeAssessment()
-
-	/**
-	 * The case's stored assessments of the document, whoever can see them.
-	 *
-	 * @param array<string, mixed>  $assessment The stamped assessment.
-	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
-	 *
-	 * @return array<int, array<string, mixed>> At most one assessment.
-	 */
-	private function existingAssessments(array $assessment, AssessmentBatchTarget $target): array {
-		return $this->searchObjectsAsArraysUnscoped(
-			objectService: $target->objectService,
-			register: $target->register,
-			schema: $target->schema,
-			filters: ['caseRef' => $target->caseId, 'documentRef' => $assessment['documentRef'], '_limit' => 1],
-		);
-	}//end existingAssessments()
-
-	/**
-	 * Why the acting user may not change the stored assessment, or null when they may.
-	 *
-	 * @param array<string, mixed>  $record     The stored assessment.
-	 * @param array<string, mixed>  $assessment The stamped assessment.
-	 * @param AssessmentBatchTarget $target     The storage target, the case and the acting user id.
-	 *
-	 * @return mixed The refusal, or null.
-	 */
-	private function refusalOn(array $record, array $assessment, AssessmentBatchTarget $target): mixed {
-		return $this->reviewerAccess?->refusalFor(
-			caseId: $target->caseId,
-			record: $record,
-			userId: $target->userId,
-			reference: (string)$assessment['documentRef']
-		);
-	}//end refusalOn()
 
 	/**
 	 * Mark the documents that just received a verdict in scope, where nobody marked them yet.

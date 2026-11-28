@@ -101,14 +101,13 @@ class WOODocumentAssessmentService implements WOODocumentAssessmentServiceInterf
 		?OutstandingDocuments $outstanding = null,
 	) {
 		$refusalGrounds = ($refusalGrounds ?? new WooRefusalGrounds(settingsService: $settingsService, logger: $logger));
+		$this->records = new AssessmentRecords(settingsService: $settingsService, userSession: $userSession, reviewerAccess: $reviewerAccess);
 		$this->batchWriter = new AssessmentBatchWriter(
-			settingsService: $settingsService,
+			records: $this->records,
 			logger: $logger,
 			refusalGrounds: $refusalGrounds,
-			reviewerAccess: $reviewerAccess,
 			reviews: $reviews
 		);
-		$this->records = new AssessmentRecords(settingsService: $settingsService, userSession: $userSession, reviewerAccess: $reviewerAccess);
 		$this->outstandingDocuments = ($outstanding ?? new OutstandingDocuments(
 			settingsService: $settingsService,
 			caseDocuments: $caseDocuments,

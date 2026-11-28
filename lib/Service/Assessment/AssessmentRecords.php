@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Service\Assessment;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
+use OCA\Dossiq\Service\AssessmentBatchTarget;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\RequiresObjectService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -36,7 +37,7 @@ use OCP\IUserSession;
 use RuntimeException;
 
 /**
- * The stored assessments of a case: find, read partly public, and change an existing one.
+ * The stored assessments of a case: where they are, who may change them, find, read partly public, and change one.
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
@@ -68,6 +69,97 @@ final class AssessmentRecords {
 	) {
 		$this->partlyPublicRows = new PartlyPublicRows();
 	}//end __construct()
+
+	/**
+	 * Where one batch of verdicts on the case is stored, and by whom.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $userId Who gives the verdicts.
+	 *
+	 * @return AssessmentBatchTarget The object service, register, schema, case and user.
+	 *
+	 * @throws RuntimeException If OpenRegister is unavailable or the schema is not configured.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-5
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function batchTarget(string $caseId, string $userId): AssessmentBatchTarget {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+
+		if (empty($register) === true || empty($assessmentSchema) === true) {
+			throw new RuntimeException('WOO assessment schema not configured');
+		}
+
+		return new AssessmentBatchTarget(
+			objectService: $objectService,
+			register: $register,
+			schema: $assessmentSchema,
+			userId: $userId,
+			caseId: $caseId
+		);
+	}//end batchTarget()
+
+	/**
+	 * The case's stored assessments of the document, whoever can see them.
+	 *
+	 * @param AssessmentBatchTarget $target      The storage target and the case.
+	 * @param mixed                 $documentRef The document the verdict is on.
+	 *
+	 * @return array<int, array<string, mixed>> At most one assessment.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function storedOf(AssessmentBatchTarget $target, mixed $documentRef): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $target->objectService,
+			register: $target->register,
+			schema: $target->schema,
+			filters: ['caseRef' => $target->caseId, 'documentRef' => $documentRef, '_limit' => 1],
+		);
+	}//end storedOf()
+
+	/**
+	 * Why the acting user may not change the stored assessment, or null when they may.
+	 *
+	 * @param AssessmentBatchTarget $target    The case and the acting user id.
+	 * @param array<string, mixed>  $record    The stored assessment.
+	 * @param string                $reference The document the verdict is on.
+	 *
+	 * @return mixed The refusal, or null.
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function refusalOn(AssessmentBatchTarget $target, array $record, string $reference): mixed {
+		return $this->reviewerAccess?->refusalFor(
+			caseId: $target->caseId,
+			record: $record,
+			userId: $target->userId,
+			reference: $reference
+		);
+	}//end refusalOn()
+
+	/**
+	 * Bring the case's reviewer access up to date after assessments were created.
+	 *
+	 * @param string $caseId  The case UUID.
+	 * @param int    $created How many assessments the batch created.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-scoped-access/specs/case-reviewer-access/spec.md#requirement-a-reviewer-changes-only-the-records-they-made-req-cra-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function reconcileAfterCreate(string $caseId, int $created): void {
+		$this->reviewerAccess?->reconcileAfterCreate(caseId: $caseId, created: $created);
+	}//end reconcileAfterCreate()
 
 	/**
 	 * The stored assessment of a (case, document) pair, or null when there is none.

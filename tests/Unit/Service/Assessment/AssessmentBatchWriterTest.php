@@ -27,10 +27,12 @@ use OCA\Dossiq\Kernel\Contracts\DocumentRelevanceInterface;
 use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
 use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\Assessment\AssessmentBatchWriter;
+use OCA\Dossiq\Service\Assessment\AssessmentRecords;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\LifecycleRegister;
 use OCA\Dossiq\Tests\Support\RefusalGroundStore;
 use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -47,8 +49,18 @@ class AssessmentBatchWriterTest extends TestCase {
 
 	private const CONFIG = ['register' => 'dossiq', 'woo_assessment_schema' => self::SCHEMA];
 
+	/**
+	 * The register the assessments are stored in.
+	 *
+	 * @var LifecycleRegister
+	 */
 	private LifecycleRegister $register;
 
+	/**
+	 * A fresh register per test.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->register = new LifecycleRegister();
 	}//end setUp()
@@ -71,20 +83,30 @@ class AssessmentBatchWriterTest extends TestCase {
 		?LoggerInterface $logger = null,
 		bool $withOr = true,
 	): AssessmentBatchWriter {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($withOr === true ? $this->register : null);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$objectService = null;
+		if ($withOr === true) {
+			$objectService = $this->register;
+		}
+
+		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
 		);
-		$groundSettings = $this->createMock(SettingsService::class);
+		$groundSettings = $this->createMock(originalClassName: SettingsService::class);
 		$groundSettings->method('getObjectService')->willReturn(RefusalGroundStore::seeded());
 		$logger = ($logger ?? new NullLogger());
 
-		return new AssessmentBatchWriter(
+		$records = new AssessmentRecords(
 			settingsService: $settings,
+			userSession: $this->createMock(originalClassName: IUserSession::class),
+			reviewerAccess: $access
+		);
+
+		return new AssessmentBatchWriter(
+			records: $records,
 			logger: $logger,
 			refusalGrounds: new WooRefusalGrounds(settingsService: $groundSettings, logger: $logger),
-			reviewerAccess: $access,
 			reviews: $reviews
 		);
 	}//end writer()
@@ -101,15 +123,15 @@ class AssessmentBatchWriterTest extends TestCase {
 			userId: 'reviewer-1'
 		);
 
-		$this->assertSame([], $result['errors']);
-		$this->assertCount(1, $result['saved']);
+		$this->assertSame(expected: [], actual: $result['errors']);
+		$this->assertCount(expectedCount: 1, haystack: $result['saved']);
 		$rows = array_values($this->register->all(self::SCHEMA));
-		$this->assertCount(1, $rows);
-		$this->assertNotSame('forged', $rows[0]['id']);
-		$this->assertSame('case-1', $rows[0]['caseRef']);
-		$this->assertSame('reviewer-1', $rows[0]['assessedBy']);
-		$this->assertSame(WooRefusalGrounds::LIST_VERSION, $rows[0]['groundsListVersion']);
-		$this->assertArrayHasKey('assessedAt', $rows[0]);
+		$this->assertCount(expectedCount: 1, haystack: $rows);
+		$this->assertNotSame(expected: 'forged', actual: $rows[0]['id']);
+		$this->assertSame(expected: 'case-1', actual: $rows[0]['caseRef']);
+		$this->assertSame(expected: 'reviewer-1', actual: $rows[0]['assessedBy']);
+		$this->assertSame(expected: WooRefusalGrounds::LIST_VERSION, actual: $rows[0]['groundsListVersion']);
+		$this->assertArrayHasKey(key: 'assessedAt', array: $rows[0]);
 	}//end testANewAssessmentIsStampedAndStored()
 
 	/**
@@ -119,7 +141,7 @@ class AssessmentBatchWriterTest extends TestCase {
 	 */
 	public function testASecondVerdictUpdatesTheStoredOne(): void {
 		$this->register->seed(schema: self::SCHEMA, uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1', 'classification' => 'openbaar']);
-		$access = $this->createMock(CaseReviewerAccess::class);
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
 		$access->method('refusalFor')->willReturn(null);
 		$access->expects($this->once())->method('reconcileAfterCreate')->with('case-1', 1);
 
@@ -132,9 +154,9 @@ class AssessmentBatchWriterTest extends TestCase {
 			userId: 'reviewer-1'
 		);
 
-		$this->assertCount(2, $result['saved']);
-		$this->assertCount(2, $this->register->all(self::SCHEMA));
-		$this->assertSame('reviewer-1', $this->register->row(self::SCHEMA, 'a-1')['assessedBy']);
+		$this->assertCount(expectedCount: 2, haystack: $result['saved']);
+		$this->assertCount(expectedCount: 2, haystack: $this->register->all(self::SCHEMA));
+		$this->assertSame(expected: 'reviewer-1', actual: $this->register->row(self::SCHEMA, 'a-1')['assessedBy']);
 	}//end testASecondVerdictUpdatesTheStoredOne()
 
 	/**
@@ -144,7 +166,7 @@ class AssessmentBatchWriterTest extends TestCase {
 	 */
 	public function testInvalidAndRefusedVerdictsAreErrors(): void {
 		$this->register->seed(schema: self::SCHEMA, uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1', 'assessedBy' => 'someone-else']);
-		$access = $this->createMock(CaseReviewerAccess::class);
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
 		$access->method('refusalFor')->willReturn(['documentRef' => 'doc-1', 'errors' => ['owner' => 'Not yours.']]);
 
 		$result = $this->writer(access: $access)->write(
@@ -156,11 +178,11 @@ class AssessmentBatchWriterTest extends TestCase {
 			userId: 'reviewer-1'
 		);
 
-		$this->assertSame([], $result['saved']);
-		$this->assertSame('unknown', $result['errors'][0]['documentRef']);
-		$this->assertArrayHasKey('documentRef', $result['errors'][0]['errors']);
-		$this->assertSame(['documentRef' => 'doc-1', 'errors' => ['owner' => 'Not yours.']], $result['errors'][1]);
-		$this->assertSame('someone-else', $this->register->row(self::SCHEMA, 'a-1')['assessedBy']);
+		$this->assertSame(expected: [], actual: $result['saved']);
+		$this->assertSame(expected: 'unknown', actual: $result['errors'][0]['documentRef']);
+		$this->assertArrayHasKey(key: 'documentRef', array: $result['errors'][0]['errors']);
+		$this->assertSame(expected: ['documentRef' => 'doc-1', 'errors' => ['owner' => 'Not yours.']], actual: $result['errors'][1]);
+		$this->assertSame(expected: 'someone-else', actual: $this->register->row(self::SCHEMA, 'a-1')['assessedBy']);
 	}//end testInvalidAndRefusedVerdictsAreErrors()
 
 	/**
@@ -169,14 +191,14 @@ class AssessmentBatchWriterTest extends TestCase {
 	 * @return void
 	 */
 	public function testJudgedDocumentsAreMarkedInScope(): void {
-		$pages = $this->createMock(PagesSeenInterface::class);
+		$pages = $this->createMock(originalClassName: PagesSeenInterface::class);
 		$pages->method('refusalFor')->willReturn([]);
-		$reviews = $this->createMock(DocumentRelevanceInterface::class);
+		$reviews = $this->createMock(originalClassName: DocumentRelevanceInterface::class);
 		$reviews->method('pages')->willReturn($pages);
 		$reviews->expects($this->once())->method('markInScopeWhereUnmarked')
 			->with('case-1', ['doc-1'], 'reviewer-1')
 			->willThrowException(new RefusedException(rule: 'review-unwritable', sentence: 'Cannot write.'));
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning');
 
 		$result = $this->writer(reviews: $reviews, logger: $logger)->write(
@@ -185,7 +207,7 @@ class AssessmentBatchWriterTest extends TestCase {
 			userId: 'reviewer-1'
 		);
 
-		$this->assertCount(1, $result['saved']);
+		$this->assertCount(expectedCount: 1, haystack: $result['saved']);
 	}//end testJudgedDocumentsAreMarkedInScope()
 
 	/**
@@ -194,9 +216,9 @@ class AssessmentBatchWriterTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnseenPageRefusesTheVerdict(): void {
-		$pages = $this->createMock(PagesSeenInterface::class);
+		$pages = $this->createMock(originalClassName: PagesSeenInterface::class);
 		$pages->method('refusalFor')->willReturn(['pagesSeen' => 'Page 3 not seen.']);
-		$reviews = $this->createMock(DocumentRelevanceInterface::class);
+		$reviews = $this->createMock(originalClassName: DocumentRelevanceInterface::class);
 		$reviews->method('pages')->willReturn($pages);
 
 		$result = $this->writer(reviews: $reviews)->write(
@@ -205,8 +227,8 @@ class AssessmentBatchWriterTest extends TestCase {
 			userId: 'reviewer-1'
 		);
 
-		$this->assertSame(['pagesSeen' => 'Page 3 not seen.'], $result['errors'][0]['errors']);
-		$this->assertSame([], $this->register->all(self::SCHEMA));
+		$this->assertSame(expected: ['pagesSeen' => 'Page 3 not seen.'], actual: $result['errors'][0]['errors']);
+		$this->assertSame(expected: [], actual: $this->register->all(self::SCHEMA));
 	}//end testAnUnseenPageRefusesTheVerdict()
 
 	/**
@@ -217,12 +239,12 @@ class AssessmentBatchWriterTest extends TestCase {
 	public function testABatchNeedsOpenRegisterAndTheSchema(): void {
 		try {
 			$this->writer(withOr: false)->write(caseId: 'case-1', assessments: [], userId: 'reviewer-1');
-			$this->fail('Without OpenRegister the batch should be refused.');
+			$this->fail(message: 'Without OpenRegister the batch should be refused.');
 		} catch (RuntimeException $e) {
-			$this->assertSame('OpenRegister is not available', $e->getMessage());
+			$this->assertSame(expected: 'OpenRegister is not available', actual: $e->getMessage());
 		}
 
-		$this->expectExceptionMessage('WOO assessment schema not configured');
+		$this->expectExceptionMessage(message: 'WOO assessment schema not configured');
 		$this->writer(config: ['register' => 'dossiq'])->write(caseId: 'case-1', assessments: [], userId: 'reviewer-1');
 	}//end testABatchNeedsOpenRegisterAndTheSchema()
 }//end class

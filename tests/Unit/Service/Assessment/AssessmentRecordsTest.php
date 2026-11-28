@@ -43,8 +43,18 @@ class AssessmentRecordsTest extends TestCase {
 
 	private const CONFIG = ['register' => 'dossiq', 'woo_assessment_schema' => self::SCHEMA];
 
+	/**
+	 * The register the assessments are stored in.
+	 *
+	 * @var LifecycleRegister
+	 */
 	private LifecycleRegister $register;
 
+	/**
+	 * A fresh register per test.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->register = new LifecycleRegister();
 	}//end setUp()
@@ -59,14 +69,19 @@ class AssessmentRecordsTest extends TestCase {
 	 * @return AssessmentRecords The records.
 	 */
 	private function records(array $config = self::CONFIG, ?CaseReviewerAccess $access = null, bool $withOr = true): AssessmentRecords {
-		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($withOr === true ? $this->register : null);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$objectService = null;
+		if ($withOr === true) {
+			$objectService = $this->register;
+		}
+
+		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key, string $default = ''): string => ($config[$key] ?? $default)
 		);
-		$user = $this->createMock(IUser::class);
+		$user = $this->createMock(originalClassName: IUser::class);
 		$user->method('getUID')->willReturn('reviewer-1');
-		$session = $this->createMock(IUserSession::class);
+		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
 		return new AssessmentRecords(settingsService: $settings, userSession: $session, reviewerAccess: $access);
@@ -81,10 +96,10 @@ class AssessmentRecordsTest extends TestCase {
 		$this->register->seed(schema: self::SCHEMA, uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1']);
 		$this->register->seed(schema: self::SCHEMA, uuid: 'a-2', row: ['caseRef' => 'case-2', 'documentRef' => 'doc-1']);
 
-		$this->assertSame('a-1', $this->records()->find(caseId: 'case-1', documentRef: 'doc-1')['id']);
-		$this->assertNull($this->records()->find(caseId: 'case-1', documentRef: 'doc-9'));
-		$this->assertNull($this->records(config: ['register' => 'dossiq'])->find(caseId: 'case-1', documentRef: 'doc-1'));
-		$this->assertNull($this->records(withOr: false)->find(caseId: 'case-1', documentRef: 'doc-1'));
+		$this->assertSame(expected: 'a-1', actual: $this->records()->find(caseId: 'case-1', documentRef: 'doc-1')['id']);
+		$this->assertNull(actual: $this->records()->find(caseId: 'case-1', documentRef: 'doc-9'));
+		$this->assertNull(actual: $this->records(config: ['register' => 'dossiq'])->find(caseId: 'case-1', documentRef: 'doc-1'));
+		$this->assertNull(actual: $this->records(withOr: false)->find(caseId: 'case-1', documentRef: 'doc-1'));
 	}//end testFindAnswersThePairsAssessment()
 
 	/**
@@ -93,19 +108,27 @@ class AssessmentRecordsTest extends TestCase {
 	 * @return void
 	 */
 	public function testPartlyPublicIsScopedAndTheTallyIsNot(): void {
-		$this->register->seed(schema: self::SCHEMA, uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1', 'classification' => 'deels_openbaar']);
-		$this->register->seed(schema: self::SCHEMA, uuid: 'a-2', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-2', 'classification' => 'deels_openbaar', 'redactedDocumentRef' => 'doc-2r']);
+		$this->register->seed(
+			schema: self::SCHEMA,
+			uuid: 'a-1',
+			row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1', 'classification' => 'deels_openbaar']
+		);
+		$this->register->seed(
+			schema: self::SCHEMA,
+			uuid: 'a-2',
+			row: ['caseRef' => 'case-1', 'documentRef' => 'doc-2', 'classification' => 'deels_openbaar', 'redactedDocumentRef' => 'doc-2r']
+		);
 		$this->register->seed(schema: self::SCHEMA, uuid: 'a-3', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-3', 'classification' => 'openbaar']);
 
-		$this->assertSame(['a-1', 'a-2'], array_column($this->records()->partlyPublic(caseId: 'case-1'), 'id'));
-		$this->assertSame([], $this->records(config: ['register' => 'dossiq'])->partlyPublic(caseId: 'case-1'));
+		$this->assertSame(expected: ['a-1', 'a-2'], actual: array_column($this->records()->partlyPublic(caseId: 'case-1'), 'id'));
+		$this->assertSame(expected: [], actual: $this->records(config: ['register' => 'dossiq'])->partlyPublic(caseId: 'case-1'));
 
 		$this->register->hiddenFromCaller = [self::SCHEMA];
-		$this->assertSame([], $this->records()->partlyPublic(caseId: 'case-1'));
-		$this->assertSame(['partlyPublic' => 2, 'waiting' => ['doc-1']], $this->records()->partlyPublicWithoutCopy(caseId: 'case-1'));
+		$this->assertSame(expected: [], actual: $this->records()->partlyPublic(caseId: 'case-1'));
+		$this->assertSame(expected: ['partlyPublic' => 2, 'waiting' => ['doc-1']], actual: $this->records()->partlyPublicWithoutCopy(caseId: 'case-1'));
 		$this->assertSame(
-			['partlyPublic' => 0, 'waiting' => []],
-			$this->records(config: ['register' => 'dossiq'])->partlyPublicWithoutCopy(caseId: 'case-1')
+			expected: ['partlyPublic' => 0, 'waiting' => []],
+			actual: $this->records(config: ['register' => 'dossiq'])->partlyPublicWithoutCopy(caseId: 'case-1')
 		);
 	}//end testPartlyPublicIsScopedAndTheTallyIsNot()
 
@@ -115,7 +138,7 @@ class AssessmentRecordsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheTallyNeedsOpenRegister(): void {
-		$this->expectException(RuntimeException::class);
+		$this->expectException(exception: RuntimeException::class);
 		$this->records(withOr: false)->partlyPublicWithoutCopy(caseId: 'case-1');
 	}//end testTheTallyNeedsOpenRegister()
 
@@ -125,16 +148,20 @@ class AssessmentRecordsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUpdatePatchesTheStoredAssessmentUnderTheReviewerRule(): void {
-		$this->register->seed(schema: self::SCHEMA, uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1', 'classification' => 'deels_openbaar']);
-		$access = $this->createMock(CaseReviewerAccess::class);
+		$this->register->seed(
+			schema: self::SCHEMA,
+			uuid: 'a-1',
+			row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1', 'classification' => 'deels_openbaar']
+		);
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
 		$access->expects($this->once())->method('assertMayChange')
-			->with('case-1', $this->callback(static fn (array $record): bool => $record['id'] === 'a-1'), 'reviewer-1');
+			->with('case-1', $this->callback(callback: static fn (array $record): bool => $record['id'] === 'a-1'), 'reviewer-1');
 
 		$saved = $this->records(access: $access)->update(caseId: 'case-1', documentRef: 'doc-1', fields: ['redactedDocumentRef' => 'doc-1r']);
 
-		$this->assertSame('doc-1r', $saved['redactedDocumentRef']);
-		$this->assertSame('doc-1r', $this->register->row(self::SCHEMA, 'a-1')['redactedDocumentRef']);
-		$this->assertSame(1, $this->register->patches);
+		$this->assertSame(expected: 'doc-1r', actual: $saved['redactedDocumentRef']);
+		$this->assertSame(expected: 'doc-1r', actual: $this->register->row(self::SCHEMA, 'a-1')['redactedDocumentRef']);
+		$this->assertSame(expected: 1, actual: $this->register->patches);
 	}//end testAnUpdatePatchesTheStoredAssessmentUnderTheReviewerRule()
 
 	/**
@@ -144,17 +171,18 @@ class AssessmentRecordsTest extends TestCase {
 	 */
 	public function testARefusedReviewerChangesNothing(): void {
 		$this->register->seed(schema: self::SCHEMA, uuid: 'a-1', row: ['caseRef' => 'case-1', 'documentRef' => 'doc-1']);
-		$access = $this->createMock(CaseReviewerAccess::class);
-		$access->method('assertMayChange')->willThrowException(new RefusedException(rule: 'owned-by-another-reviewer', sentence: 'Not yours.', status: RefusedException::STATUS_FORBIDDEN));
+		$access = $this->createMock(originalClassName: CaseReviewerAccess::class);
+		$refusal = new RefusedException(rule: 'owned-by-another-reviewer', sentence: 'Not yours.', status: RefusedException::STATUS_FORBIDDEN);
+		$access->method('assertMayChange')->willThrowException($refusal);
 
 		try {
 			$this->records(access: $access)->update(caseId: 'case-1', documentRef: 'doc-1', fields: ['redaction' => ['x' => 1]]);
-			$this->fail('The refusal should have been thrown.');
+			$this->fail(message: 'The refusal should have been thrown.');
 		} catch (RefusedException $e) {
-			$this->assertSame(403, $e->getStatus());
+			$this->assertSame(expected: 403, actual: $e->getStatus());
 		}
 
-		$this->assertSame(0, $this->register->patches);
+		$this->assertSame(expected: 0, actual: $this->register->patches);
 	}//end testARefusedReviewerChangesNothing()
 
 	/**
@@ -165,12 +193,12 @@ class AssessmentRecordsTest extends TestCase {
 	public function testAnUpdateNeedsAnAssessedDocument(): void {
 		try {
 			$this->records()->update(caseId: 'case-1', documentRef: 'doc-1', fields: []);
-			$this->fail('An unassessed document should be refused.');
+			$this->fail(message: 'An unassessed document should be refused.');
 		} catch (RuntimeException $e) {
-			$this->assertStringContainsString('must be assessed', $e->getMessage());
+			$this->assertStringContainsString(needle: 'must be assessed', haystack: $e->getMessage());
 		}
 
-		$this->expectExceptionMessage('OpenRegister is not available');
+		$this->expectExceptionMessage(message: 'OpenRegister is not available');
 		$this->records(withOr: false)->update(caseId: 'case-1', documentRef: 'doc-1', fields: []);
 	}//end testAnUpdateNeedsAnAssessedDocument()
 }//end class
