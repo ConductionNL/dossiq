@@ -39,13 +39,13 @@ final class FirstResponseDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testADeclaredTermWins(): void {
-		$resolution = $this->createMock(TermResolution::class);
+		$resolution = $this->createMock(originalClassName: TermResolution::class);
 		$resolution->expects($this->once())
 			->method('resolve')
 			->with('klacht', [], TermKind::FIRST_RESPONSE)
 			->willReturn(['definition' => ['standardDurationDays' => 3]]);
 
-		self::assertSame(3, (new FirstResponseDays(resolution: $resolution))->days(caseType: 'klacht', fallback: 5));
+		self::assertSame(expected: 3, actual: (new FirstResponseDays(resolution: $resolution))->days(caseType: 'klacht', fallback: 5));
 	}//end testADeclaredTermWins()
 
 	/**
@@ -54,14 +54,14 @@ final class FirstResponseDaysTest extends TestCase {
 	 * @return void
 	 */
 	public function testNothingDeclaredIsTheFallback(): void {
-		self::assertSame(5, (new FirstResponseDays())->days(caseType: 'klacht', fallback: 5));
+		self::assertSame(expected: 5, actual: (new FirstResponseDays())->days(caseType: 'klacht', fallback: 5));
 
-		$none = $this->createMock(TermResolution::class);
+		$none = $this->createMock(originalClassName: TermResolution::class);
 		$none->method('resolve')->willReturn(null);
-		self::assertSame(5, (new FirstResponseDays(resolution: $none))->days(caseType: 'klacht', fallback: 5));
+		self::assertSame(expected: 5, actual: (new FirstResponseDays(resolution: $none))->days(caseType: 'klacht', fallback: 5));
 
-		$zero = $this->createMock(TermResolution::class);
+		$zero = $this->createMock(originalClassName: TermResolution::class);
 		$zero->method('resolve')->willReturn(['definition' => ['standardDurationDays' => 0]]);
-		self::assertSame(5, (new FirstResponseDays(resolution: $zero))->days(caseType: 'klacht', fallback: 5));
+		self::assertSame(expected: 5, actual: (new FirstResponseDays(resolution: $zero))->days(caseType: 'klacht', fallback: 5));
 	}//end testNothingDeclaredIsTheFallback()
 }//end class

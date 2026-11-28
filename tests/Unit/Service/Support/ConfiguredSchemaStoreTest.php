@@ -47,7 +47,7 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 	 * @return ConfiguredSchemaStore
 	 */
 	private function store(?object $objectService, string $register = 'dossiq', string $schema = 'thing'): ConfiguredSchemaStore {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getObjectService')->willReturn($objectService);
 		$settings->method('getConfigValue')->willReturnMap([
 			['register', '', $register],
@@ -70,15 +70,40 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 			/** @var list<array<string, mixed>> */
 			public array $searches = [];
 
+			/**
+			 * A found record, by id.
+			 *
+			 * @param int|string $id The id.
+			 * @param mixed ...$args The find options.
+			 *
+			 * @return array<string, string>
+			 */
 			public function find(int|string $id, mixed ...$args): array {
 				return ['id' => (string)$id, 'title' => 'Found'];
 			}
 
+			/**
+			 * Two records; the search is recorded.
+			 *
+			 * @param string $register The register slug.
+			 * @param string $schema The schema slug.
+			 * @param array<string, mixed> $filters The filters.
+			 *
+			 * @return list<array<string, string>>
+			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
 				$this->searches[] = ['register' => $register, 'schema' => $schema, 'filters' => $filters];
 				return [['id' => 'a'], ['id' => 'b']];
 			}
 
+			/**
+			 * The saved record; the save is recorded.
+			 *
+			 * @param array<string, mixed> $object The record.
+			 * @param ObjectSaveOptions $options Where and what to save.
+			 *
+			 * @return array<string, mixed>
+			 */
 			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions()): array {
 				$this->saves[] = ['object' => $object, 'options' => $options];
 				return $object + ['saved' => true];
@@ -95,11 +120,11 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 		$service = $this->objectService();
 		$store   = $this->store(objectService: $service);
 
-		self::assertSame(['id' => 'x-1', 'title' => 'Found'], $store->find(id: 'x-1'));
-		self::assertSame([['id' => 'a'], ['id' => 'b']], $store->search(filters: ['_limit' => 5]));
-		self::assertSame('dossiq', $service->searches[0]['register']);
-		self::assertSame('thing', $service->searches[0]['schema']);
-		self::assertSame(['_limit' => 5], $service->searches[0]['filters']);
+		self::assertSame(expected: ['id' => 'x-1', 'title' => 'Found'], actual: $store->find(id: 'x-1'));
+		self::assertSame(expected: [['id' => 'a'], ['id' => 'b']], actual: $store->search(filters: ['_limit' => 5]));
+		self::assertSame(expected: 'dossiq', actual: $service->searches[0]['register']);
+		self::assertSame(expected: 'thing', actual: $service->searches[0]['schema']);
+		self::assertSame(expected: ['_limit' => 5], actual: $service->searches[0]['filters']);
 	}//end testReadsUseTheConfiguredSchema()
 
 	/**
@@ -108,10 +133,10 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReadWithoutAStoreAnswersNothing(): void {
-		self::assertNull($this->store(objectService: null)->find(id: 'x'));
-		self::assertSame([], $this->store(objectService: null)->search(filters: []));
-		self::assertNull($this->store(objectService: $this->objectService(), schema: '')->find(id: 'x'));
-		self::assertSame([], $this->store(objectService: $this->objectService(), register: '')->search(filters: []));
+		self::assertNull(actual: $this->store(objectService: null)->find(id: 'x'));
+		self::assertSame(expected: [], actual: $this->store(objectService: null)->search(filters: []));
+		self::assertNull(actual: $this->store(objectService: $this->objectService(), schema: '')->find(id: 'x'));
+		self::assertSame(expected: [], actual: $this->store(objectService: $this->objectService(), register: '')->search(filters: []));
 	}//end testAReadWithoutAStoreAnswersNothing()
 
 	/**
@@ -128,19 +153,19 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 
 		try {
 			$this->store(objectService: null)->create(object: [], prepare: $prepare);
-			self::fail('no refusal without OpenRegister');
+			self::fail(message: 'no refusal without OpenRegister');
 		} catch (RuntimeException $e) {
-			self::assertSame('OpenRegister is not available', $e->getMessage());
+			self::assertSame(expected: 'OpenRegister is not available', actual: $e->getMessage());
 		}
 
 		try {
 			$this->store(objectService: $this->objectService(), schema: '')->create(object: [], prepare: $prepare);
-			self::fail('no refusal without a schema');
+			self::fail(message: 'no refusal without a schema');
 		} catch (RuntimeException $e) {
-			self::assertSame('Thing schema not configured', $e->getMessage());
+			self::assertSame(expected: 'Thing schema not configured', actual: $e->getMessage());
 		}
 
-		self::assertFalse($prepared);
+		self::assertFalse(condition: $prepared);
 	}//end testACreateRefusesBeforeItPrepares()
 
 	/**
@@ -155,11 +180,11 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 			prepare: fn (array $object): array => $object + ['status' => 'received']
 		);
 
-		self::assertSame(['title' => 'T', 'status' => 'received', 'saved' => true], $answer);
-		self::assertSame(['title' => 'T', 'status' => 'received'], $service->saves[0]['object']);
-		self::assertNull($service->saves[0]['options']->uuid);
-		self::assertSame('dossiq', $service->saves[0]['options']->target->register);
-		self::assertSame('thing', $service->saves[0]['options']->target->schema);
+		self::assertSame(expected: ['title' => 'T', 'status' => 'received', 'saved' => true], actual: $answer);
+		self::assertSame(expected: ['title' => 'T', 'status' => 'received'], actual: $service->saves[0]['object']);
+		self::assertNull(actual: $service->saves[0]['options']->uuid);
+		self::assertSame(expected: 'dossiq', actual: $service->saves[0]['options']->target->register);
+		self::assertSame(expected: 'thing', actual: $service->saves[0]['options']->target->schema);
 	}//end testACreateDropsIdentityKeysAndSavesThePreparedRecord()
 
 	/**
@@ -171,11 +196,11 @@ final class ConfiguredSchemaStoreTest extends TestCase {
 		$service = $this->objectService();
 		$this->store(objectService: $service)->update(id: 'u-1', object: ['status' => 'handled']);
 
-		self::assertSame(['status' => 'handled'], $service->saves[0]['object']);
-		self::assertSame('u-1', $service->saves[0]['options']->uuid);
+		self::assertSame(expected: ['status' => 'handled'], actual: $service->saves[0]['object']);
+		self::assertSame(expected: 'u-1', actual: $service->saves[0]['options']->uuid);
 
-		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessage('OpenRegister is not available');
+		$this->expectException(exception: RuntimeException::class);
+		$this->expectExceptionMessage(message: 'OpenRegister is not available');
 		$this->store(objectService: null)->update(id: 'u-1', object: []);
 	}//end testAnUpdateWritesOntoTheUuid()
 }//end class
