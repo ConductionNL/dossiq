@@ -62,4 +62,15 @@ final class AdminCaller {
 		$user = $this->userSession->getUser();
 		return $user !== null && $this->groupManager->isAdmin($user->getUID());
 	}//end isAdmin()
+
+	/**
+	 * Whether a caller is signed in at all.
+	 *
+	 * @return bool True when the session carries a user.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function isSignedIn(): bool {
+		return $this->userSession->getUser() !== null;
+	}//end isSignedIn()
 }//end class

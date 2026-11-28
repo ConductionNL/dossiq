@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\BelplanController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
@@ -48,6 +49,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
  * Wire-contract tests for BelplanController::route().
  *
  * @covers \OCA\Dossiq\Controller\BelplanController
+ * @uses   \OCA\Dossiq\Controller\Support\AdminCaller
+ * @uses   \OCA\Dossiq\Controller\Support\SchemaObjectCalls
  */
 class BelplanControllerContractTest extends TestCase {
 
@@ -112,8 +115,7 @@ class BelplanControllerContractTest extends TestCase {
 			request: $this->request,
 			routingService: $this->routingService,
 			settingsService: $this->settingsService,
-			userSession: $this->userSession,
-			groupManager: $this->groupManager,
+			caller: new AdminCaller(userSession: $this->userSession, groupManager: $this->groupManager),
 		);
 	}//end setUp()
 
