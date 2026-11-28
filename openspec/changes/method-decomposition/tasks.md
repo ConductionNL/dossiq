@@ -2344,6 +2344,24 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `DocumentAssessmentGuardRedactedTest`, `DocumentRedactionServiceTest` and the assessment controller suites.
         Own tests: `tests/Unit/Service/Assessment/AssessmentBatchWriterTest` (6) and `AssessmentRecordsTest` (6); keeping
         the caller's identity keys turns `AssessmentBatchWriterTest` and `WooAssessmentForgedIdTest` red (checked).
+  - [x] 8et `Service/WOODecisionService` (1, unsuppressed: CouplingBetweenObjects 18 against 13). Raising the decision
+        in decidiq and failing closed (the subject, the context, the logged refusal) moved to
+        `Service/DecisionDocument/DecisionRaiser::raise()`. The decision as recorded on the case moved to
+        `Service/DecisionDocument/LocalDecisionRecord`: `compose()` (OpenRegister and the decision schema required, then the
+        case title and the assessment tally) and `record()` (the besluit saved under the decision schema with the override
+        data merged and no identity kept, the case marked ready to publish, the assembled line logged; it answers the saved
+        uuid). The line a resident reads under the decision's title is worked out once by the service and travels on
+        `WooDecisionSubject::$label` (new, optional), so neither new class makes a static call. `DECISION_TYPE_ID` now lives
+        on the record and the service's constant points at it. Bodies otherwise moved unchanged. The service keeps both
+        guards, the subject, the actor and the answer with its drafts, and builds both helpers in its constructor, so its
+        constructor, interface and container are unchanged. Coupling 18 to 13 (raiser 7, record 11); phpmd: zero findings on
+        the four files under both rulesets.
+        Characterisation, green before and after: `WOODecisionServiceTest` (all of it, including the raise, the refused
+        raise, the missing seam, the forged id and the readable summary), `WooWritesMatchTheRealSchemasTest`,
+        `WooPublicationSummaryTest` and the assessment controller suites. Own tests:
+        `tests/Unit/Service/DecisionDocument/DecisionRaiserTest` (3) and `LocalDecisionRecordTest` (3), and the label in
+        `WooDecisionSubjectTest`; saving the besluit without its label turns `LocalDecisionRecordTest` and
+        `WOODecisionServiceTest` red (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
