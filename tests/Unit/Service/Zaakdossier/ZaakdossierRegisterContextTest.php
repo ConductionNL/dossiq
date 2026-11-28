@@ -29,8 +29,8 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DossierRecords;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
-use OCA\Dossiq\Service\ZaakdossierService;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -43,11 +43,11 @@ use stdClass;
  *
  * @covers \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @covers \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
- * @covers \OCA\Dossiq\Service\ZaakdossierService
+ * @covers \OCA\Dossiq\Service\Zaakdossier\DossierRecords
  * @uses \OCA\Dossiq\Service\DocumentUpload
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  *
  * @spec openspec/specs/case-management/spec.md
- * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ZaakdossierRegisterContextTest extends TestCase {
 	/**
@@ -57,7 +57,7 @@ class ZaakdossierRegisterContextTest extends TestCase {
 	 */
 	public static function services(): array {
 		return [
-			'case file service' => [ZaakdossierService::class, 'requireRegister'],
+			'case file records' => [DossierRecords::class, 'context'],
 			'document record store' => [DocumentRecordStore::class, 'requireRegister'],
 			'document status lifecycle' => [InformatieobjectStatusLifecycle::class, 'requireRegister'],
 		];

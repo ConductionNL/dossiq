@@ -2363,6 +2363,25 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `WooDecisionSubjectTest`; saving the besluit without its label turns `LocalDecisionRecordTest` and
         `WOODecisionServiceTest` red (checked). The besluit write moved, so its `ALLOWED_DECISION_WRITERS` entry in
         `LocalDecisionAuthoringTest` moved with it, from the service to `LocalDecisionRecord`, with the same reason.
+  - [x] 8eu `Service/ZaakdossierService` (1, unsuppressed: CouplingBetweenObjects 19 against 13). Every read and write
+        of the register moved out, so the service no longer uses `SearchesObjects`. `Service/Zaakdossier/DossierRecords`
+        holds the dossier as stored: the register (`context()`, private), where the informatieobject records go
+        (`informatieobjects()`), linking without a second join and unlinking only the joins (`link()`, `unlink()`), the
+        documents a case's joins resolve to (`documentsOf()`), one record read and patched (`find()`, `patch()`), a type's
+        default classification and an upload's (`defaultClassification()`, `uploadClassification()`, only ever tighter),
+        and the uuid of a saved object (`savedUuid()`). `Service/Zaakdossier/UploadedDocumentWriter::write()` builds the
+        upload, requires its type, resolves its classification through the records, stores the file on the case, merges
+        into the record the file already has or creates one, and answers the id, the summary and the correspondents; it
+        takes four parameters (gate-122). Bodies moved unchanged. The service keeps the public surface, the status
+        delegations, the correspondent naming of a listing and of an edit, the grouping, and joining an upload to its case
+        with its dispatches and its log line; it builds both helpers in its constructor, so its constructor, interface and
+        container are unchanged. Coupling 19 to 13 (records 10, writer 11); phpmd: zero findings on the three files under
+        both rulesets.
+        Characterisation, green before and after: the `tests/Unit/Service/Zaakdossier/` suite (including
+        `DocumentCorrespondentsWriteTest`, which builds the real service), `OneDateWritePathTest` and the dossier
+        controller suites. `ZaakdossierRegisterContextTest` now reads the register through `DossierRecords::context()`,
+        where the reading moved. Own tests: `DossierRecordsTest` (7) and `UploadedDocumentWriterTest` (3); saving the
+        upload without the record the file already has turns `UploadedDocumentWriterTest` red (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
