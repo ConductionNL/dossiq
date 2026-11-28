@@ -37,6 +37,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\RoutingController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
+use OCA\Dossiq\Controller\Support\CaseStepReroute;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\CaseRouter;
 use OCA\Dossiq\Exception\RefusedException;
@@ -78,6 +80,8 @@ interface RoutingControllerContractObjectService {
  * Wire-contract tests for RoutingController::reroute().
  *
  * @covers \OCA\Dossiq\Controller\RoutingController
+ * @uses \OCA\Dossiq\Controller\Support\AdminCaller
+ * @uses \OCA\Dossiq\Controller\Support\CaseStepReroute
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\ObjectArray
  */
@@ -158,11 +162,9 @@ class RoutingControllerContractTest extends TestCase {
 		$this->controller = new RoutingController(
 			appName: 'dossiq',
 			request: $this->request,
-			resolver: $this->resolver,
+			reroute: new CaseStepReroute(settingsService: $this->settingsService, resolver: $this->resolver),
 			router: $this->router,
-			settingsService: $this->settingsService,
-			userSession: $this->userSession,
-			groupManager: $this->groupManager,
+			caller: new AdminCaller(userSession: $this->userSession, groupManager: $this->groupManager),
 			logger: $this->logger,
 		);
 	}//end setUp()

@@ -2310,6 +2310,24 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and two `@uses` lines, `AdminCallerTest` and `BespokeServiceRegistrarTest`. Own tests:
         `tests/Unit/Controller/Support/SchemaObjectCallsTest` (4) and `AdminCallerTest::testTheUserIsTheSessions`;
         answering the validation refusal as a 500 turns `SchemaObjectCallsTest` red (checked).
+  - [x] 8er `Controller/RoutingController` (1, unsuppressed: CouplingBetweenObjects 16 against 13). Reading a case and
+        the steps of its workflow template from the configured register, and resolving every step that carries a rule
+        against the case, moved to `Controller/Support/CaseStepReroute::affectedSteps()` (null without OpenRegister;
+        bodies moved unchanged). Turning a stored object into an array and a stored step list into rows stays with the
+        controller (`toArray()`, `decodeSteps()`, which `ObjectArrayCopiesTest` and `RowListCopiesTest` pin there) and
+        is handed in as two closures, so no static call moves. The admin guard goes through `AdminCaller` (8da, 8eq):
+        no user a 401, no administrator a 403, as before. The controller keeps the guards, the 503, the refusal and
+        failure answers and `route()`. It takes `CaseStepReroute` and `AdminCaller` in place of the role resolver, the
+        settings bridge, the session and the group manager; the container autowires both, and only its two tests build
+        it by hand. Coupling 16 to 13; phpmd: the coupling finding gone and nothing new on both files under both
+        rulesets (the two inherited StaticAccess findings stay on their untouched lines).
+        Characterisation, written first and green on the untouched controller: `tests/Unit/Controller/RoutingControllerTest`
+        (7: 401 and 403 for both acts, the 503, the steps resolved with the reads in order, a case without a workflow,
+        the logged 500, a refusal keeping its status, and `route()`'s 400, answer and logged 500), then unchanged but for
+        the constructor; `RoutingControllerContractTest` (8), unchanged but for the constructor and two `@uses` lines;
+        `ObjectArrayCopiesTest` and `RowListCopiesTest`. Own test:
+        `tests/Unit/Controller/Support/CaseStepRerouteTest` (2); resolving a step without a rule turns both suites red
+        (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
