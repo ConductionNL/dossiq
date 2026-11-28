@@ -48,7 +48,7 @@ interface StufIntegriqBridgeInterface {
 	 *
 	 * @throws StufException 400 when the endpoint names no integriq source or integriq refuses; 503 when integriq does not answer.
 	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-stuf-goes-through-integriq
 	 */
 	public function vrijBericht(array $endpoint, string $name, array $payload): array;
 }//end interface

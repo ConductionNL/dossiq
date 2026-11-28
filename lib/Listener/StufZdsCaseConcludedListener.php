@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
  */
 class StufZdsCaseConcludedListener implements IEventListener {
 
@@ -72,7 +72,7 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
 	 */
 	public function handle(Event $event): void {
 		// Integriq's class, optional at runtime: instanceof on an absent class is
@@ -100,7 +100,7 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
 	 */
 	private function subjectFor(string $code): string {
 		return match ($code) {
@@ -118,7 +118,7 @@ class StufZdsCaseConcludedListener implements IEventListener {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-a-failed-message-still-reaches-the-administrators
 	 */
 	private function contextOf(object $event, array $result): array {
 		$fout = (array)($result['fout'] ?? []);

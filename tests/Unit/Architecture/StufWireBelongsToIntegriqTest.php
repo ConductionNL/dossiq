@@ -23,8 +23,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-go-to-integriq-only
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-go-to-integriq-only
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
  */
 
 declare(strict_types=1);

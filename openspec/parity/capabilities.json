@@ -20772,13 +20772,12 @@
 					"reason": "backend: StUF gateway"
 				},
 				"requirement": [
-					"openspec/specs/stuf-integration :: REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)",
-					"openspec/specs/stuf-integration :: REQ-003: StUF-BG person query handler (npsLv01)",
+					"openspec/specs/stuf-integration :: Dossiq answers StUF provider questions through integriq",
 					"openspec/specs/stuf-zkn-outbound :: Outbound orchestration"
 				],
 				"plan": [
-					"openspec/changes/stuf-onto-integriq",
-					"openspec/changes/stuf-provider-through-integriq",
+					"openspec/changes/archive/2026-11-28-stuf-onto-integriq",
+					"openspec/changes/archive/2026-11-28-stuf-provider-through-integriq",
 					"openspec/changes/stuf-writes-through-integriq"
 				]
 			},
