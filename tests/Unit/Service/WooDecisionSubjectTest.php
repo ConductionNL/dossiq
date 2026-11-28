@@ -43,10 +43,13 @@ class WooDecisionSubjectTest extends TestCase {
 			caseId: $caseId,
 			register: $register,
 			record: $record,
+			label: 'label-value',
 		);
 
 		$this->assertSame(expected: $caseId, actual: $value->caseId);
 		$this->assertSame(expected: $register, actual: $value->register);
 		$this->assertSame(expected: $record, actual: $value->record);
+		$this->assertSame(expected: 'label-value', actual: $value->label);
+		$this->assertSame(expected: '', actual: (new WooDecisionSubject(caseId: $caseId, register: $register, record: $record))->label);
 	}//end testEveryPropertyReadsBack()
 }//end class
