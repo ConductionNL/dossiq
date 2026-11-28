@@ -85,9 +85,9 @@ class StufWireBelongsToIntegriqTest extends TestCase {
 
 		foreach (self::WIRE_URLS as $url) {
 			$this->assertStringNotContainsString(
-				"'" . $url . "'",
-				$routes,
-				$url . ' is integriq\'s now; point the zaaksysteem at integriq instead of routing it here.'
+				needle: "'" . $url . "'",
+				haystack: $routes,
+				message: $url . ' is integriq\'s now; point the zaaksysteem at integriq instead of routing it here.'
 			);
 		}
 	}//end testTheRouteTableServesNoStufWireUrl()
@@ -101,10 +101,12 @@ class StufWireBelongsToIntegriqTest extends TestCase {
 		$routes = (string)file_get_contents(self::ROOT . '/appinfo/routes.php');
 
 		foreach (self::ADMIN_ROUTES as $name => $url) {
+			$pattern = '#\'name\'\s*=>\s*\'' . preg_quote(str: $name, delimiter: '#')
+				. '\',\s*\'url\'\s*=>\s*\'' . preg_quote(str: $url, delimiter: '#') . '\'#';
 			$this->assertMatchesRegularExpression(
-				'#\'name\'\s*=>\s*\'' . preg_quote($name, '#') . '\',\s*\'url\'\s*=>\s*\'' . preg_quote($url, '#') . '\'#',
-				$routes,
-				$name . ' must still route ' . $url . '.'
+				pattern: $pattern,
+				string: $routes,
+				message: $name . ' must still route ' . $url . '.'
 			);
 		}
 	}//end testTheAdminRoutesStay()
@@ -117,14 +119,23 @@ class StufWireBelongsToIntegriqTest extends TestCase {
 	public function testNoForwarderIsLeftBehind(): void {
 		$controller = new ReflectionClass(StufController::class);
 		foreach (['cases', 'casesLegacyPath', 'persons', 'personsLegacyPath', 'inbound', 'inboundLegacyPath', 'readRawBody'] as $method) {
-			$this->assertFalse($controller->hasMethod($method), 'StufController::' . $method . '() forwarded a wire URL; integriq serves it now.');
+			$this->assertFalse(
+				condition: $controller->hasMethod(name: $method),
+				message: 'StufController::' . $method . '() forwarded a wire URL; integriq serves it now.'
+			);
 		}
 
 		$bridge = new ReflectionClass(StufIntegriqBridgeInterface::class);
 		foreach (['forwardConfirmation', 'forwardProviderRequest'] as $method) {
-			$this->assertFalse($bridge->hasMethod($method), 'StufIntegriqBridgeInterface::' . $method . '() is gone with the forwarders.');
+			$this->assertFalse(
+				condition: $bridge->hasMethod(name: $method),
+				message: 'StufIntegriqBridgeInterface::' . $method . '() is gone with the forwarders.'
+			);
 		}
 
-		$this->assertTrue($bridge->hasMethod('vrijBericht'), 'The outbound vrijBericht still goes through the bridge.');
+		$this->assertTrue(
+			condition: $bridge->hasMethod(name: 'vrijBericht'),
+			message: 'The outbound vrijBericht still goes through the bridge.'
+		);
 	}//end testNoForwarderIsLeftBehind()
 }//end class
