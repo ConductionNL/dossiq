@@ -38,30 +38,6 @@ use OCA\Dossiq\Service\Stuf\StufException;
 interface StufIntegriqBridgeInterface {
 
 	/**
-	 * Hand a confirmation envelope to integriq and return its answer.
-	 *
-	 * @param string $rawXml The raw request body, unchanged.
-	 *
-	 * @return array{statusCode:int,body:string}|null Integriq's answer, or null when nobody answered.
-	 *
-	 * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-on-the-old-url-reach-integriq
-	 */
-	public function forwardConfirmation(string $rawXml): ?array;
-
-	/**
-	 * Hand a StUF provider request (zakLv01, zakLk01, npsLv01, edcLk01) to integriq and return its answer.
-	 *
-	 * @param string $rawXml   The raw request body, unchanged.
-	 * @param string $sourceId The integriq source of the endpoint the sender belongs to, '' when unknown (integriq then refuses).
-	 * @param string $service  `cases` or `persons`.
-	 *
-	 * @return array{statusCode:int,body:string}|null Integriq's answer, or null when nobody answered.
-	 *
-	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-on-the-old-urls-reach-integriq
-	 */
-	public function forwardProviderRequest(string $rawXml, string $sourceId, string $service): ?array;
-
-	/**
 	 * Ask integriq to send a vrij bericht on the endpoint's integriq source.
 	 *
 	 * @param array  $endpoint The stufEndpoint row.

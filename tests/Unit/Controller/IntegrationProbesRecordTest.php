@@ -49,7 +49,6 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 use OCP\App\IAppManager;
 
@@ -355,7 +354,6 @@ class IntegrationProbesRecordTest extends TestCase {
 			register: $register,
 			bridge: $this->createMock(StufIntegriqBridge::class),
 			l10n: $this->createMock(IL10N::class),
-			logger: $this->createMock(LoggerInterface::class),
 			integrationStatus: $this->recorder,
 		);
 	}//end stufController()
