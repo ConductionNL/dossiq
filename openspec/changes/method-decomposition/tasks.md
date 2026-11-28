@@ -2361,7 +2361,8 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `WooPublicationSummaryTest` and the assessment controller suites. Own tests:
         `tests/Unit/Service/DecisionDocument/DecisionRaiserTest` (3) and `LocalDecisionRecordTest` (3), and the label in
         `WooDecisionSubjectTest`; saving the besluit without its label turns `LocalDecisionRecordTest` and
-        `WOODecisionServiceTest` red (checked).
+        `WOODecisionServiceTest` red (checked). The besluit write moved, so its `ALLOWED_DECISION_WRITERS` entry in
+        `LocalDecisionAuthoringTest` moved with it, from the service to `LocalDecisionRecord`, with the same reason.
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
