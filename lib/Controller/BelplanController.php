@@ -62,7 +62,7 @@ class BelplanController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param BelplanRoutingServiceInterface $routingService The belplan routing service.
 	 * @param SettingsServiceInterface $settingsService The settings service.
-	 * @param AdminCaller $caller Whether the caller is signed in, and an administrator.
+	 * @param AdminCaller $caller The signed-in user, and whether they are an administrator.
 	 */
 	public function __construct(
 		string $appName,
@@ -72,7 +72,7 @@ class BelplanController extends Controller {
 		private readonly AdminCaller $caller,
 	) {
 		parent::__construct(appName: $appName, request: $request);
-		$this->objects = new SchemaObjectCalls();
+		$this->objects = new SchemaObjectCalls(createFailure: 'Could not create belplan', patchFailure: 'Could not update belplan');
 	}//end __construct()
 
 	/**
@@ -93,7 +93,7 @@ class BelplanController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
-		if ($this->caller->isSignedIn() === false) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -174,7 +174,6 @@ class BelplanController extends Controller {
 		return $this->objects->created(
 			store: $store,
 			record: $record,
-			failure: 'Could not create belplan',
 			answer: fn (mixed $created): JSONResponse => new JSONResponse($this->toArray(result: $created))
 		);
 	}//end saveBelplan()
@@ -205,7 +204,6 @@ class BelplanController extends Controller {
 			store: [$objectService, $register, $schema],
 			id: $id,
 			changes: $this->requestedPatch(),
-			failure: 'Could not update belplan',
 			answer: fn (mixed $updated): JSONResponse => new JSONResponse($this->toArray(result: $updated))
 		);
 	}//end update()
@@ -249,7 +247,7 @@ class BelplanController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function route(): JSONResponse {
-		if ($this->caller->isSignedIn() === false) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 

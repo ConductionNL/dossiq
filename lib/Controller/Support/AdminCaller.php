@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller\Support;
 
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -64,13 +65,13 @@ final class AdminCaller {
 	}//end isAdmin()
 
 	/**
-	 * Whether a caller is signed in at all.
+	 * The signed-in user, or null when nobody is signed in.
 	 *
-	 * @return bool True when the session carries a user.
+	 * @return IUser|null The session's user.
 	 *
 	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	public function isSignedIn(): bool {
-		return $this->userSession->getUser() !== null;
-	}//end isSignedIn()
+	public function getUser(): ?IUser {
+		return $this->userSession->getUser();
+	}//end getUser()
 }//end class

@@ -44,21 +44,34 @@ final class SchemaObjectCalls {
 	use SearchesObjects;
 
 	/**
+	 * Constructor.
+	 *
+	 * @param string $createFailure The error a genuine fault on a create answers with, as a 500.
+	 * @param string $patchFailure The error any failure on a patch answers with, as a 500.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function __construct(
+		private readonly string $createFailure,
+		private readonly string $patchFailure,
+	) {
+	}//end __construct()
+
+	/**
 	 * Save the record as a new object and answer it.
 	 *
 	 * The answer for an OpenRegister validation refusal is a 400 with its message,
-	 * for any other failure a 500 with `$failure`.
+	 * for any other failure a 500 with the create failure.
 	 *
 	 * @param array{0: object, 1: string, 2: string} $store The object service, register and schema.
 	 * @param array<string, mixed> $record The record to save.
-	 * @param string $failure The error a genuine fault answers with.
 	 * @param Closure $answer Turns the created object into the response.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
 	 */
-	public function created(array $store, array $record, string $failure, Closure $answer): JSONResponse {
+	public function created(array $store, array $record, Closure $answer): JSONResponse {
 		[$objectService, $register, $schema] = $store;
 
 		try {
@@ -75,7 +88,7 @@ final class SchemaObjectCalls {
 			// a genuine fault.
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (Throwable $e) {
-			return new JSONResponse(['error' => $failure], Http::STATUS_INTERNAL_SERVER_ERROR);
+			return new JSONResponse(['error' => $this->createFailure], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
 		return $answer($created);
@@ -87,20 +100,19 @@ final class SchemaObjectCalls {
 	 * @param array{0: object, 1: string, 2: string} $store The object service, register and schema.
 	 * @param string $id The object's uuid.
 	 * @param array<string, mixed> $changes The fields to write.
-	 * @param string $failure The error any failure answers with, as a 500.
 	 * @param Closure $answer Turns the patched object into the response.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
 	 */
-	public function patched(array $store, string $id, array $changes, string $failure, Closure $answer): JSONResponse {
+	public function patched(array $store, string $id, array $changes, Closure $answer): JSONResponse {
 		[$objectService, $register, $schema] = $store;
 
 		try {
 			$updated = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: $changes);
 		} catch (Throwable $e) {
-			return new JSONResponse(['error' => $failure], Http::STATUS_INTERNAL_SERVER_ERROR);
+			return new JSONResponse(['error' => $this->patchFailure], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
 		return $answer($updated);

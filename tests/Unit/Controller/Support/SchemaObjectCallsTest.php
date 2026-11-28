@@ -135,10 +135,9 @@ final class SchemaObjectCallsTest extends TestCase {
 	 */
 	public function testACreatedObjectIsAnswered(): void {
 		$service  = $this->objectService(failure: null);
-		$response = (new SchemaObjectCalls())->created(
+		$response = (new SchemaObjectCalls(createFailure: 'Could not create', patchFailure: 'Could not update'))->created(
 			store: [$service, 'dossiq', 'belplan'],
 			record: ['name' => 'Hoofdnummer'],
-			failure: 'Could not create',
 			answer: $this->answer()
 		);
 
@@ -153,11 +152,10 @@ final class SchemaObjectCallsTest extends TestCase {
 	 * @return void
 	 */
 	public function testACreateAnswersARefusalAs400AndAFaultAs500(): void {
-		$calls   = new SchemaObjectCalls();
+		$calls   = new SchemaObjectCalls(createFailure: 'Could not create', patchFailure: 'Could not update');
 		$refused = $calls->created(
 			store: [$this->objectService(failure: new OpenRegisterValidationException(message: "Property 'priority' is wrong")), 'r', 's'],
 			record: [],
-			failure: 'Could not create',
 			answer: $this->answer()
 		);
 		$this->assertSame(expected: 400, actual: $refused->getStatus());
@@ -166,7 +164,6 @@ final class SchemaObjectCallsTest extends TestCase {
 		$fault = $calls->created(
 			store: [$this->objectService(failure: new RuntimeException(message: 'db down')), 'r', 's'],
 			record: [],
-			failure: 'Could not create',
 			answer: $this->answer()
 		);
 		$this->assertSame(expected: 500, actual: $fault->getStatus());
@@ -180,12 +177,11 @@ final class SchemaObjectCallsTest extends TestCase {
 	 */
 	public function testAPatchIsAnsweredAndAnyFailureIs500(): void {
 		$service = $this->objectService(failure: null);
-		$calls   = new SchemaObjectCalls();
+		$calls   = new SchemaObjectCalls(createFailure: 'Could not create', patchFailure: 'Could not update');
 		$patched = $calls->patched(
 			store: [$service, 'dossiq', 'belplan'],
 			id: 'b1',
 			changes: ['priority' => 5],
-			failure: 'Could not update',
 			answer: $this->answer()
 		);
 		$this->assertSame(expected: ['answered' => ['priority' => 5, 'id' => 'b1']], actual: $patched->getData());
@@ -195,7 +191,6 @@ final class SchemaObjectCallsTest extends TestCase {
 			store: [$this->objectService(failure: new OpenRegisterValidationException(message: 'bad')), 'r', 's'],
 			id: 'b1',
 			changes: [],
-			failure: 'Could not update',
 			answer: $this->answer()
 		);
 		$this->assertSame(expected: 500, actual: $failed->getStatus());
@@ -209,7 +204,7 @@ final class SchemaObjectCallsTest extends TestCase {
 	 */
 	public function testAFailedListIsEmpty(): void {
 		$service = $this->objectService(failure: null);
-		$calls   = new SchemaObjectCalls();
+		$calls   = new SchemaObjectCalls(createFailure: 'Could not create', patchFailure: 'Could not update');
 
 		$this->assertSame(expected: [['id' => 'a']], actual: $calls->listed(store: [$service, 'dossiq', 'belplan'], filters: ['_limit' => 200]));
 		$this->assertSame(expected: [['searchObjectsBySlug', 'dossiq', 'belplan', ['_limit' => 200]]], actual: $service->calls);
