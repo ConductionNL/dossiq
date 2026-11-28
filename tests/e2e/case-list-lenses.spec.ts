@@ -186,18 +186,22 @@ async function visit(page: Page, url: string): Promise<void> {
  * @param page The page.
  */
 async function casesTable(page: Page): Promise<Locator> {
-	const table = page.getByRole('table')
+	// The list's own table: the page can also draw a record list's table
+	// (cn-record-list-table), so a bare role query matches two.
+	const table = page.getByTestId('cn-object-list-table')
 	await expect(table).toBeVisible({ timeout: 30_000 })
 	return table
 }
 
 const CHIPS = {
 	all: /^(All|Alle)$/,
-	mine: /^(Mine|Van mij)$/,
+	// The manifest labels these lenses My cases and Deadline this week, on
+	// both the Cases and the Tasks list.
+	mine: /^(My cases|Mijn zaken)$/,
 	unclaimed: /^(Unclaimed|Niet toegewezen)$/,
 	closed: /^(Closed|Gesloten)$/,
 	overdue: /^(Overdue|Verlopen)$/,
-	dueThisWeek: /^(Due this week|Deze week te doen)$/,
+	dueThisWeek: /^(Deadline this week|Termijn deze week)$/,
 }
 
 /**
@@ -770,7 +774,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// @e2e openspec/specs/task-management/spec.md#all-is-the-default-lens-on-tasks-mine-is-one-click-away
 	test('the Tasks index lands on All and offers Mine', async ({ page }) => {
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		await expectLensActive(page, CHIPS.all)
 		await listSettled(page, 'task-other')
@@ -785,7 +789,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// @e2e openspec/specs/task-management/spec.md#unclaimed-shows-tasks-nobody-holds
 	test('Unclaimed on Tasks shows the open task nobody holds', async ({ page }) => {
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		await chooseLens(page, CHIPS.unclaimed)
 		await listSettled(page, 'task-unclaimed')
@@ -799,7 +803,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	// @e2e openspec/specs/task-management/spec.md#all-shows-every-task
 	test('All on Tasks shows the completed task too', async ({ page }) => {
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		await chooseLens(page, CHIPS.all)
 		await listSettled(page, 'task-other')
@@ -814,7 +818,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		page,
 	}) => {
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		await chooseLens(page, CHIPS.closed)
 		await listSettled(page, 'task-done')
@@ -826,7 +830,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		page,
 	}) => {
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		await chooseLens(page, CHIPS.overdue)
 		await listSettled(page, 'task-overdue')
@@ -853,7 +857,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		)
 
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		await chooseLens(page, CHIPS.dueThisWeek)
 		await listSettled(page, 'task-this-week')
@@ -871,7 +875,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		page,
 	}) => {
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 
 		// `caseTask.priority` is `facetable`, so it was always reachable
 		// through the sidebar and never present in the row a handler reads.
@@ -915,7 +919,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 		// `beforeAll`, never off a version string.
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 		await chooseLens(page, CHIPS.dueThisWeek)
 
 		// 🔴 THE REQUEST FIRST, THE ROW AFTER. See the Overdue test below for
@@ -996,7 +1000,7 @@ test.describe('Lenses, deadlines and bulk actions on the case list', () => {
 	}) => {
 		const asked = inboxQueries(page)
 		await visit(page, TASKS_URL)
-		await expect(page.getByRole('table')).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByTestId('cn-object-list-table')).toBeVisible({ timeout: 30_000 })
 		await chooseLens(page, CHIPS.overdue)
 
 		// 🔴 THE REQUEST IS READ BEFORE ANY ROW IS WAITED FOR, AND THE ORDER
