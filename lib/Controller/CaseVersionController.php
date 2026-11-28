@@ -33,19 +33,18 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\CaseVersionMoves;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
-use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
-use OCA\Dossiq\Service\CaseType\CaseVersionMove;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionChainInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypeVersionWindowInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -54,7 +53,6 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -63,7 +61,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+ * @spec openspec/specs/zaaktype-versioning/spec.md
  */
 class CaseVersionController extends Controller {
 
@@ -72,27 +70,24 @@ class CaseVersionController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                 $appName        The app name.
-	 * @param IRequest               $request        The request.
-	 * @param CaseTypeVersionChain   $chain          The versions of one case type.
-	 * @param CaseVersionMove        $move           What a move would change, and the move.
-	 * @param CaseTypeVersionWindow  $window         When a version starts and stops being offered.
-	 * @param CaseAccessGuard        $accessGuard    Per-case authorization, failing closed.
-	 * @param IUserSession           $userSession    The session.
-	 * @param LoggerInterface        $logger         The logger.
+	 * @param string                         $appName The app name.
+	 * @param IRequest                       $request The request.
+	 * @param CaseTypeVersionChainInterface  $chain   The versions of one case type.
+	 * @param CaseVersionMoves               $moves   Who may move a case, its options, and the move.
+	 * @param CaseTypeVersionWindowInterface $window  When a version starts and stops being offered.
+	 * @param LoggerInterface                $logger  The logger.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly CaseTypeVersionChain $chain,
-		private readonly CaseVersionMove $move,
-		private readonly CaseTypeVersionWindow $window,
-		private readonly CaseAccessGuard $accessGuard,
-		private readonly IUserSession $userSession,
+		private readonly CaseTypeVersionChainInterface $chain,
+		private readonly CaseVersionMoves $moves,
+		private readonly CaseTypeVersionWindowInterface $window,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -115,7 +110,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The versions, or 404 when the type is unreadable.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-the-case-type-page-shows-its-version-chain-req-zv-04
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-the-case-type-page-shows-its-version-chain-req-zv-04
 	 */
 	#[NoAdminRequired]
 	public function chain(string $id): JSONResponse {
@@ -139,7 +134,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or 422 with what stood in the way.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function deprecate(string $id): JSONResponse {
@@ -172,7 +167,9 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function options(string $caseId): JSONResponse {
@@ -181,14 +178,9 @@ class CaseVersionController extends Controller {
 		}
 
 		try {
-			$answer = $this->move->options(caseId: $caseId);
-
 			$target = trim((string)$this->request->getParam('target', ''));
-			if ($target !== '') {
-				$answer['preview'] = $this->move->preview(caseId: $caseId, targetCaseTypeId: $target);
-			}
 
-			return new JSONResponse($answer);
+			return new JSONResponse($this->moves->options(caseId: $caseId, target: $target));
 		} catch (RefusedException $e) {
 			return $this->refused(op: 'version-options', e: $e);
 		} catch (Throwable $e) {
@@ -203,7 +195,9 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse What was applied, or the refusal naming the status.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 * @spec openspec/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function moveToVersion(string $caseId): JSONResponse {
@@ -214,11 +208,11 @@ class CaseVersionController extends Controller {
 
 		try {
 			return new JSONResponse(
-				$this->move->move(
+				$this->moves->move(
 					caseId: $caseId,
-					targetCaseTypeId: trim((string)$this->request->getParam('target', '')),
+					target: trim((string)$this->request->getParam('target', '')),
 					reason: (string)$this->request->getParam('reason', ''),
-					actorUid: $user->getUID(),
+					actor: $user,
 				)
 			);
 		} catch (RefusedException $e) {
@@ -239,19 +233,12 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return IUser|null The caller, or null when they may not.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function writerOf(string $caseId): ?IUser {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return null;
-		}
-
-		if ($this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-			return null;
-		}
-
-		return $user;
+		return $this->moves->writer(caseId: $caseId);
 	}//end writerOf()
 
 	/**
@@ -259,7 +246,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The 403.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function notYours(): JSONResponse {
 		return new JSONResponse(
@@ -276,7 +263,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The answer.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	private function broke(string $op, Throwable $e): JSONResponse {
 		$this->logger->error('CaseVersionController: ' . $op . ' failed', ['exception' => $e->getMessage()]);

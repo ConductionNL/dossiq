@@ -26,15 +26,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email\Filters;
 
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Service\Email\InboundMessage;
-use OCA\Dossiq\AppInfo\Application;
 use OCP\IAppConfig;
 
 /**
@@ -42,7 +42,7 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
@@ -76,7 +76,7 @@ class OwnNotificationLoopFilter implements InboundMailFilter {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function name(): string {
 		return self::NAME;
@@ -90,7 +90,7 @@ class OwnNotificationLoopFilter implements InboundMailFilter {
 	 *
 	 * @return integer The order.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function order(): int {
 		return 10;
@@ -103,7 +103,7 @@ class OwnNotificationLoopFilter implements InboundMailFilter {
 	 *
 	 * @return FilterVerdict Reject when it is ours, pass otherwise.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function decide(InboundMessage $message): FilterVerdict {
 		if ($message->hasHeader(name: self::NOTIFICATION_HEADER) === true) {
@@ -114,7 +114,7 @@ class OwnNotificationLoopFilter implements InboundMailFilter {
 		}
 
 		$ourAddress = strtolower(trim(
-			$this->appConfig->getValueString(Application::APP_ID, 'email_from_address', '')
+			$this->appConfig->getValueString(AppIdentity::APP_ID, 'email_from_address', '')
 		));
 		if ($ourAddress === '') {
 			return FilterVerdict::pass(filterName: self::NAME);

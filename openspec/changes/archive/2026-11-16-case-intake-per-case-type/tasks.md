@@ -1,0 +1,6 @@
+- [x] T01 caseType schema declares `portalIntake`; the Woo request case type sets it
+- [x] T02 CaseTypeProperties: answers named as a case type's property definitions become case properties (WooRequesterProperties delegates)
+- [x] T03 CaseTypeIntake: the changes a received case of a configured type gets (origin, party, properties)
+- [x] T04 CaseTypeIntakeListener: applies them before store on receipt; links the dossier once the case exists
+- [x] T05 The Woo action becomes a create action with fieldMap and draft
+- [x] T06 PHPUnit for CaseTypeIntake and the listener

@@ -10,130 +10,68 @@ through the existing zaakdossier storage path, and a clean, non-breaking fallbac
 is not installed.
 
 ## Requirements
-### Requirement: REQ-LBS-001 — Signature Request Creation
 
-When `onderteken()` is invoked on a beschikking and LibreSign is enabled, `LibresignSigningAdapter::sign()` SHALL create a LibreSign signature request for the beschikking's PDF, identified by its Nextcloud file id (`$bestandId`), via `LibresignApiClient::requestSignature()` — the single thin HTTP boundary for all outbound LibreSign calls.
+### Requirement: A document is signed through filinq
 
-#### Scenario: A signature request is created with the correct file id and signer
+Asking for a decision's signature SHALL raise filinq's `DocumentSigningRequestedEvent` with source
+app `dossiq`, the decision as subject, its file as document, the signer's Nextcloud user id and
+the signature level configured in `signing.level` (SES, AdES or QES; SES otherwise). It SHALL
+answer HTTP 202 and leave the decision's status unchanged, with `signing.state = requested` and
+filinq's request id. While a request is open a second one SHALL be refused (409). When filinq is
+not installed or does not take the request, the answer SHALL be 503 and nothing SHALL be written.
 
-- **GIVEN** a beschikking with `samengesteldeInhoud.bestandId` set to a valid Nextcloud file id
-  and an `$ondertekenaar` UID that resolves to an NC user with a configured email
-- **WHEN** `LibresignSigningAdapter::sign($bestandId, $ondertekenaar, $tspProvider)` is called
-- **THEN** `LibresignApiClient::requestSignature()` SHALL be called with that exact file id and a
-  `users` list containing exactly one signer built from the resolved NC user's email and display
-  name
-- **AND** no other outbound HTTP call SHALL be made outside `LibresignApiClient`
+#### Scenario: Filinq takes the request
 
-### Requirement: REQ-LBS-002 — Signer Resolution From Mandaat Data
+- **GIVEN** an approved decision and filinq installed
+- **WHEN** its signature is asked for
+- **THEN** filinq's request event SHALL carry the decision id, the signer and the configured level
+- **AND** the decision SHALL keep its status and carry `signing.state = requested`
 
-`LibresignSigningAdapter` SHALL resolve the LibreSign signer identity from the `$ondertekenaar` UID supplied by `BeschikkingService::onderteken()` — the mandaat-authorised actor recorded by the prior `akkoord()` step — via `IUserManager`, and WHEN the UID does not resolve to an account, or resolves to an account with no configured email address, `sign()` SHALL throw `RuntimeException('libresign_signer_unresolvable')` before any LibreSign API call is made.
+#### Scenario: Filinq is absent
 
-#### Scenario: Signer resolves to a real NC account with an email
+- **GIVEN** filinq does not take the request
+- **WHEN** the signature is asked for
+- **THEN** the answer SHALL be `signing_unavailable` (503) and the decision SHALL be unchanged
 
-- **GIVEN** `$ondertekenaar` is the UID of an NC user with display name "J. Jansen" and email
-  `j.jansen@example.nl`
-- **WHEN** `sign()` builds the LibreSign request
-- **THEN** the signer entry SHALL carry `identify.email = 'j.jansen@example.nl'` and
-  `displayName = 'J. Jansen'`
+### Requirement: A signing request that ends unsigned is shown as not concluded
 
-#### Scenario: Mandaat data is missing or incomplete
+When filinq concludes a request dossiq raised, a `signed` conclusion SHALL move the decision to
+signed, with the signature level, filinq's request id and the signed document. A `declined`,
+`cancelled` or `expired` conclusion SHALL set `signing.state = not-concluded` with filinq's status
+as `signing.outcome`, leave the decision's status unchanged and allow a new request. A conclusion
+for a request the decision is not waiting on SHALL change nothing. A conclusion SHALL be written as
+the background service account, never as the signed-in user. With no usable service account it SHALL
+NOT be written by any other identity: the decision keeps `signing.state = requested` and an error
+naming the decision and the signing request SHALL be logged.
 
-- **GIVEN** `$ondertekenaar` is a UID that either does not resolve to any NC user, or resolves to
-  a user with no email address configured
-- **WHEN** `sign()` is called
-- **THEN** it SHALL throw `RuntimeException('libresign_signer_unresolvable')`
-- **AND** `LibresignApiClient::requestSignature()` SHALL NOT be called
-- **AND** `BeschikkingController::mapRuntime()` SHALL map this to HTTP 422
+#### Scenario: Filinq's request expires
 
-### Requirement: REQ-LBS-003 — Status Polling And Mapping
+- **GIVEN** a decision waiting on a signing request
+- **WHEN** filinq concludes it `expired` after `signing_request_expiry_days`
+- **THEN** the decision SHALL show `signing.state = not-concluded` and `signing.outcome = expired`
+- **AND** its signature MAY be asked for again
 
-After creating a signature request, `sign()` SHALL poll `LibresignApiClient::getStatus()` up to a configurable number of attempts, mapping each raw LibreSign status via `LibresignStatusMapper::map()` onto one of `PENDING`/`SIGNED`/`DECLINED`/`UNKNOWN`, and an `UNKNOWN` status SHALL be treated as `PENDING` (never as an implicit sign) and logged at `warning`.
+#### Scenario: No usable service account
 
-#### Scenario: LibreSign status maps to the internal vocabulary
+- **GIVEN** a decision waiting on a signing request and no usable background service account
+- **WHEN** filinq concludes the request
+- **THEN** nothing SHALL be written, and the decision SHALL still read `signing.state = requested`
+- **AND** an error naming the decision and the signing request SHALL be logged
 
-- **GIVEN** LibreSign's raw `statusText` values `draft`, `able_to_sign`, `partial_signed`,
-  `signed`, `deleted`
-- **WHEN** each is passed to `LibresignStatusMapper::map()`
-- **THEN** the first three SHALL map to `PENDING`, `signed` SHALL map to `SIGNED`, and `deleted`
-  SHALL map to `DECLINED`
+#### Scenario: Filinq's request is signed
 
-#### Scenario: An unrecognised status value maps to UNKNOWN and is treated as pending
+- **GIVEN** a decision waiting on a signing request
+- **WHEN** filinq concludes it `signed`
+- **THEN** the decision SHALL be signed and its file SHALL be filinq's signed document
 
-- **GIVEN** LibreSign returns a `statusText` of `"something-new"` that the mapper does not
-  recognise
-- **WHEN** `LibresignStatusMapper::map('something-new')` is called
-- **THEN** it SHALL return `UNKNOWN`
-- **AND** `LibresignSigningAdapter::sign()` SHALL continue polling (or exit the poll window)
-  exactly as it would for `PENDING`, never proceeding as if the beschikking were signed
+### Requirement: The audit packet says when no validation report is available
 
-#### Scenario: The request is signed within the poll window
+The audit packet of a signed decision SHALL contain a `validatierapport.json` that says no
+validation report is available and names filinq's signing request, rather than a report nobody
+produced.
 
-- **GIVEN** `LibresignApiClient::getStatus()` returns a status that maps to `SIGNED` within the
-  configured poll attempts
-- **WHEN** `sign()` observes this
-- **THEN** it SHALL proceed to download and store the signed file and return the full `sign()`
-  contract (`signedBestandId`, `validatieRapportId`, `certificaatSerienummer`,
-  `tspProviderEidasId`, `ondertekeningTijdstip`)
+#### Scenario: A decision signed through filinq is exported
 
-#### Scenario: The request is declined
-
-- **GIVEN** `LibresignApiClient::getStatus()` returns a status that maps to `DECLINED`
-- **WHEN** `sign()` observes this
-- **THEN** it SHALL throw `RuntimeException('libresign_signing_declined')`
-- **AND** `BeschikkingController::mapRuntime()` SHALL map this to HTTP 409
-- **AND** the beschikking SHALL remain in its current status (no transition to `ondertekend`)
-
-#### Scenario: The request is still pending after the poll window
-
-- **GIVEN** `LibresignApiClient::getStatus()` never reports `SIGNED` or `DECLINED` within the
-  configured poll attempts
-- **WHEN** the poll window is exhausted
-- **THEN** `sign()` SHALL throw `RuntimeException('libresign_signing_pending')`
-- **AND** `BeschikkingController::mapRuntime()` SHALL map this to HTTP 202
-- **AND** the beschikking SHALL remain in its current status, signable again on a later
-  `onderteken()` retry
-
-### Requirement: REQ-LBS-004 — Signed-File Storage Into The Zaakdossier
-
-When a signature request reaches `SIGNED`, `LibresignSigningAdapter` SHALL fetch the signed file's bytes by its Nextcloud file id and persist them through the existing `ZgwDocumentService::storeRaw()` binary storage service — the same service the rest of the zaakdossier already uses — rather than introducing a new storage mechanism.
-
-#### Scenario: Signed bytes are stored via the existing document storage service
-
-- **GIVEN** LibreSign reports `SIGNED` with `file.signedFileId` pointing at a readable Nextcloud
-  file
-- **WHEN** `sign()` processes the signed result
-- **THEN** it SHALL call `ZgwDocumentService::storeRaw()` with the signed file's actual byte
-  content and a filename derived from the original `$bestandId`
-- **AND** the id returned by `storeRaw()` SHALL be returned as `signedBestandId`
-- **AND** no alternative/new file-storage code path SHALL be introduced
-
-### Requirement: REQ-LBS-005 — LibreSign-Unavailable Fallback
-
-`SigningAdapterInterface` SHALL resolve to `LibresignSigningAdapter` only when `IAppManager::isEnabledForUser('libresign')` is true at DI-wiring time; otherwise it SHALL resolve to the pre-existing `MockSigningAdapter` unchanged, dossiq SHALL install, build, and run unchanged when LibreSign is absent, and a structured, translated admin-facing hint SHALL be logged and exposed via `SettingsController::index()`.
-
-#### Scenario: LibreSign is not installed — pipeline falls back unchanged
-
-- **GIVEN** the LibreSign app is not installed or not enabled
-- **WHEN** dossiq resolves `SigningAdapterInterface` from the DI container
-- **THEN** it SHALL receive the existing `MockSigningAdapter` instance
-- **AND** a `warning`-level log entry SHALL be written carrying a translated hint that LibreSign
-  is not installed/enabled and that installing it enables real digital signing
-- **AND** `SettingsController::index()` SHALL report `libresignAvailable: false` and a non-null
-  `libresignHint`
-
-#### Scenario: LibreSign is toggled off mid-session (race)
-
-- **GIVEN** `LibresignSigningAdapter` was resolved while LibreSign was enabled, but LibreSign is
-  disabled by an admin before `sign()` is actually invoked
-- **WHEN** `sign()` re-checks `IAppManager::isEnabledForUser('libresign')` at call time and finds
-  it false
-- **THEN** it SHALL throw `RuntimeException('libresign_unavailable')`
-- **AND** `BeschikkingController::mapRuntime()` SHALL map this to HTTP 503
-
-#### Scenario: LibreSign is installed and enabled
-
-- **GIVEN** the LibreSign app is installed and enabled
-- **WHEN** dossiq resolves `SigningAdapterInterface` from the DI container
-- **THEN** it SHALL receive a `LibresignSigningAdapter` instance
-- **AND** `SettingsController::index()` SHALL report `libresignAvailable: true`
-
+- **GIVEN** a decision signed through filinq
+- **WHEN** its audit packet is exported
+- **THEN** `validatierapport.json` SHALL hold `available: false` and the signing request id

@@ -13,7 +13,7 @@
  * first paint to their own rows, and an empty result reads as an empty
  * register rather than as a filter. The default assertion is the guard.
  *
- * The Unclaimed chip and the Queue page's base filter are the same two
+ * The Unclaimed chip and the team queue view's filter are the same two
  * conditions written twice. Nothing at runtime compares them, so they drift
  * the moment one side is edited; the deep-equal here is what makes "the two
  * lists agree" a fact rather than an intention.
@@ -40,10 +40,8 @@ import { pageWidgets } from './helpers/pageViews.js'
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 
-const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
-const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const bulkActionsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
@@ -86,7 +84,7 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
  * tests stayed green, which is the failure `a-test-that-feeds-two-different-
  * literals` names.
  */
-const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
+const LENSES = ['All', 'My cases', 'Unclaimed', 'Closed', 'Overdue', 'Deadline this week']
 
 /**
  * The lens the Cases list gained with `lifecycle-acts-on-the-case`.
@@ -152,7 +150,7 @@ const CASE_LENSES = [
 	// Mine because it is about the CASE, and Mine onwards are about who is
 	// holding it.
 	'Assessed high risk',
-	'Mine',
+	'My cases',
 	'Unclaimed',
 	'Handed on',
 	'Closed',
@@ -175,13 +173,17 @@ const CASE_LENSES = [
 	// working set with every draft you may read in it.
 	WITH_DRAFTS_LENS,
 	'Overdue',
-	'Due this week',
+	'Deadline this week',
 	// fees-and-payments-on-the-case (#2930): the cases whose type makes a fee
 	// due and whose payment shillinq has not confirmed. It sits with the two
 	// clock lenses because it is the same question about a different clock:
 	// what this case is waiting on before it can move.
 	'Awaiting payment',
 	'Stuck',
+	// The cases whose term stands still (DqZaken "Opgeschort"): a term clock of
+	// the case is paused under Awb 4:5. Last, because it is the newest lens and
+	// the full structure shows only the first four.
+	'Suspended',
 ]
 
 /**
@@ -222,11 +224,23 @@ const CASES_ONLY = [
 	// payment of its own and nothing on the Tasks list could answer this.
 	'Awaiting payment',
 	'Stuck',
+	// A pause belongs to a case's term; a task has no term of its own to pause.
+	'Suspended',
 ]
 
 describe('Cases index lenses', () => {
 	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
+	})
+
+	it('narrows Suspended on a paused term of the open case, through the term rows that point at it', () => {
+		const suspended = chip('Cases', 'Suspended')
+		expect(suspended.filter).toEqual({
+			'_related[deadlineInstance][case][status]': 'paused',
+			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('shows four chips and hands the rest to the overflow chip', () => {
@@ -264,21 +278,21 @@ describe('Cases index lenses', () => {
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {
-		expect(chip('Cases', 'Mine').filter.isFinalStatus).toBe(false)
+		expect(chip('Cases', 'My cases').filter.isFinalStatus).toBe(false)
 		expect(chip('Cases', 'Unclaimed').filter.isFinalStatus).toBe(false)
 	})
 
 	it('scopes Mine to the signed-in user through @me', () => {
-		expect(chip('Cases', 'Mine').filter.assignee).toBe('@me')
+		expect(chip('Cases', 'My cases').filter.assignee).toBe('@me')
 	})
 
 	it('shows closed cases under Closed only', () => {
 		expect(chip('Cases', 'Closed').filter).toEqual({ isFinalStatus: true })
 	})
 
-	it('gives Unclaimed the same filter as the Queue page', () => {
+	it('gives Unclaimed the same filter as the team queue view', () => {
 		expect(chip('Cases', 'Unclaimed').filter).toEqual(
-			page('Queue').config.filter,
+			page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters,
 		)
 	})
 
@@ -328,7 +342,7 @@ describe('Cases index lenses', () => {
 				JSON.stringify(entry.config?.filter ?? {}).includes('_drafts'),
 			)
 		expect(asking).toEqual([])
-		expect('_drafts' in page('Queue').config.filter).toBe(false)
+		expect('_drafts' in page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters).toBe(false)
 	})
 
 	it('is not the default lens, so the archive is never the first paint', () => {
@@ -361,12 +375,12 @@ describe('Cases index lenses', () => {
 		expect(spelled).toEqual([])
 	})
 
-	it('keeps the archive out of the Queue by the same default', () => {
-		// The Queue's base filter carries no archive condition either, and it
+	it('keeps the archive out of the team queue by the same default', () => {
+		// The team queue view's filter carries no archive condition either, and it
 		// does not need one twice over: the platform excludes archived objects
 		// from every list, and a case can only be archived after it has ended,
 		// which `isFinalStatus: false` already keeps out.
-		const queue = page('Queue').config.filter
+		const queue = page('Cases').config.defaultSavedViews.find((view) => view.slug === 'team-queue').overrides.lockedFilters
 		expect('_archived' in queue).toBe(false)
 		expect(queue.isFinalStatus).toBe(false)
 	})
@@ -381,7 +395,7 @@ describe('Cases index lenses', () => {
 	})
 
 	it('gives Due this week the half-open window on deadline', () => {
-		expect(chip('Cases', 'Due this week').filter).toEqual({
+		expect(chip('Cases', 'Deadline this week').filter).toEqual({
 			isFinalStatus: false,
 			statusHiddenInLists: false,
 			isDraft: false,
@@ -420,7 +434,7 @@ describe('Tasks index lenses', () => {
 		// The two person-scoped lenses, and the only two. `scope` says so
 		// rather than relying on the default, which is the point of the
 		// test below.
-		expect(chip('Tasks', 'Mine').filter).toEqual({
+		expect(chip('Tasks', 'My cases').filter).toEqual({
 			scope: 'assigned',
 			isTerminal: false,
 		})
@@ -460,7 +474,7 @@ describe('Tasks index lenses', () => {
 			.filter((entry) => entry.filter.scope !== 'all')
 			.map((entry) => entry.label)
 			.sort()
-		expect(personal).toEqual(['Mine', 'Unclaimed'])
+		expect(personal).toEqual(['My cases', 'Unclaimed'])
 	})
 
 	it('asks the engine for the two due windows rather than deriving them', () => {
@@ -471,7 +485,7 @@ describe('Tasks index lenses', () => {
 			scope: 'all',
 			overdue: true,
 		})
-		expect(chip('Tasks', 'Due this week').filter).toEqual({
+		expect(chip('Tasks', 'Deadline this week').filter).toEqual({
 			scope: 'all',
 			isTerminal: false,
 			dueAfter: '@today',
@@ -532,7 +546,7 @@ describe('Tasks index lenses', () => {
 describe('the relative-date tokens the windows are built from', () => {
 	it('spells the week edge the way the library parses it', () => {
 		for (const id of ['Cases', 'Tasks']) {
-			const window = chip(id, 'Due this week').filter
+			const window = chip(id, 'Deadline this week').filter
 			const far = Object.values(window).find(
 				(value) => typeof value === 'string' && value.startsWith('@today+'),
 			)
@@ -604,10 +618,10 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(routeQuery(tile)).toEqual(asQuery(chip('Cases', 'Overdue').filter))
 	})
 
-	it('the Deadlines table carries its own, wider window', () => {
-		// Not the chip's filter: this table also lists what is due within
-		// three days, so landing on overdue-only would show fewer cases than
-		// the table just listed. What must hold is that the filter survives
+	it('the deadline signals table carries its own, wider window', () => {
+		// Not the chip's filter: this table also lists cases in the last
+		// quarter of their term, so landing on overdue-only would show fewer
+		// cases than the table just listed. What must hold is that the filter survives
 		// the trip at all (triage item 4) and reaches the page as a flat
 		// bracket key rather than a JSON-stringified object.
 		const table = dashboardWidgets().deadlines
@@ -616,7 +630,7 @@ describe('the deadline widgets and the Overdue chip', () => {
 		expect(table.content.viewAllRoute.name).toBe('Cases')
 		expect(query).toEqual(asQuery(flattenFilter(table.content.source.filter)))
 		expect(query.isFinalStatus).toBe('false')
-		expect(Object.keys(query)).toContain('deadline[lte]')
+		expect(Object.keys(query)).toContain('termSignalFrom[lte]')
 	})
 })
 
@@ -652,15 +666,39 @@ describe('the Deadline column', () => {
 			(column) => typeof column === 'object' && column.key === 'deadline',
 		)
 
-	it('renders through the deadlineCountdown cell widget', () => {
-		expect(deadlineColumn().widget).toBe('deadlineCountdown')
+	it('renders through the library date cell as a countdown', () => {
+		// The library's `date` cell with `due` reads the days overdue in the
+		// error colour from the day after the deadline, "Due today" on the
+		// day itself, and with `upcomingLabel` the days left before it.
+		expect(deadlineColumn().widget).toBe('date')
+		expect(deadlineColumn().widgetProps.due.upcomingLabel).toEqual({
+			one: '{count} day left',
+			other: '{count} days left',
+		})
 	})
 
-	it('names a widget id the cell registry resolves', () => {
-		// A `widget` id that resolves to nothing in `cnCellWidgets` does not
-		// error: CnCellRenderer falls through to the type-aware rendering and
-		// the column silently reverts to a plain date.
-		expect(cellWidgetsSource).toMatch(/^\tdeadlineCountdown: /m)
+	it('declares the same countdown on every deadline column', () => {
+		const deadlineColumns = []
+		const walk = (node) => {
+			if (Array.isArray(node)) {
+				node.forEach(walk)
+			} else if (node && typeof node === 'object') {
+				if (node.key === 'deadline' && typeof node.widget === 'string' && node.widgetProps?.due) {
+					deadlineColumns.push(node)
+				}
+				Object.values(node).forEach(walk)
+			}
+		}
+		walk(manifest.pages)
+		expect(deadlineColumns.length).toBeGreaterThan(1)
+		for (const column of deadlineColumns) {
+			expect(column.widget).toBe('date')
+			expect(column.widgetProps.due.upcomingLabel.other).toBe('{count} days left')
+		}
+	})
+
+	it('names no app cell widget, so the library draws it', () => {
+		expect(fs.existsSync(path.join(ROOT, 'src', 'services', 'cellWidgets.js'))).toBe(false)
 	})
 
 	it('sorts on the stored deadline, not on the rendered text', () => {
@@ -683,14 +721,21 @@ describe('bulk actions on the Cases index', () => {
 	 */
 	const actions = () => page('Cases').config.bulkActions
 
-	it('offers reassign plus the four lifecycle gestures', () => {
+	it('offers reassign, the four lifecycle gestures and the anonymised export', () => {
 		expect(actions().map((action) => action.id)).toEqual([
 			'reassign',
 			'transition',
 			'suspend',
 			'resume',
 			'extend-term',
+			'export-anonymised',
 		])
+	})
+
+	it('keeps the band to the five buttons DqZaken draws and puts the anonymised export under More', () => {
+		const inline = actions().filter((action) => action.menu !== true).map((action) => action.id)
+		expect(inline).toEqual(['reassign', 'transition', 'suspend', 'resume', 'extend-term'])
+		expect(actions().find((action) => action.id === 'export-anonymised').menu).toBe(true)
 	})
 
 	it('names a handler that caseBulkActions.js exports AND the registry registers', () => {
@@ -727,9 +772,12 @@ describe('bulk actions on the Cases index', () => {
 })
 
 describe('what this change does NOT move', () => {
-	it('leaves the Queue page and the My Work page in place', () => {
-		expect(page('Queue')).toBeTruthy()
-		expect(page('MyWork')).toBeTruthy()
+	it('keeps the team queue and Assigned to me as views of the case list', () => {
+		// They were pages; they are views of Cases now (Ruben, 19 October 2026).
+		const slugs = page('Cases').config.defaultSavedViews.map((view) => view.slug)
+		expect(slugs).toEqual(expect.arrayContaining(['team-queue', 'my-work']))
+		expect(page('Queue')).toBeUndefined()
+		expect(page('MyWork')).toBeUndefined()
 	})
 
 	it('changes no menu entry', () => {
@@ -740,12 +788,10 @@ describe('what this change does NOT move', () => {
 		// first such addition, `Integrations`
 		// (pluggable-integration-registry) the second, `Contacts`
 		// (contacts-domain) the third and the `Organisations` right after it
-		// (contacts-you-can-find) the fourth, and `Deleted cases`
-		// (case-recycle-window) the fifth; every entry this change was
-		// about is unmoved, in the same order. `Deleted cases` spends no
-		// top-level slot: `menu-layout.json` relocates it under `My work`
-		// beside `All cases`, which is where a handler looks for the case
-		// they just deleted.
+		// (contacts-you-can-find) the fourth; every entry this change was
+		// about is unmoved, in the same order. `Deleted cases`
+		// (case-recycle-window) came and went again: cases are archival and
+		// never deleted (cases-are-archival-no-delete).
 		//
 		// ONE ENTRY IS LABELLED `Organisations`: the KvK companies. The second
 		// one, `TenantsMenu` (the multitenancy tenant), retired with dossiq's
@@ -764,18 +810,18 @@ describe('what this change does NOT move', () => {
 			'Contacts',
 			'Organisations',
 			'All cases',
-			'Deleted cases',
 			'Objects',
 			'Tasks',
-			'Close out your day',
+			'Close the day',
 			'Workflow board',
 			'Reports',
-			'Processing time',
+			'Lead time',
 			'Process mining',
-			'Map',
+			// `Map` retired with the CaseMap page; the map is the Cases list
+			// in map view, and `/map` redirects there.
 			'Settings',
 			'Documentation',
-			'Store',
+			'Marketplace',
 			'Map layers',
 			'Woo refusal grounds',
 			'Case types',
@@ -783,7 +829,7 @@ describe('what this change does NOT move', () => {
 			// attribute catalogue, beside the case types it files for. It
 			// spends no top-level slot either, because it carries
 			// `section: "settings"` like `Case types` and `Flows` do.
-			'Attributes',
+			'Attributes (catalogue)',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
@@ -798,10 +844,8 @@ describe('what this change does NOT move', () => {
 			'Offline sync conflicts',
 			'Needs assessments',
 			'Multidisciplinary consultations',
-			'Re-integration pathways',
 			'Supplier portal accounts',
 			'Data breach register',
-			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',

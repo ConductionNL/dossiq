@@ -21,57 +21,58 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\BelplanRoutingService;
-use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Controller\Support\AdminCaller;
+use OCA\Dossiq\Controller\Support\SchemaObjectCalls;
+use OCA\Dossiq\Kernel\Contracts\BelplanRoutingServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Service\Support\CastArray;
 use OCA\Dossiq\Settings\AdminSettings;
-use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
-use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUserSession;
 use RuntimeException;
-use Throwable;
 
 /**
  * REST API for belplannen and datagedreven routing.
  *
- * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
+ * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
  */
 class BelplanController extends Controller {
-	use SearchesObjects;
+	/**
+	 * Creates, patches and lists belplannen, answering each failure.
+	 *
+	 * @var SchemaObjectCalls
+	 */
+	private readonly SchemaObjectCalls $objects;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param BelplanRoutingService $routingService The belplan routing service.
-	 * @param SettingsService $settingsService The settings service.
-	 * @param IUserSession $userSession The user session.
-	 * @param IGroupManager $groupManager The group manager.
+	 * @param BelplanRoutingServiceInterface $routingService The belplan routing service.
+	 * @param SettingsServiceInterface $settingsService The settings service.
+	 * @param AdminCaller $caller The signed-in user, and whether they are an administrator.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BelplanRoutingService $routingService,
-		private readonly SettingsService $settingsService,
-		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groupManager,
+		private readonly BelplanRoutingServiceInterface $routingService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly AdminCaller $caller,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->objects = new SchemaObjectCalls(createFailure: 'Could not create belplan', patchFailure: 'Could not update belplan');
 	}//end __construct()
 
 	/**
@@ -80,12 +81,7 @@ class BelplanController extends Controller {
 	 * @return bool True when the current user is an admin.
 	 */
 	private function isAdmin(): bool {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return false;
-		}
-
-		return $this->groupManager->isAdmin($user->getUID());
+		return $this->caller->isAdmin();
 	}//end isAdmin()
 
 	/**
@@ -93,11 +89,11 @@ class BelplanController extends Controller {
 	 *
 	 * @return JSONResponse The belplannen.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -110,7 +106,7 @@ class BelplanController extends Controller {
 	 *
 	 * @return JSONResponse The created belplan.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function create(): JSONResponse {
@@ -118,10 +114,8 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('belplan_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$store = $this->belplanStore();
+		if ($store === null) {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -130,7 +124,34 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'naam is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$record = [
+		return $this->saveBelplan(store: $store, record: $this->belplanRecord(name: $name));
+	}//end create()
+
+	/**
+	 * The object service, register and belplan schema to store a belplan in, or null when one is not configured.
+	 *
+	 * @return array{0: object, 1: string, 2: string}|null
+	 */
+	private function belplanStore(): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('belplan_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $schema];
+	}//end belplanStore()
+
+	/**
+	 * The belplan record a create request describes.
+	 *
+	 * @param string $name The belplan name.
+	 *
+	 * @return array<string, mixed> The record to save.
+	 */
+	private function belplanRecord(string $name): array {
+		return [
 			'name' => $name,
 			'triggerNumber' => (array)$this->request->getParam('triggerNumber', []),
 			'routingSteps' => (array)$this->request->getParam('routingSteps', []),
@@ -139,26 +160,23 @@ class BelplanController extends Controller {
 			'priority' => (int)$this->request->getParam('priority', 0),
 			'isActive' => (bool)$this->request->getParam('isActive', true),
 		];
+	}//end belplanRecord()
 
-		try {
-			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
-		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
-			// The same shape TaskChecklistController carries: a payload
-			// OpenRegister's schema refuses came back as a 500, so an admin who
-			// typed a bad routing step was told the server had broken. The
-			// exception's message already names the offending property, and
-			// this arm was returning a fixed sentence that named nothing, so
-			// there was no way to find out from the response either.
-			//
-			// Narrow on purpose; the Throwable arm below still answers 500 for
-			// a genuine fault.
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		} catch (Throwable $e) {
-			return new JSONResponse(['error' => 'Could not create belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->toArray(result: $created));
-	}//end create()
+	/**
+	 * Save a belplan record, answering a schema refusal as 400 and any other failure as 500.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store The object service, register and belplan schema.
+	 * @param array<string, mixed> $record The record to save.
+	 *
+	 * @return JSONResponse
+	 */
+	private function saveBelplan(array $store, array $record): JSONResponse {
+		return $this->objects->created(
+			store: $store,
+			record: $record,
+			answer: fn (mixed $created): JSONResponse => new JSONResponse($this->toArray(result: $created))
+		);
+	}//end saveBelplan()
 
 	/**
 	 * Update a belplan (admin only).
@@ -167,7 +185,7 @@ class BelplanController extends Controller {
 	 *
 	 * @return JSONResponse The updated belplan.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function update(string $id): JSONResponse {
@@ -178,10 +196,37 @@ class BelplanController extends Controller {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('belplan_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		if ($this->isConfigured(hasObjects: $objectService !== null, register: $register, schema: $schema) === false) {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
+		return $this->objects->patched(
+			store: [$objectService, $register, $schema],
+			id: $id,
+			changes: $this->requestedPatch(),
+			answer: fn (mixed $updated): JSONResponse => new JSONResponse($this->toArray(result: $updated))
+		);
+	}//end update()
+
+	/**
+	 * Whether the object service, register and belplan schema are all there.
+	 *
+	 * @param bool   $hasObjects Whether OpenRegister's object service is there.
+	 * @param string $register   The register id.
+	 * @param string $schema     The belplan schema id.
+	 *
+	 * @return bool
+	 */
+	private function isConfigured(bool $hasObjects, string $register, string $schema): bool {
+		return $hasObjects === true && $register !== '' && $schema !== '';
+	}//end isConfigured()
+
+	/**
+	 * The belplan fields the request sets.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function requestedPatch(): array {
 		$patch = [];
 		foreach (['name', 'triggerNumber', 'routingSteps', 'openingHours', 'fallbackAction', 'priority', 'isActive'] as $field) {
 			$value = $this->request->getParam($field, null);
@@ -190,25 +235,19 @@ class BelplanController extends Controller {
 			}
 		}
 
-		try {
-			$updated = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: $patch);
-		} catch (Throwable $e) {
-			return new JSONResponse(['error' => 'Could not update belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->toArray(result: $updated));
-	}//end update()
+		return $patch;
+	}//end requestedPatch()
 
 	/**
 	 * Resolve a routing destination for a dialed number and menu selection.
 	 *
 	 * @return JSONResponse The routing decision.
 	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
+	 * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
 	 */
 	#[NoAdminRequired]
 	public function route(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -237,11 +276,7 @@ class BelplanController extends Controller {
 			return [];
 		}
 
-		try {
-			$results = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 200]);
-		} catch (Throwable $e) {
-			return [];
-		}
+		$results = $this->objects->listed(store: [$objectService, $register, $schema], filters: ['_limit' => 200]);
 
 		$records = [];
 		foreach ((array)$results as $result) {
@@ -259,18 +294,6 @@ class BelplanController extends Controller {
 	 * @return array<string, mixed> The normalised record.
 	 */
 	private function toArray($result): array {
-		if (is_array($result) === true) {
-			return $result;
-		}
-
-		if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-			return (array)$result->jsonSerialize();
-		}
-
-		if (is_object($result) === true) {
-			return (array)$result;
-		}
-
-		return [];
+		return CastArray::of(value: $result);
 	}//end toArray()
 }//end class

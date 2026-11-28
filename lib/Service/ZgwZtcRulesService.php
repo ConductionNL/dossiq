@@ -63,7 +63,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwZtcRulesService extends ZgwRulesBase {
 	/**
@@ -102,6 +102,27 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	private ZtcPublishAndDeleteChecks $lifecycle;
 
 	/**
+	 * The reference arrays a zaaktype create resolves: field, schema key, lookup field.
+	 *
+	 * @var array<int, array{0: string, 1: string, 2: string}>
+	 */
+	private const CASE_TYPE_REFERENCES = [
+		['informatieobjecttypen', 'document_type_schema', 'name'],
+		['besluittypen', 'decision_type_schema', 'name'],
+		['deelzaaktypen', 'case_type_schema', 'identifier'],
+	];
+
+	/**
+	 * The reference arrays a besluittype create resolves: field, schema key, lookup field.
+	 *
+	 * @var array<int, array{0: string, 1: string, 2: string}>
+	 */
+	private const DECISION_TYPE_REFERENCES = [
+		['informatieobjecttypen', 'document_type_schema', 'name'],
+		['zaaktypen', 'case_type_schema', 'identifier'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * Takes what every rules class takes and builds its three collaborators
@@ -133,7 +154,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @see ZtcConceptRules::checkConceptProtection()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function checkConceptProtection(
 		string $resource,
@@ -161,7 +182,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @see ZtcConceptRules::defaultConcept()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function defaultConcept(array $body, string $resource): array {
 		return $this->concept->defaultConcept(body: $body, resource: $resource);
@@ -178,7 +199,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @see ZtcConceptRules::preserveConcept()
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function preserveConcept(array $body, string $resource, ?array $existingObject): array {
 		return $this->concept->preserveConcept(body: $body, resource: $resource, existingObject: $existingObject);
@@ -232,7 +253,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypenCreate(array $body): array {
 		// Ztc-001: Validate selectielijstProcestype URL.
@@ -242,24 +263,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		}
 
 		// Resolve reference arrays by omschrijving/identificatie to UUIDs.
-		$body = $this->references->resolveTypeReferences(
-			body: $body,
-			field: 'informatieobjecttypen',
-			schemaKey: 'document_type_schema',
-			lookupField: 'name'
-		);
-		$body = $this->references->resolveTypeReferences(
-			body: $body,
-			field: 'besluittypen',
-			schemaKey: 'decision_type_schema',
-			lookupField: 'name'
-		);
-		$body = $this->references->resolveTypeReferences(
-			body: $body,
-			field: 'deelzaaktypen',
-			schemaKey: 'case_type_schema',
-			lookupField: 'identifier'
-		);
+		$body = $this->resolveReferences(body: $body, references: self::CASE_TYPE_REFERENCES);
 		$body = $this->references->resolveGerelateerdeZaaktypen(body: $body);
 
 		// Store resolved array fields via _directFields (bypasses Twig mapping).
@@ -308,22 +312,11 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesBesluittypenCreate(array $body): array {
 		// Resolve reference arrays by omschrijving/identificatie to UUIDs.
-		$body = $this->references->resolveTypeReferences(
-			body: $body,
-			field: 'informatieobjecttypen',
-			schemaKey: 'document_type_schema',
-			lookupField: 'name'
-		);
-		$body = $this->references->resolveTypeReferences(
-			body: $body,
-			field: 'zaaktypen',
-			schemaKey: 'case_type_schema',
-			lookupField: 'identifier'
-		);
+		$body = $this->resolveReferences(body: $body, references: self::DECISION_TYPE_REFERENCES);
 
 		// Store resolved arrays as _directFields (bypass Twig mapping for array fields).
 		$body = $this->references->withDirectFields(
@@ -335,6 +328,27 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	}//end rulesBesluittypenCreate()
 
 	/**
+	 * Resolve each declared reference array of a body, in order.
+	 *
+	 * @param array                                    $body       The ZGW request body
+	 * @param array<int, array{0: string, 1: string, 2: string}> $references Field, schema key and lookup field per array.
+	 *
+	 * @return array The body with the references resolved
+	 */
+	private function resolveReferences(array $body, array $references): array {
+		foreach ($references as [$field, $schemaKey, $lookupField]) {
+			$body = $this->references->resolveTypeReferences(
+				body: $body,
+				field: $field,
+				schemaKey: $schemaKey,
+				lookupField: $lookupField
+			);
+		}
+
+		return $body;
+	}//end resolveReferences()
+
+	/**
 	 * Rules for creating a zaaktype-informatieobjecttype (ZIOT).
 	 *
 	 * Resolves the informatieobjecttype field from omschrijving to UUID when
@@ -344,7 +358,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The validation result
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function rulesZaaktypeinformatieobjecttypenCreate(array $body): array {
 		// Resolve informatieobjecttype: omschrijving → UUID, or bare UUID → verify.

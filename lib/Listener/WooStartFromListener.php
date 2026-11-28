@@ -29,8 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
-use OCA\Dossiq\Woo\WooSearchPlans;
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\WooSearchPlansInterface;
+use OCA\Dossiq\Listener\Support\EventObjectPayload;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -49,13 +50,13 @@ class WooStartFromListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param WooSearchPlans           $plans        Copies the configuration and writes the draft plan.
-	 * @param ObjectSchemaSlugResolver $slugResolver Tells a case from any other object.
+	 * @param WooSearchPlansInterface           $plans        Copies the configuration and writes the draft plan.
+	 * @param ObjectSchemaSlugResolverInterface $slugResolver Tells a case from any other object.
 	 * @param LoggerInterface          $logger       Logs a copy that could not be made.
 	 */
 	public function __construct(
-		private readonly WooSearchPlans $plans,
-		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly WooSearchPlansInterface $plans,
+		private readonly ObjectSchemaSlugResolverInterface $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -101,17 +102,10 @@ class WooStartFromListener implements IEventListener {
 	 * @param ObjectCreatedEvent $event The event.
 	 *
 	 * @return array<string, mixed>|null The object.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) EventObjectPayload is a stateless reader.
 	 */
 	private function payload(ObjectCreatedEvent $event): ?array {
-		$object = $event->getObject();
-		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-			$object = $object->jsonSerialize();
-		}
-
-		if (is_array($object) === false) {
-			return null;
-		}
-
-		return $object;
+		return EventObjectPayload::fromValue(object: $event->getObject());
 	}//end payload()
 }//end class

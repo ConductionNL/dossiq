@@ -43,9 +43,8 @@ $extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
         // Consumed by useAppManifest('dossiq', bundled, { mergeStrategy: 'delta' }).
     ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
-        // The case types each user chose for My case types (case-types-in-my-menu).
-    ['name' => 'menuCaseTypes#index',  'url' => '/api/menu-case-types', 'verb' => 'GET'],
-    ['name' => 'menuCaseTypes#update', 'url' => '/api/menu-case-types', 'verb' => 'PUT'],
+        // The current user's primary team, for the @myTeam filter token (my-team-queue).
+    ['name' => 'myTeam#show', 'url' => '/api/me/team', 'verb' => 'GET'],
 
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
     ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
@@ -138,11 +137,33 @@ $extra = [
         // type rather than on a definition package, so they sit under
         // /api/case-types and on their own controller.
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
+    ['name' => 'caseTypePhases#index',     'url' => '/api/case-types/{id}/phases',           'verb' => 'GET'],
+    ['name' => 'caseTypeTerms#index',      'url' => '/api/case-types/{id}/terms',            'verb' => 'GET'],
+    ['name' => 'caseTypeRules#index',      'url' => '/api/case-types/{id}/rules',            'verb' => 'GET'],
+    ['name' => 'caseTypeRights#index',     'url' => '/api/case-types/{id}/rights-by-role',   'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
         // The case surfaces that read and act through pipelinq
         // (parties-and-contact-moments-consume-pipelinq, boards
         // DqZaakContactmomenten, DqZaakPartijen, DqZaaktype).
+    // A party's open pipelinq tickets by master entity (organisation-open-tickets).
+    ['name' => 'partyTicket#openTicketCounts', 'url' => '/api/parties/open-tickets',      'verb' => 'GET'],
+    ['name' => 'partyTicket#openTickets',      'url' => '/api/parties/open-tickets/list', 'verb' => 'GET'],
+    ['name' => 'personReachability#show',      'url' => '/api/people/{id}/reachability',  'verb' => 'GET'],
+    ['name' => 'personLookup#lookup',          'url' => '/api/people/lookup',             'verb' => 'POST'],
+    ['name' => 'caseNextStatus#show',          'url' => '/api/cases/{caseId}/next-status', 'verb' => 'GET'],
+    // The instalments of the payment schedules on a case's decisions, with their states and totals (grant-cases-from-application-to-settlement).
+    ['name' => 'paymentSchedule#forCase', 'url' => '/api/cases/{caseId}/payment-schedule', 'verb' => 'GET'],
+    // The settlements of a case, reached through its applications and their executions (overview-cards-per-case-type).
+    ['name' => 'settlement#forCase', 'url' => '/api/cases/{caseId}/settlements', 'verb' => 'GET'],
+    // The executions of a case's grants with what the grant header actions need (grant-cases-from-application-to-settlement 1.2).
+    ['name' => 'settlement#grantChain', 'url' => '/api/cases/{caseId}/grant-chain', 'verb' => 'GET'],
+    // A case's declared sessions and the ones it holds; plan one (complaints-are-a-case-type 2.3).
+    ['name' => 'caseSession#index', 'url' => '/api/cases/{caseId}/sessions', 'verb' => 'GET'],
+    ['name' => 'caseSession#create', 'url' => '/api/cases/{caseId}/sessions', 'verb' => 'POST'],
+    // The scoring sheet of a case and the scoring of one submission with the case's formula (tenders-run-on-the-tender-case-type 3.2).
+    ['name' => 'scoring#sheet', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'GET'],
+    ['name' => 'scoring#score', 'url' => '/api/cases/{caseId}/scoring', 'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#contactMoments',      'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'GET'],
     ['name' => 'pipelinqContactMoment#logContactMoment',    'url' => '/api/cases/{caseId}/pipelinq/contact-moments',                   'verb' => 'POST'],
     ['name' => 'pipelinqContactMoment#fileContactMoment',   'url' => '/api/cases/{caseId}/pipelinq/contact-moments/{momentId}/file',   'verb' => 'POST'],
@@ -185,14 +206,24 @@ $extra = [
         // anything; `grounds` exists so the dialog offers the server's own list
         // rather than a second copy that can drift out of it.
     ['name' => 'sociaalDomeinPlan#plan',             'url' => '/api/family-plans/{planId}',                    'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#planOfCase',       'url' => '/api/cases/{caseId}/family-plan',               'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#saveGoal',         'url' => '/api/family-plans/{planId}/goals',              'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#saveIntervention', 'url' => '/api/family-plans/{planId}/interventions',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#recordReview',     'url' => '/api/family-plans/{planId}/reviews',            'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
+    ['name' => 'caseGoal#index',                     'url' => '/api/cases/{caseId}/goals',                     'verb' => 'GET'],
+    ['name' => 'caseGoal#create',                    'url' => '/api/cases/{caseId}/goals',                     'verb' => 'POST'],
+    ['name' => 'caseGoal#close',                     'url' => '/api/cases/{caseId}/goals/{goalId}/close',      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
     ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
     ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
-    ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
+        // The household card on a social domain case (DqSociaalDomein). Other domains are read only on a
+        // chosen ground, logged, and kept in the reader's session.
+    ['name' => 'householdCases#index',  'url' => '/api/cases/{caseId}/household-cases',        'verb' => 'GET'],
+    ['name' => 'householdCases#lookUp', 'url' => '/api/cases/{caseId}/household-cases/lookup', 'verb' => 'POST'],
+
+        // The OpenAPI document of dossiq's own API (ApiContract), public, served under /api/v1/ too.
+    ['name' => 'openApi#show', 'url' => '/api/openapi.json', 'verb' => 'GET'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
         // Literal routes registered before the ZGW {resource}-wildcard
@@ -318,33 +349,13 @@ $extra = [
     ['name' => 'woz#object', 'url' => '/api/external/woz/value/{wozobjectnummer}', 'verb' => 'GET'],
 
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
-        // Inbound SOAP endpoints accept raw XML POST.
-    ['name' => 'stuf#cases',   'url' => '/api/stuf/cases',   'verb' => 'POST'],
-    ['name' => 'stuf#persons', 'url' => '/api/stuf/persons', 'verb' => 'POST'],
-        // DEPRECATED ALIASES — same reasoning as /api/stuf/inkomend below: the
-        // URL lives in the SENDING zaaksysteem's configuration, so renaming it
-        // alone turns a working SOAP receiver into a silent 404 on somebody
-        // else's schedule. Each needs its OWN method name because AppHost
-        // Routes::standard() rejects duplicates by `name` and ignores `postfix`.
-        // Remove once every configured sender posts to the English paths.
-    ['name' => 'stuf#casesLegacyPath',   'url' => '/api/stuf/zaken',    'verb' => 'POST'],
-    ['name' => 'stuf#personsLegacyPath', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
-        // Outbound StUF-ZKN gateway (admin REST) + async confirmation receiver.
+        // Admin REST for the outbound StUF-ZKN gateway. Integriq owns the wire:
+        // a zaaksysteem posts provider requests to integriq's
+        // /api/stuf-zkn/provider/{sourceId}/cases and /persons, and confirmations
+        // to integriq's /api/stuf-zkn/confirmations.
     ['name' => 'stuf#endpoints', 'url' => '/api/stuf/endpoints', 'verb' => 'GET'],
     ['name' => 'stuf#messages',  'url' => '/api/stuf/messages',  'verb' => 'GET'],
     ['name' => 'stuf#outbound',  'url' => '/api/stuf/outbound',  'verb' => 'POST'],
-    ['name' => 'stuf#inbound',   'url' => '/api/stuf/inbound',   'verb' => 'POST'],
-        // DEPRECATED ALIAS — remove once every configured zaaksysteem posts to
-        // /api/stuf/inbound. This URL is a WIRE CONTRACT: it is written into the
-        // upstream system's configuration, not into ours, so renaming it alone
-        // turns a working webhook into a silent 404 on somebody else's schedule.
-        //
-        // It routes to its OWN method rather than reusing 'stuf#inbound' with a
-        // postfix: openregister's AppHost Routes::standard() rejects duplicate
-        // names by `name` alone and never looks at `postfix`, so the two-entries-
-        // one-name form throws "Duplicate route name" at boot and takes the whole
-        // app's routing down with it.
-    ['name' => 'stuf#inboundLegacyPath', 'url' => '/api/stuf/inkomend', 'verb' => 'POST'],
 
         // Doorlooptijd (throughput-time) dashboard metrics.
     ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
@@ -352,6 +363,9 @@ $extra = [
         // Process mining bottleneck report — dwell-time, bottleneck ranking,
         // transition matrix + rework detection, throughput trend.
     ['name' => 'processMining#report', 'url' => '/api/reports/process-mining', 'verb' => 'GET'],
+        // Processing-time report: target compliance, distribution, trend,
+        // throughput, records at risk and the per-type breakdown.
+    ['name' => 'processingTimeReport#show', 'url' => '/api/reports/processing-time', 'verb' => 'GET'],
 
         // Deelzaak (sub-case) parent-child relations.
     ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
@@ -390,15 +404,17 @@ $extra = [
         // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
     ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
     ['name' => 'workQueue#workload', 'url' => '/api/work-queue/workload', 'verb' => 'GET'],
+    ['name' => 'workQueueSources#index', 'url' => '/api/work-queue/sources', 'verb' => 'GET'],
 
         // One personal queue, fed by the declared sources (one-personal-queue).
         // Nothing here takes a user id: every endpoint answers for the caller.
     ['name' => 'personalQueue#index',              'url' => '/api/personal-queue',                   'verb' => 'GET'],
-    ['name' => 'personalQueue#endOfDay',           'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
+    ['name' => 'endOfDay#show',                     'url' => '/api/personal-queue/end-of-day',        'verb' => 'GET'],
     ['name' => 'personalQueue#setGrouping',        'url' => '/api/personal-queue/grouping',          'verb' => 'POST'],
     ['name' => 'personalQueue#hideGroup',          'url' => '/api/personal-queue/groups/{group}/hide', 'verb' => 'POST'],
     ['name' => 'personalQueue#showGroup',          'url' => '/api/personal-queue/groups/{group}/show', 'verb' => 'POST'],
     ['name' => 'personalQueue#planItem',           'url' => '/api/personal-queue/planned-items',     'verb' => 'POST'],
+    ['name' => 'plannedItemDefaults#show',        'url' => '/api/personal-queue/planned-items/defaults', 'verb' => 'GET'],
     ['name' => 'personalQueue#digestSettings',     'url' => '/api/personal-queue/digest',            'verb' => 'GET'],
     ['name' => 'personalQueue#saveDigestSettings', 'url' => '/api/personal-queue/digest',            'verb' => 'POST'],
     ['name' => 'personalQueue#stage',              'url' => '/api/personal-queue/stages/{caseId}',   'verb' => 'GET'],
@@ -407,6 +423,8 @@ $extra = [
         // PWA assets (must precede the catch-all /{path} shell route below).
     ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
     ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],
+    // The files browser's actions, fetched by the bundle on an object's page.
+    ['name' => 'dashboard#filesSurfaces', 'url' => '/files-surfaces',              'verb' => 'GET'],
 
 
         // ── Advice Management (adviesAanvraag) ──────────────────────────
@@ -421,13 +439,6 @@ $extra = [
         // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
-        // a-case-note-reaches-the-neighbouring-register: sending ONE note to a
-        // neighbouring ZGW register, as a zaakinformatieobject of a reserved
-        // type. A deliberate act rather than a hook on save, because note
-        // storage is OpenRegister's entirely and it dispatches no note-saved
-        // event dossiq could listen for; `notes#mention` above is called the
-        // same way, after the note is already stored.
-    ['name' => 'notes#push', 'url' => '/api/cases/{caseId}/notes/push', 'verb' => 'POST'],
 
         // ── Workflow Definitions (workflowTemplate) ─────────────────────
         // CRUD on workflowTemplate is served by the manifest renderer +
@@ -471,6 +482,7 @@ $extra = [
         // perform, with the sentence naming the role, because an act that is
         // simply absent teaches nobody why.
     ['name' => 'caseActs#acts',           'url' => '/api/case/{caseId}/acts',           'verb' => 'GET'],
+    ['name' => 'caseActs#archiveReadiness', 'url' => '/api/case/{caseId}/archive/readiness', 'verb' => 'GET'],
         // Decision outcomes on the case: start the decidiq walk a gated act
         // waits for, and link its decision id to the case.
     ['name' => 'caseApproval#raise',      'url' => '/api/case/{caseId}/approvals/{act}', 'verb' => 'POST'],
@@ -488,10 +500,11 @@ $extra = [
     // in OpenRegister's recycle state; restoring and destroying are two
     // separate acts, and destroying needs the role the case type declares.
     ['name' => 'caseRecycle#deleted',            'url' => '/api/cases/deleted',                     'verb' => 'GET'],
+    ['name' => 'caseChanges#index',              'url' => '/api/cases/changes',                     'verb' => 'GET'],
     ['name' => 'caseRecycle#restore',            'url' => '/api/case/{caseId}/restore',             'verb' => 'POST'],
     ['name' => 'caseRecycle#destructionPreview', 'url' => '/api/case/{caseId}/destruction-preview', 'verb' => 'GET'],
     ['name' => 'caseRecycle#destroy',            'url' => '/api/case/{caseId}/destroy',             'verb' => 'POST'],
-    ['name' => 'caseRecycle#clocks',             'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
+    ['name' => 'retentionClocks#clocks',         'url' => '/api/case/{caseId}/retention-clocks',    'verb' => 'GET'],
 
         // Claim and release (case-claim-action, row 2.4). Who holds a case is
         // one field, and OpenRegister would take that write straight from the
@@ -580,6 +593,7 @@ $extra = [
     ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
+    ['name' => 'caseTaskCancel#cancel', 'url' => '/api/case-tasks/{taskId}/cancel',      'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
     ['name' => 'caseTask#detach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments/{fileId}', 'verb' => 'DELETE'],
 
@@ -592,6 +606,8 @@ $extra = [
         //
         // The two `bulk-transition` routes this replaces looped in dossiq.
     ['name' => 'bulkJobHandoff#create', 'url' => '/api/cases/bulk-jobs', 'verb' => 'POST'],
+        // The anonymised variant of the list export (social-domain-consent-and-safeguards, REQ-SDC-ANON-01).
+    ['name' => 'caseAnonymisedExport#export', 'url' => '/api/cases/anonymised-export', 'verb' => 'POST'],
 
         // The tenant CRUD + lifecycle routes retired with the tenant admin store
         // (tenancy-onto-openregister-organisation 6.9): a tenant is an OpenRegister
@@ -647,6 +663,9 @@ $extra = [
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
     ['name' => 'caseAccessLink#index',         'url' => '/api/access-links/case/{caseId}',   'verb' => 'GET'],
+        // Every share of a case outside the organisation, and revoking one (case read access, the share must be the case's).
+    ['name' => 'caseShare#index',              'url' => '/api/cases/{caseId}/shares',        'verb' => 'GET'],
+    ['name' => 'caseShare#destroy',            'url' => '/api/cases/{caseId}/shares/{shareId}', 'verb' => 'DELETE'],
     ['name' => 'caseAccessLink#preview',       'url' => '/api/access-links/{linkId}/preview', 'verb' => 'GET'],
     ['name' => 'caseAccessLink#pause',         'url' => '/api/access-links/{linkId}',    'verb' => 'PUT'],
     ['name' => 'caseAccessLink#revoke',        'url' => '/api/access-links/{linkId}',    'verb' => 'DELETE'],
@@ -668,6 +687,10 @@ $extra = [
 
         // Role-based routing engine action — manual recompute of step assignees.
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
+    // The purpose a reader states before a case with special categories of personal data opens (case-access-purpose).
+    ['name' => 'caseAccessPurpose#record', 'url' => '/api/cases/{id}/access-purpose', 'verb' => 'POST'],
+    // Whether the reader must state a purpose: the case's own handler opens it without one (access-purpose-handler).
+    ['name' => 'caseAccessPurpose#check', 'url' => '/api/cases/{id}/access-purpose', 'verb' => 'GET'],
     ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
         // Route a case to one person by a rule; arms the rule's take-back window.
     ['name' => 'routing#route', 'url' => '/api/cases/{id}/route', 'verb' => 'POST'],
@@ -684,24 +707,54 @@ $extra = [
     ['name' => 'lhs#recommend', 'url' => '/api/lhs/recommend', 'verb' => 'POST'],
     ['name' => 'lhs#override',  'url' => '/api/lhs/override',  'verb' => 'POST'],
 
-        // ── VTH Module ─────────────────────────────────────────────────────
-        // Checklist templates (admin). The URLs keep their first names; the
-        // controllers behind them know no procedure.
-    ['name' => 'checklistTemplate#index',   'url' => '/api/vth/checklists',       'verb' => 'GET'],
-    ['name' => 'checklistTemplate#create',  'url' => '/api/vth/checklists',       'verb' => 'POST'],
-    ['name' => 'checklistTemplate#update',  'url' => '/api/vth/checklists/{id}',  'verb' => 'PUT'],
-    ['name' => 'checklistTemplate#destroy', 'url' => '/api/vth/checklists/{id}',  'verb' => 'DELETE'],
+        // Advice from the decision table a case type names (REQ-LHS-CASE-01): ask on a case, then accept or deviate with a reason.
+        // @spec openspec/changes/enforcement-intervention-from-the-case/specs/enforcement-lhs/spec.md
+    ['name' => 'decisionAdvice#form',      'url' => '/api/decision-advice/case/{caseId}/form', 'verb' => 'GET'],
+    ['name' => 'decisionAdvice#recommend', 'url' => '/api/decision-advice/recommend', 'verb' => 'POST'],
+    ['name' => 'decisionAdvice#override',  'url' => '/api/decision-advice/override',  'verb' => 'POST'],
+
+        // Checklist templates (admin).
+    ['name' => 'checklistTemplate#index',   'url' => '/api/checklists',       'verb' => 'GET'],
+    ['name' => 'checklistTemplate#create',  'url' => '/api/checklists',       'verb' => 'POST'],
+    ['name' => 'checklistTemplate#update',  'url' => '/api/checklists/{id}',  'verb' => 'PUT'],
+    ['name' => 'checklistTemplate#destroy', 'url' => '/api/checklists/{id}',  'verb' => 'DELETE'],
+        // deprecated alias: /api/checklists[/{id}], remove after the next major.
+        // Each alias has its own method: AppHost Routes::standard() rejects a
+        // duplicate route name and ignores `postfix`.
+    ['name' => 'checklistTemplate#indexLegacyPath',   'url' => '/api/vth/checklists',      'verb' => 'GET'],
+    ['name' => 'checklistTemplate#createLegacyPath',  'url' => '/api/vth/checklists',      'verb' => 'POST'],
+    ['name' => 'checklistTemplate#updateLegacyPath',  'url' => '/api/vth/checklists/{id}', 'verb' => 'PUT'],
+    ['name' => 'checklistTemplate#destroyLegacyPath', 'url' => '/api/vth/checklists/{id}', 'verb' => 'DELETE'],
         // A checklist run on a case: submit one, read them all.
-    ['name' => 'taskChecklist#submit', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
-    ['name' => 'taskChecklist#runs',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+    ['name' => 'taskChecklist#submit', 'url' => '/api/cases/{id}/checklist-results', 'verb' => 'POST'],
+    ['name' => 'taskChecklist#runs',   'url' => '/api/cases/{id}/checklist-results', 'verb' => 'GET'],
+    // An external inspector's run is a portal task (inspection-checklists-onto-task 4.3).
+    ['name' => 'externalInspectionRun#assign', 'url' => '/api/cases/{id}/checklist-runs/external', 'verb' => 'POST'],
+        // deprecated alias: /api/cases/{id}/checklist-results, remove after the
+        // next major. The offline field-inspection leaf replays to the old URL.
+    ['name' => 'taskChecklist#submitLegacyPath', 'url' => '/api/vth/cases/{id}/inspection-result',  'verb' => 'POST'],
+    ['name' => 'taskChecklist#runsLegacyPath',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
         // What an inspector captured at the site. The metadata validator and
         // the transcription queue both shipped with mobiel-inspectie-offline
         // and had no door, so a photo or a voice memo reached nobody and the
         // fieldEvidence page read a schema nothing wrote.
     ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
-        // Per-case advice request creation.
-    ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
-    ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
+        // The sync frame's conflict card keeps the device's text or the office's.
+    ['name' => 'conflictRecord#resolve', 'url' => '/api/conflict-records/{id}/resolve', 'verb' => 'POST'],
+        // A supervision plan's figures, counted from its inspections, and a
+        // proposed schedule that is shown before anything is planned
+        // (supervision-plan-page).
+    ['name' => 'supervisionPlan#progressForYear',  'url' => '/api/supervision-plans/year/{year}/progress',   'verb' => 'GET'],
+    ['name' => 'supervisionPlan#scheduleProposalForYear', 'url' => '/api/supervision-plans/year/{year}/schedule-proposal', 'verb' => 'GET'],
+    ['name' => 'supervisionPlan#progress',         'url' => '/api/supervision-plans/{id}/progress',          'verb' => 'GET'],
+    ['name' => 'supervisionPlan#scheduleProposal', 'url' => '/api/supervision-plans/{id}/schedule-proposal', 'verb' => 'GET'],
+        // Per-case advice requests, on any case type.
+    ['name' => 'advice#createForCase', 'url' => '/api/cases/{id}/advice-requests', 'verb' => 'POST'],
+    ['name' => 'advice#getForCase',    'url' => '/api/cases/{id}/advice-requests', 'verb' => 'GET'],
+        // DEPRECATED ALIASES of the two above, for one release. Each has its
+        // own method name because Routes::standard() rejects duplicate names.
+    ['name' => 'advice#createForCaseLegacyPath', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
+    ['name' => 'advice#getForCaseLegacyPath',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
 
         // ── Berichtenbox (government inbox integration) ─────────────────
     ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
@@ -721,6 +774,9 @@ $extra = [
         // ── Consultation (advice requests and responses) ─────────────────
     ['name' => 'consultation#index',               'url' => '/api/consultations/case/{caseId}',                'verb' => 'GET'],
     ['name' => 'consultation#create',              'url' => '/api/consultations',                              'verb' => 'POST'],
+    // Before {id}, so the router does not read these words as an id.
+    ['name' => 'consultationReport#dueSoon',             'url' => '/api/consultations/due-soon',                     'verb' => 'GET'],
+    ['name' => 'consultationReport#bottlenecks',         'url' => '/api/consultations/bottlenecks',                  'verb' => 'GET'],
     ['name' => 'consultation#show',                'url' => '/api/consultations/{id}',                         'verb' => 'GET'],
     ['name' => 'consultation#delete',              'url' => '/api/consultations/{id}',                         'verb' => 'DELETE'],
     ['name' => 'consultation#updateStatus',        'url' => '/api/consultations/{id}/status',                  'verb' => 'POST'],
@@ -748,15 +804,17 @@ $extra = [
     ['name' => 'emailTemplate#listTemplates',  'url' => '/api/casetypes/{caseTypeId}/email-templates',                  'verb' => 'GET'],
     ['name' => 'emailTemplate#createTemplate', 'url' => '/api/casetypes/{caseTypeId}/email-templates',                  'verb' => 'POST'],
     ['name' => 'emailTemplate#variables',      'url' => '/api/casetypes/{caseTypeId}/email-templates/variables',         'verb' => 'GET'],
-    ['name' => 'emailTemplate#seedDefaults',   'url' => '/api/casetypes/{caseTypeId}/email-templates/seed-defaults',    'verb' => 'POST'],
     ['name' => 'emailTemplate#updateTemplate', 'url' => '/api/email-templates/{templateId}',                            'verb' => 'PUT'],
     ['name' => 'emailTemplate#prefillDraft',   'url' => '/api/cases/{caseId}/email-templates/{templateId}/draft',       'verb' => 'POST'],
     // The account the background jobs (the termijn reminder sweep) write as. Admin only.
     ['name' => 'backgroundServiceAccount#show', 'url' => '/api/settings/background-service-account', 'verb' => 'GET'],
     ['name' => 'backgroundServiceAccount#save', 'url' => '/api/settings/background-service-account', 'verb' => 'PUT'],
-    ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
-    ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
-    ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
+    // Which groups may see each contributed dashboard widget. Admin only.
+    ['name' => 'widgetAudience#show', 'url' => '/api/settings/widget-audience', 'verb' => 'GET'],
+    ['name' => 'widgetAudience#save', 'url' => '/api/settings/widget-audience', 'verb' => 'PUT'],
+    ['name' => 'emailSettings#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
+    ['name' => 'emailSettings#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
+    ['name' => 'emailSettings#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],
 
     // Inbound-mail-filters: the intake log as a surface, and the two named acts
     // a handler can perform on a message that should not have come to us. Every
@@ -789,6 +847,8 @@ $extra = [
     // per-case guard `refuse` does, because it mutates a case and, on an
     // inadmissible verdict, closes it.
     ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
+    // The completeness items the case type declares, ticked against the case (case read access).
+    ['name' => 'caseCompleteness#show',     'url' => '/api/cases/{caseId}/completeness',                 'verb' => 'GET'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],
@@ -810,15 +870,25 @@ $extra = [
     ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
     ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
     ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
+    // The letter a case type declares for a purpose (documentDrafts.<purpose>): the decision dialog's letter row.
+    ['name' => 'caseLetter#show',  'url' => '/api/cases/{id}/letters/{purpose}', 'verb' => 'GET'],
+    ['name' => 'caseLetter#draft', 'url' => '/api/cases/{id}/letters/{purpose}', 'verb' => 'POST'],
     ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
     ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
     // Lodge a remedy (bezwaar, ...) against a decided case; the case type's remedy declaration names the case type it opens (woo-case-screens-and-objections REQ-RML-001, generic per decision 182).
     ['name' => 'remedy#lodge', 'url' => '/api/cases/{id}/remedy', 'verb' => 'POST'],
     // Woo review reports (woo-review-reports): opt-in per organisation, the reader check is in the body.
-    ['name' => 'wooReport#throughput', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    ['name' => 'wooReport#throughput', 'url' => '/api/document-review/reports/throughput', 'verb' => 'GET'],
+        // deprecated alias: /api/document-review/reports/throughput, remove after the next major.
+    ['name' => 'wooReport#throughputLegacyPath', 'url' => '/api/woo/reports/throughput', 'verb' => 'GET'],
+    ['name' => 'wooReport#offered', 'url' => '/api/reports/offered', 'verb' => 'GET'],
     ['name' => 'mailPartiesReport#show', 'url' => '/api/cases/{id}/reports/mail-parties', 'verb' => 'GET'],
     // Woo review (woo-review-triage): relevance apart from the verdict, and the case summary.
     ['name' => 'documentReview#summary',   'url' => '/api/cases/{id}/review/summary', 'verb' => 'GET'],
+    ['name' => 'documentVerdicts#forCase', 'url' => '/api/cases/{id}/review/verdicts', 'verb' => 'GET'],
+    // A reply to the resident kept as the caller's draft on the case (DqZaakContact "Opslaan als concept").
+    ['name' => 'caseReplyDraft#show', 'url' => '/api/cases/{id}/reply-draft', 'verb' => 'GET'],
+    ['name' => 'caseReplyDraft#save', 'url' => '/api/cases/{id}/reply-draft', 'verb' => 'PUT'],
     ['name' => 'documentReview#relevance', 'url' => '/api/cases/{id}/review/documents/{documentRef}/relevance', 'verb' => 'POST'],
     ['name' => 'documentReview#batches',     'url' => '/api/cases/{id}/review/batches', 'verb' => 'GET'],
     ['name' => 'documentReview#createBatch', 'url' => '/api/cases/{id}/review/batches', 'verb' => 'POST'],
@@ -842,6 +912,9 @@ $extra = [
     ['name' => 'wooDeliveredSet#item', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}', 'verb' => 'GET', 'requirements' => ['index' => '\d+']],
     ['name' => 'wooDeliveredSet#file', 'url' => '/api/cases/{id}/woo/delivered-sets/{setId}/items/{index}/{side}', 'verb' => 'GET', 'requirements' => ['index' => '\d+', 'side' => 'original|delivered']],
     ['name' => 'portalPermit#changePlate', 'url' => '/api/portal/vergunning/kenteken', 'verb' => 'POST'],
+    // The person a form named, such as a second signer, signs or refuses from the portal
+    // (obligations-placed-at-intake); portaliq forwards with a signed X-Portal-Subject assertion.
+    ['name' => 'portalObligation#settle', 'url' => '/api/portal/obligations/settle', 'verb' => 'POST'],
     // Gather documents on a Woo case (woo-requests-gather-documents-from-sources D-2, D-3).
     ['name' => 'wooSources#index',  'url' => '/api/cases/{id}/woo/sources',        'verb' => 'GET'],
     ['name' => 'wooSources#search', 'url' => '/api/cases/{id}/woo/sources/search', 'verb' => 'POST'],
@@ -859,6 +932,9 @@ $extra = [
     // The requester answers the organisation's question from Mijn zaken (woo-dossier-shared-with-the-requester):
     // portaliq forwards the row action `beantwoordVraag` here with a signed X-Portal-Subject assertion.
     ['name' => 'portalWooAnswer#answer', 'url' => '/api/portal/vragen/antwoord', 'verb' => 'POST'],
+    // The external inspector completes their inspection task (inspection-checklists-onto-task 4.3):
+    // portaliq forwards the task's completeVia action here with a signed X-Portal-Subject assertion.
+    ['name' => 'portalInspection#complete', 'url' => '/api/portal/inspectie/checklist', 'verb' => 'POST'],
 
         // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
         // to the existing WOORedactionService, never a replacement — proposals are
@@ -876,6 +952,14 @@ $extra = [
         'verb'         => 'POST',
         'requirements' => ['documentRef' => '[^/]+'],
     ],
+
+        // The redaction step: a partly public document gets its redacted copy through filinq, or by upload
+        // (partly-public-documents-get-a-redacted-copy).
+    ['name' => 'documentRedaction#index',  'url' => '/api/cases/{id}/redactions',                       'verb' => 'GET'],
+    ['name' => 'documentRedaction#detect', 'url' => '/api/cases/{id}/redactions/{documentRef}/detect', 'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+    ['name' => 'documentRedaction#check',  'url' => '/api/cases/{id}/redactions/{documentRef}/check',  'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+    ['name' => 'documentRedaction#redact', 'url' => '/api/cases/{id}/redactions/{documentRef}/redact', 'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
+    ['name' => 'documentRedaction#upload', 'url' => '/api/cases/{id}/redactions/{documentRef}/upload', 'verb' => 'POST', 'requirements' => ['documentRef' => '[^/]+']],
 
         // ── Milestone tracking ───────────────────────────────────────────
     ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
@@ -898,6 +982,7 @@ $extra = [
         // are the `besluitvorming` package now, installed on request through the
         // package routes below (hydra ADR-118, decision 190).
     ['name' => 'package#index',   'url' => '/api/packages',              'verb' => 'GET'],
+    ['name' => 'package#reload',  'url' => '/api/packages/reload',       'verb' => 'POST'],
     ['name' => 'package#install', 'url' => '/api/packages/{id}/install', 'verb' => 'POST'],
         // The two `agenda#` routes were removed with the agenda compiler: decidiq
         // owns agenda-building and meetings, and it surfaces them here through the
@@ -945,6 +1030,7 @@ $extra = [
     ['name' => 'complaint#deadlineAlerts',              'url' => '/api/complaints/deadline-alerts',    'verb' => 'GET'],
     ['name' => 'complaintAnalytics#analytics',          'url' => '/api/complaints/analytics',          'verb' => 'GET'],
     ['name' => 'complaintAnalytics#kpi',                'url' => '/api/complaints/kpi',                'verb' => 'GET'],
+    ['name' => 'complaintPatterns#index',               'url' => '/api/complaints/patterns',           'verb' => 'GET'],
     ['name' => 'complaint#show',               'url' => '/api/complaints/{id}',                        'verb' => 'GET'],
     ['name' => 'complaint#update',             'url' => '/api/complaints/{id}',                        'verb' => 'PUT'],
     ['name' => 'complaint#transition',         'url' => '/api/complaints/{id}/transition',             'verb' => 'POST'],
@@ -969,6 +1055,10 @@ $extra = [
         // awb-art-7:7 audit entry on late corrections; the `hearingSession`
         // schema has no manifest page, so this is the only way in.
     ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
+
+    // The advisory committee's move of an advice request (Awb 7:13). The only
+    // writer DeliberationStartGuard lets into advice-issued or inadmissible.
+    ['name' => 'bezwaarAdviceRequest#transition', 'url' => '/api/bezwaar/advice-requests/{id}/transition', 'verb' => 'POST'],
 
     // The decision on an objection, Awb 7:11. `DecisionService` has held the
     // whole disposition matrix since the bezwaar lifecycle shipped and no
@@ -1066,17 +1156,27 @@ $extra = [
     ['name' => 'leaverHandover#preview',   'url' => '/api/leaver-handover/preview',                       'verb' => 'POST'],
     ['name' => 'leaverHandover#execute',   'url' => '/api/leaver-handover/execute',                       'verb' => 'POST'],
 
-        // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
+        // ── Deadlines, accruing amounts and payouts (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for payout callbacks: the finance app (X-Shillinq-Signature)
-        // or the external payment provider (frozen X-Procest-Signature). URL frozen.
-    ['name' => 'payoutCallback#callback', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
-        // TermijnInstance lifecycle (caseworker / handler).
-    ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
-    ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
-    ['name' => 'termijn#pauze',      'url' => '/api/termijn/instances/{id}/pauze',       'verb' => 'POST'],
-    ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
-    ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
-    ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // or the external payment provider (frozen X-Procest-Signature).
+    ['name' => 'payoutCallback#callback', 'url' => '/api/payments/callback', 'verb' => 'POST'],
+        // PERMANENT alias: the old URL is configured at external payment
+        // providers, where no repair step can reach it. Never remove.
+    ['name' => 'payoutCallback#callbackLegacyPath', 'url' => '/api/dossiq/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
+        // Term instance lifecycle (caseworker / handler).
+    ['name' => 'termijn#create',     'url' => '/api/deadlines/instances',                'verb' => 'POST'],
+    ['name' => 'termijn#show',       'url' => '/api/deadlines/instances/{id}',           'verb' => 'GET'],
+    ['name' => 'termijn#pauze',      'url' => '/api/deadlines/instances/{id}/pause',     'verb' => 'POST'],
+    ['name' => 'termijn#hervat',     'url' => '/api/deadlines/instances/{id}/resume',    'verb' => 'POST'],
+    ['name' => 'termijn#verleng',    'url' => '/api/deadlines/instances/{id}/extend',    'verb' => 'POST'],
+    ['name' => 'termijn#voltooi',    'url' => '/api/deadlines/instances/{id}/complete',  'verb' => 'POST'],
+        // deprecated alias: /api/deadlines/instances*, remove after the next major.
+    ['name' => 'deadlineInstanceLegacyPath#create',  'url' => '/api/termijn/instances',             'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#show',    'url' => '/api/termijn/instances/{id}',        'verb' => 'GET'],
+    ['name' => 'deadlineInstanceLegacyPath#pauze',   'url' => '/api/termijn/instances/{id}/pauze',  'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#hervat',  'url' => '/api/termijn/instances/{id}/hervat', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#verleng', 'url' => '/api/termijn/instances/{id}/verleng', 'verb' => 'POST'],
+    ['name' => 'deadlineInstanceLegacyPath#voltooi', 'url' => '/api/termijn/instances/{id}/voltooi', 'verb' => 'POST'],
         // The four clocks on ONE CASE. Addressed by case and not by instance,
         // because a case page holds a case id and there are four instances
         // behind it: a statutory term, a planned end, an internal target and a
@@ -1095,7 +1195,9 @@ $extra = [
         // statutory suspension.
     ['name' => 'caseTerms#aanvullingsverzoeken', 'url' => '/api/cases/{caseId}/aanvullingsverzoeken', 'verb' => 'GET'],
         // How old the work still standing is, read live over open cases only.
-    ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
+    ['name' => 'caseTerms#workloadAge', 'url' => '/api/deadlines/reports/open-workload-age', 'verb' => 'GET'],
+        // deprecated alias: /api/deadlines/reports/open-workload-age, remove after the next major.
+    ['name' => 'caseTerms#workloadAgeLegacyPath', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
 
         // AVG data subject requests, driven from the case
         // (data-subject-requests-drive-the-platform, REQ-AVG-DSR-01..03).
@@ -1110,47 +1212,55 @@ $extra = [
     ['name' => 'dataSubjectRequest#requestExport', 'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'POST'],
     ['name' => 'dataSubjectRequest#exportState',   'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
-        // TermijnDefinitiesTab.vue has always called this collection; only
+        // DeadlineDefinitionsTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
-    ['name' => 'termijnDefinitie#index',  'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#index',  'url' => '/api/deadlines/definitions',   'verb' => 'GET'],
     // What every term on this instance is counted against: the zone, and
     // whether an organisation calendar answers the Awt roll. The admin page
     // says which, because a roll that could not be made and a roll that was
     // not needed produce the same plausible date.
-    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/termijn/calendar',      'verb' => 'GET'],
-    ['name' => 'termijnDefinitie#create', 'url' => '/api/termijn/definities',      'verb' => 'POST'],
-    ['name' => 'termijnDefinitie#update', 'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
-        // Notice-of-default registration.
-        // Route NAMES follow the renamed controller — a route name resolves to
-        // its class, so it must move with it or the router 500s. The URLs
-        // deliberately do NOT move: /api/termijn/ingebrekestellingen is the
-        // published contract and changing it is a breaking change for every
-        // consumer, which is a separate decision from this rename.
-    ['name' => 'accrualNotice#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
-    ['name' => 'accrualNotice#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
-        // Dwangsom state + bezwaar.
-    ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
-    ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
-    ['name' => 'payout#prepare',        'url' => '/api/termijn/dwangsom/{id}/uitbetaling', 'verb' => 'POST'],
-    ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
-    ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
+    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/deadlines/calendar',    'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#create', 'url' => '/api/deadlines/definitions',      'verb' => 'POST'],
+    ['name' => 'termijnDefinitie#update', 'url' => '/api/deadlines/definitions/{id}', 'verb' => 'PATCH'],
+        // deprecated alias: /api/deadlines/definitions[/{id}] and /api/deadlines/calendar, remove after the next major.
+    ['name' => 'termijnDefinitie#indexLegacyPath',    'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#calendarLegacyPath', 'url' => '/api/termijn/calendar',        'verb' => 'GET'],
+    ['name' => 'termijnDefinitie#createLegacyPath',   'url' => '/api/termijn/definities',      'verb' => 'POST'],
+    ['name' => 'termijnDefinitie#updateLegacyPath',   'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
+        // Notice of default, accruing amount, objection and payout
+        // (case-money-is-configuration, REQ-DQM-003). Named for what they do.
+    ['name' => 'accrualNotice#register',     'url' => '/api/notices-of-default',                       'verb' => 'POST'],
+    ['name' => 'accrualNotice#show',         'url' => '/api/notices-of-default/{id}',                  'verb' => 'GET'],
+    ['name' => 'caseNoticesOfDefault#index', 'url' => '/api/cases/{caseId}/notices-of-default',       'verb' => 'GET'],
+    ['name' => 'accruingAmount#show',        'url' => '/api/accruing-amounts/{id}',                    'verb' => 'GET'],
+    ['name' => 'accruingAmount#settle',      'url' => '/api/accruing-amounts/{id}/settle',             'verb' => 'POST'],
+    ['name' => 'payout#prepare',             'url' => '/api/accruing-amounts/{id}/payout',             'verb' => 'POST'],
+    ['name' => 'accruingAmount#objection',   'url' => '/api/accruing-amounts/{id}/objection',          'verb' => 'POST'],
+    ['name' => 'accruingAmount#reconsider',  'url' => '/api/accruing-amounts/{id}/objection/reconsider', 'verb' => 'POST'],
+        // Deprecated alias: the URLs above under /api/termijn/, remove one release after case-money-is-configuration.
+    ['name' => 'accrualNotice#registerLegacyPath',    'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+    ['name' => 'accrualNotice#showLegacyPath',        'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+    ['name' => 'accruingAmount#showLegacyPath',       'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
+    ['name' => 'accruingAmount#settleLegacyPath',     'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],
+    ['name' => 'payout#prepareLegacyPath',            'url' => '/api/termijn/dwangsom/{id}/uitbetaling', 'verb' => 'POST'],
+    ['name' => 'accruingAmount#objectionLegacyPath',  'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
+    ['name' => 'accruingAmount#reconsiderLegacyPath', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).
-        // The route NAMES follow the renamed controller and its methods; the
-        // URLs deliberately do NOT. /api/termijn/* is the published contract and
-        // moving it is a breaking change for every consumer, so it is a separate
-        // decision from this rename. Nothing references these route names — the
-        // frontend calls the URLs directly.
-    ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
-    ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
-    ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+    ['name' => 'deadlineReporting#dashboard',        'url' => '/api/deadlines/dashboard/kpi',          'verb' => 'GET'],
+    ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/deadlines/reports/quarterly',      'verb' => 'GET'],
+    ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/deadlines/reports/annual',         'verb' => 'GET'],
+    ['name' => 'deadlineReporting#penaltyPayments',  'url' => '/api/deadlines/reports/penalty-payments', 'verb' => 'GET'],
+    ['name' => 'deadlineNotices#notices',            'url' => '/api/deadlines/notices',                'verb' => 'GET'],
+    ['name' => 'deadlineEndingFirst#index',          'url' => '/api/deadlines/ending-first',           'verb' => 'GET'],
         // The first response, counted and averaged from what was stored on the
         // cases at the time (term-configuration-beyond-the-case-type, row 8.24).
-    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/termijn/reports/eerste-reactie', 'verb' => 'GET'],
-        // IV3/BBV taakveld reference list, for the case-type classification
-        // picker. The quarterly IV3 cost report that used to sit alongside it
-        // is gone under ADR-081 — Shillinq is the only statutory reporter. The
-        // URL is unchanged because the settings picker calls it directly.
-    ['name' => 'iv3Taakveld#taakvelden',             'url' => '/api/reports/iv3/taakvelden',           'verb' => 'GET'],
+    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/deadlines/reports/first-response', 'verb' => 'GET'],
+        // deprecated alias: /api/deadlines/dashboard/kpi and /api/deadlines/reports/*,
+        // remove after the next major. External report consumers call these.
+    ['name' => 'deadlineReporting#dashboardLegacyPath',           'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
+    ['name' => 'deadlineReporting#quarterlyReportLegacyPath',     'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
+    ['name' => 'deadlineReporting#annualStatementLegacyPath',     'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+    ['name' => 'deadlineReporting#firstResponseReportLegacyPath', 'url' => '/api/termijn/reports/eerste-reactie',   'verb' => 'GET'],
 
         // ── ZGW DRC Case Dossier (document-zaakdossier spec) ────────────
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
@@ -1167,10 +1277,14 @@ $extra = [
         // to integriq's MessageParser and the parsed message is filed on the
         // case beside the original, which is never moved or deleted.
     ['name' => 'savedMail#read',                   'url' => '/api/cases/{caseId}/files/{fileId}/read-as-message', 'verb' => 'POST'],
+    // A case file opened in the editor: the file is shared with the caller for editing after the case checks.
+    ['name' => 'caseFileEditor#open',              'url' => '/api/cases/{caseId}/files/{fileId}/editor',      'verb' => 'POST'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
+    // The ticked documents merged into one PDF in the case folder, by filinq (DqDocumentenBeheer "Samenvoegen tot pdf").
+    ['name' => 'caseDocumentMerge#merge',          'url' => '/api/cases/{caseId}/dossier/merge',               'verb' => 'POST'],
         // Generate document: asks Filinq to render a library template over
         // the case (DocumentGenerationRequestedEvent) and files the result
         // as an informatieobject + join, the same filing a flow's
@@ -1186,7 +1300,11 @@ $extra = [
     ['name' => 'zaakdossier#approvalMarkers',      'url' => '/api/informatieobjecten/approval-markers',       'verb' => 'GET'],
     ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
     ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
+    ['name' => 'documentCopy#bulkCopy',           'url' => '/api/informatieobjecten/bulk/copy',              'verb' => 'POST'],
     ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],
+    // document-access-exception: only named people and groups see this document (DqDocumentenBeheer, Who can see this).
+    ['name' => 'documentAccessException#update',  'url' => '/api/informatieobjecten/{infoObjectId}/access-exception', 'verb' => 'PUT'],
+    ['name' => 'documentAccessException#destroy', 'url' => '/api/informatieobjecten/{infoObjectId}/access-exception', 'verb' => 'DELETE'],
     ['name' => 'zaakdossier#updateMetadata',       'url' => '/api/informatieobjecten/{infoObjectId}',          'verb' => 'PATCH'],
     ['name' => 'zaakdossierDownload#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
     ['name' => 'zaakdossierDownload#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
@@ -1197,14 +1315,27 @@ $extra = [
         // from a different app is worse than one that stops, because a
         // subscriber cannot tell it has moved.
 
+        // The catalogue page's object types: the schemas in dossiq's own register.
+    ['name' => 'catalogue#objectTypes', 'url' => '/api/catalogue/object-types', 'verb' => 'GET'],
+
         // Case-configuration store (ADR-080). Consume-only: dossiq browses a
         // remote OpenRegister registry through AppHost's GenericStoreService and
         // installs locally. It never publishes, and it builds no registry URL of
         // its own — discovery belongs to the engine.
     ['name' => 'store#search',       'url' => '/api/store/items',                 'verb' => 'GET'],
     ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
+    ['name' => 'storePackage#index',   'url' => '/api/store/packages',              'verb' => 'GET'],
+    [
+        'name' => 'storePackage#install',
+        'url' => '/api/store/packages/{id}/install',
+        'verb' => 'POST',
+        'requirements' => ['id' => '[a-z0-9][a-z0-9-]*[a-z0-9]'],
+    ],
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
+    // Also in OpenRegister's canonical table; declared here so it is visible
+    // where this app's routes are read, and it overrides by name.
+    ['name' => 'store#publish',      'url' => '/api/store/publish',               'verb' => 'POST'],
 
         // What a new instance starts with (starter-content-and-templates).
         // The literal `/api/starter/roles` paths sit BEFORE the `{schema}` and
@@ -1237,7 +1368,8 @@ $extra = [
 // Preferred path: the OpenRegister AppHost owns the canonical route table.
 // `class_exists()` autoloads without fatalling when the class is unavailable.
 if (class_exists('OCA\OpenRegister\AppHost\Routes') === true) {
-    return \OCA\OpenRegister\AppHost\Routes::standard($extra);
+    // Every unversioned API route is also served under /api/v1/; see ApiPathAliases.
+    return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(\OCA\OpenRegister\AppHost\Routes::standard($extra));
 }
 
 // Fallback: openregister is not installed. Reproduce `Routes::standard()`
@@ -1282,4 +1414,4 @@ foreach ($canonicalRoutes as $canonicalRoute) {
 $mergedRoutes   = array_merge($mergedRoutes, $extra);
 $mergedRoutes[] = $catchAllRoute;
 
-return ['routes' => $mergedRoutes];
+return \OCA\Dossiq\Middleware\Support\ApiPathAliases::withVersionedAliases(['routes' => $mergedRoutes]);

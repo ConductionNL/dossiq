@@ -32,7 +32,13 @@ use RuntimeException;
  * the way the real one does, and the schemas are the shipped fragment
  * 25-brp-kvk.json, so a fragment without the annotation fails here.
  *
+ * @covers \OCA\Dossiq\Service\Registry\RequesterRegistrySubscription
+ * @covers \OCA\Dossiq\Listener\RequesterRegistrySubscriptionListener
+ * @uses \OCA\Dossiq\Service\Registry\SubscriptionRun
+ * @uses \OCA\Dossiq\Service\ObjectSchemaSlugResolver
+ *
  * @spec openspec/changes/contacts-domain/tasks.md#4-the-contact-reference-on-a-contact-moment
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
  */
 class RequesterRegistrySubscriptionTest extends TestCase {
 
@@ -55,6 +61,9 @@ class RequesterRegistrySubscriptionTest extends TestCase {
 
 			/** @var array<int, string> */
 			public array $requested = [];
+
+			/** @var array<int, string> The identity value each request carried. */
+			public array $identities = [];
 
 			/**
 			 * @param object $schema The schema.
@@ -89,6 +98,7 @@ class RequesterRegistrySubscriptionTest extends TestCase {
 				}
 
 				$this->requested[] = (string)$object->getUuid();
+				$this->identities[] = (string)$object->getObject()[$annotation['identity']];
 
 				return new \stdClass();
 			}
@@ -132,12 +142,29 @@ class RequesterRegistrySubscriptionTest extends TestCase {
 			}
 
 			/**
-			 * @param string $id The uuid.
+			 * Like OpenRegister's find(): a rendered read masks a property whose
+			 * read needs an explicit reveal, such as brpPerson's BSN.
+			 *
+			 * @param string      $id      The uuid.
+			 * @param object|null $options The find options; `render: false` reads the stored value.
 			 *
 			 * @return ObjectEntity|null The object.
 			 */
-			public function find(string $id): ?ObjectEntity {
-				return ($this->objects[$id] ?? null);
+			public function find(string $id, ?object $options = null): ?ObjectEntity {
+				$object = ($this->objects[$id] ?? null);
+				if ($object === null || ($options !== null && $options->render === false)) {
+					return $object;
+				}
+
+				$rendered = clone $object;
+				$data = $rendered->getObject();
+				if (isset($data['citizenServiceNumber']) === true) {
+					$data['citizenServiceNumber'] = '*****' . substr((string)$data['citizenServiceNumber'], -4);
+				}
+
+				$rendered->setObject($data);
+
+				return $rendered;
 			}
 		};
 
@@ -207,6 +234,23 @@ class RequesterRegistrySubscriptionTest extends TestCase {
 		$this->assertSame(['requested' => true, 'reason' => ''], $this->service()->subscribe(objectUuid: 'p-1'));
 		$this->assertSame(['p-1'], $this->registry->requested);
 	}//end testABrpRequesterIsSubscribed()
+
+	/**
+	 * The subscription carries the stored BSN, not the masked one a rendered read shows.
+	 *
+	 * The BSN of a brpPerson is read only with an explicit reveal, so a rendered
+	 * read answers `*****3653`. OpenRegister takes the identity from the object
+	 * it is handed, and integriq subscribed that masked value at the BRP.
+	 *
+	 * @return void
+	 */
+	public function testTheSubscriptionCarriesTheStoredBsnNotTheMaskedOne(): void {
+		$this->object(uuid: 'p-1', schema: 'brpPerson', data: ['citizenServiceNumber' => '999993653']);
+
+		$this->service()->subscribe(objectUuid: 'p-1');
+
+		$this->assertSame(expected: ['999993653'], actual: $this->registry->identities);
+	}//end testTheSubscriptionCarriesTheStoredBsnNotTheMaskedOne()
 
 	/**
 	 * A requester already subscribed is not subscribed again.

@@ -1,0 +1,318 @@
+<?php
+
+/**
+ * StatusTypeLookup store-read tests
+ *
+ * Verifies how a single statusType row is read from the store when the store
+ * is unavailable, unconfigured, throwing, answers an entity, or answers
+ * something that is not a row, and that the row helpers short-circuit on a
+ * blank case type without asking the resolver.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Service\Transitions
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/specs/status-transition-engine/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
+
+use OCA\Dossiq\Service\CaseTypeResolver;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCP\IL10N;
+
+/**
+ * @covers \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ *
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ */
+class StatusTypeLookupReadTest extends TestCase {
+
+	/**
+	 * A lookup whose store answers `$found` (or throws it) for every find.
+	 *
+	 * @param mixed                 $found    What `find()` returns, or a Throwable it throws.
+	 * @param array<string, string> $config   The settings values.
+	 * @param bool                  $noStore  Whether the object service is unavailable.
+	 * @param CaseTypeResolver|null $resolver The resolver, or a silent mock.
+	 * @param string                $language The reader's language, '' for none.
+	 *
+	 * @return StatusTypeLookup
+	 */
+	private function lookup(
+		mixed $found = [],
+		array $config = ['register' => 'dossiq', 'status_type_schema' => 'statusType'],
+		bool $noStore = false,
+		?CaseTypeResolver $resolver = null,
+		string $language = '',
+	): StatusTypeLookup {
+		$objectService = new class($found) {
+			public function __construct(private mixed $found) {
+			}
+
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = $options?->register;
+				$schema = $options?->schema;
+				if ($this->found instanceof \Throwable) {
+					throw $this->found;
+				}
+
+				if (is_array($this->found) === true && isset($this->found['rendered']) === true && $options?->render === true) {
+					return $this->found['rendered'];
+				}
+
+				return $this->found;
+			}
+		};
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($noStore === true ? null : $objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ($config[$key] ?? '')
+		);
+
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn($language);
+
+		return new StatusTypeLookup(
+			settingsService: $settings,
+			caseTypeResolver: ($resolver ?? $this->createMock(originalClassName: CaseTypeResolver::class)),
+			text: new LanguageMapText(),
+			reader: new TranslatedText(l10n: $l10n),
+		);
+	}//end lookup()
+
+	/**
+	 * A translatable status name reads in the reader's language, Dutch for a reader without one.
+	 *
+	 * @return void
+	 */
+	public function testATranslatableNameReadsInTheReadersLanguage(): void {
+		$row = ['id' => 's-3', 'name' => ['nl' => 'Bevestigd', 'en' => 'Confirmed']];
+
+		self::assertSame(expected: 'Confirmed', actual: $this->lookup(found: $row, language: 'en')->nameFor(statusTypeId: 's-3'));
+		self::assertSame(expected: 'Confirmed', actual: $this->lookup(found: $row, language: 'en_GB')->nameFor(statusTypeId: 's-3'));
+		self::assertSame(expected: 'Bevestigd', actual: $this->lookup(found: $row, language: 'nl')->nameFor(statusTypeId: 's-3'));
+		self::assertSame(expected: 'Bevestigd', actual: $this->lookup(found: $row)->nameFor(statusTypeId: 's-3'));
+	}//end testATranslatableNameReadsInTheReadersLanguage()
+
+	/**
+	 * A text is the status's name when it is the name in any of its languages.
+	 *
+	 * @return void
+	 */
+	public function testATextIsTheNameInAnyLanguage(): void {
+		$lookup = $this->lookup(found: ['id' => 's-3', 'name' => ['nl' => 'Hoorgesprek', 'en' => 'Hearing']], language: 'en');
+
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-3', text: 'Hoorgesprek'));
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-3', text: ' Hearing '));
+		self::assertFalse(condition: $lookup->isNameOf(statusTypeId: 's-3', text: 'Plan the hearing'));
+		self::assertFalse(condition: $lookup->isNameOf(statusTypeId: 's-3', text: ''));
+		self::assertTrue(condition: $this->lookup(found: ['id' => 's-4', 'name' => 'Besluit'])->isNameOf(statusTypeId: 's-4', text: 'Besluit'));
+	}//end testATextIsTheNameInAnyLanguage()
+
+	/**
+	 * The name is read from the stored row, not from a render that already
+	 * resolved it in another language.
+	 *
+	 * @return void
+	 */
+	public function testTheNameIsReadFromTheStoredRow(): void {
+		$stored = ['id' => 's-5', 'name' => ['nl' => 'Hoorgesprek', 'en' => 'Hearing'], 'rendered' => ['id' => 's-5', 'name' => 'Hoorgesprek']];
+		$lookup = $this->lookup(found: $stored, language: 'en');
+
+		self::assertSame(expected: 'Hearing', actual: $lookup->nameFor(statusTypeId: 's-5'));
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-5', text: 'Hearing'));
+	}//end testTheNameIsReadFromTheStoredRow()
+
+	/**
+	 * A row read from the store is returned whole, from the configured schema.
+	 *
+	 * @return void
+	 */
+	public function testARowIsReadFromTheConfiguredSchema(): void {
+		$row = ['id' => 's-1', 'name' => 'Ontvangen', 'publicLabel' => 'Ontvangen door de gemeente'];
+		$lookup = $this->lookup(found: $row);
+
+		self::assertSame($row, $lookup->rowFor(statusTypeId: 's-1'));
+		self::assertSame('Ontvangen door de gemeente', $lookup->announcedLabelOf(statusTypeId: 's-1'));
+	}//end testARowIsReadFromTheConfiguredSchema()
+
+	/**
+	 * An entity the store answers with is serialised into its row.
+	 *
+	 * @return void
+	 */
+	public function testAnEntityIsSerialisedIntoItsRow(): void {
+		$entity = new class implements \JsonSerializable {
+			public function jsonSerialize(): array {
+				return ['id' => 's-2', 'title' => 'In behandeling'];
+			}
+		};
+
+		$lookup = $this->lookup(found: $entity);
+
+		self::assertSame(['id' => 's-2', 'title' => 'In behandeling'], $lookup->rowFor(statusTypeId: 's-2'));
+		self::assertSame('In behandeling', $lookup->nameFor(statusTypeId: 's-2'));
+	}//end testAnEntityIsSerialisedIntoItsRow()
+
+	/**
+	 * Something that is not a row reads as no row.
+	 *
+	 * @return void
+	 */
+	public function testANonRowAnswerIsNoRow(): void {
+		self::assertSame([], $this->lookup(found: 'not-a-row')->rowFor(statusTypeId: 's-3'));
+		self::assertSame([], $this->lookup(found: new \stdClass())->rowFor(statusTypeId: 's-3'));
+	}//end testANonRowAnswerIsNoRow()
+
+	/**
+	 * A store that throws reads as no row, and the announced label is empty.
+	 *
+	 * @return void
+	 */
+	public function testAThrowingStoreIsNoRow(): void {
+		$lookup = $this->lookup(found: new RuntimeException('unreadable'));
+
+		self::assertSame([], $lookup->rowFor(statusTypeId: 's-4'));
+		self::assertSame('', $lookup->announcedLabelOf(statusTypeId: 's-4'));
+	}//end testAThrowingStoreIsNoRow()
+
+	/**
+	 * No object service means no row.
+	 *
+	 * @return void
+	 */
+	public function testNoObjectServiceIsNoRow(): void {
+		self::assertSame([], $this->lookup(found: ['id' => 'x'], noStore: true)->rowFor(statusTypeId: 's-5'));
+	}//end testNoObjectServiceIsNoRow()
+
+	/**
+	 * An unconfigured register or schema means no row, and the store is not asked.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredRegisterOrSchemaIsNoRow(): void {
+		self::assertSame(
+			[],
+			$this->lookup(found: ['id' => 'x'], config: ['status_type_schema' => 'statusType'])->rowFor(statusTypeId: 's-6')
+		);
+		self::assertSame(
+			[],
+			$this->lookup(found: ['id' => 'x'], config: ['register' => 'dossiq'])->rowFor(statusTypeId: 's-6')
+		);
+	}//end testAnUnconfiguredRegisterOrSchemaIsNoRow()
+
+	/**
+	 * A blank case type has no statuses and no rows, and the resolver is not asked.
+	 *
+	 * @return void
+	 */
+	public function testABlankCaseTypeHasNoStatusesOrRows(): void {
+		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver->expects($this->never())->method('statusTypesFor');
+
+		$lookup = $this->lookup(resolver: $resolver);
+
+		self::assertSame([], $lookup->statusesOf(caseTypeId: '  '));
+		self::assertSame([], $lookup->rowsOf(caseTypeId: ' '));
+	}//end testABlankCaseTypeHasNoStatusesOrRows()
+
+	/**
+	 * The rows of a case type are the resolver's, inherited ones included.
+	 *
+	 * @return void
+	 */
+	public function testRowsOfAreTheResolversRows(): void {
+		$rows = [
+			['id' => 'p-1', 'name' => 'Ontvangen', 'isFinal' => false],
+			['id' => 'c-9', 'name' => 'Afgehandeld', 'isFinal' => true],
+		];
+		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver->expects($this->once())
+			->method('statusTypesFor')
+			->with('ct-child')
+			->willReturn($rows);
+
+		self::assertSame($rows, $this->lookup(resolver: $resolver)->rowsOf(caseTypeId: 'ct-child'));
+	}//end testRowsOfAreTheResolversRows()
+
+	/**
+	 * The rendered and the stored view of one status are each read from the
+	 * store once in a request, kept apart, and each asked with its own render
+	 * option.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
+	 */
+	public function testTheRenderedAndTheStoredViewAreKeptApart(): void {
+		$objectService = new class {
+			/**
+			 * The render option of every find, in order.
+			 *
+			 * @var list<bool|null>
+			 */
+			public array $renders = [];
+
+			/**
+			 * Answer a rendered or a stored row, recording the render option.
+			 *
+			 * @param string                 $id             The id.
+			 * @param ObjectFindOptions|null $options        The find options.
+			 * @param bool                   $_rbac          Unused.
+			 * @param bool                   $_multitenancy  Unused.
+			 *
+			 * @return mixed
+			 */
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$this->renders[] = $options?->render;
+				if ($options?->render === true) {
+					return ['id' => $id, 'name' => 'Hoorgesprek', 'schema' => $options->schema];
+				}
+
+				return ['id' => $id, 'name' => ['nl' => 'Hoorgesprek', 'en' => 'Hearing'], 'schema' => $options?->schema];
+			}
+		};
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => (['register' => 'dossiq', 'status_type_schema' => 'statusType'][$key] ?? '')
+		);
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+		$lookup = new StatusTypeLookup(
+			settingsService: $settings,
+			caseTypeResolver: $this->createMock(originalClassName: CaseTypeResolver::class),
+			text: new LanguageMapText(),
+			reader: new TranslatedText(l10n: $l10n),
+		);
+
+		self::assertSame(expected: 'Hearing', actual: $lookup->nameFor(statusTypeId: 's-5'));
+		self::assertSame(expected: ['id' => 's-5', 'name' => 'Hoorgesprek', 'schema' => 'statusType'], actual: $lookup->rowFor(statusTypeId: 's-5'));
+		self::assertTrue(condition: $lookup->isNameOf(statusTypeId: 's-5', text: 'Hearing'));
+		self::assertSame(expected: 'Hoorgesprek', actual: $lookup->rowFor(statusTypeId: 's-5')['name']);
+		self::assertSame(expected: [false, true], actual: $objectService->renders);
+
+		$lookup->forget();
+		$lookup->rowFor(statusTypeId: 's-5');
+		self::assertSame(expected: [false, true, true], actual: $objectService->renders);
+	}//end testTheRenderedAndTheStoredViewAreKeptApart()
+}//end class

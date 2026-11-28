@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\PackageInstallerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 
@@ -46,12 +46,12 @@ class InstallShippedPackages implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param PackageInstaller $installer The package installer.
-	 * @param SettingsService  $settings  Resolves the OpenRegister object service.
+	 * @param PackageInstallerInterface $installer The package installer.
+	 * @param SettingsServiceInterface  $settings  Resolves the OpenRegister object service.
 	 */
 	public function __construct(
-		private readonly PackageInstaller $installer,
-		private readonly SettingsService $settings,
+		private readonly PackageInstallerInterface $installer,
+		private readonly SettingsServiceInterface $settings,
 	) {
 	}//end __construct()
 
@@ -67,12 +67,14 @@ class InstallShippedPackages implements IRepairStep {
 	}//end getName()
 
 	/**
-	 * Install every automatic package and say what became of each.
+	 * Install every automatic package and update every package already
+	 * installed here, whatever its install mode, and say what became of each.
 	 *
 	 * Runs on install AND on every upgrade (post-migration). The ledger makes
-	 * it idempotent: a package at the version already installed is `current`
-	 * and writes nothing, and a package added or raised in a new app version
-	 * is installed.
+	 * it idempotent: a package at the version and files already recorded is
+	 * `current` and writes nothing, and a package added, raised or changed in
+	 * a new app version is installed, keeping every row edited here. An
+	 * on-request package nobody installed is left alone.
 	 *
 	 * A refused or failed package is a warning, not an abort: one package
 	 * this instance cannot take must not stop the upgrade of everything else,
@@ -89,42 +91,85 @@ class InstallShippedPackages implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
+	 * @spec openspec/changes/repair-updates-installed-packages/specs/case-types/spec.md
 	 */
 	public function run(IOutput $output): void {
+		$outcomes = $this->reloadInstalledPackages();
+
+		if ($outcomes === []) {
+			$output->info('No shipped package installs automatically or is installed here.');
+			return;
+		}
+
+		foreach ($outcomes as $outcome) {
+			$this->reportOutcome(output: $output, outcome: $outcome);
+		}
+
+		if (in_array(PackageInstallerInterface::INSTALLED, array_column($outcomes, 'status'), true) === true) {
+			$this->importRegisterAgain(output: $output);
+		}
+	}//end run()
+
+	/**
+	 * Reload the installed shipped packages under the system identity.
+	 *
+	 * @return array<int, array<string, mixed>> One outcome per package.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function reloadInstalledPackages(): array {
 		// Under a system identity: an upgrade has no session, and OpenRegister
 		// refuses `create` for 'Anonymous'.
 		$outcomes = [];
 		$this->withSystemIdentity(
 			objectService: $this->settings->getObjectService(),
 			work: function () use (&$outcomes): void {
-				$outcomes = $this->installer->installAutomatic();
+				$outcomes = $this->installer->reloadInstalled();
 			}
 		);
 
-		if ($outcomes === []) {
-			$output->info('No shipped package installs automatically.');
+		return $outcomes;
+	}//end reloadInstalledPackages()
+
+	/**
+	 * Report one package's outcome: info when it is installed or current, a warning otherwise.
+	 *
+	 * @param IOutput $output Where the step reports.
+	 * @param array<string, mixed> $outcome The package's outcome.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function reportOutcome(IOutput $output, array $outcome): void {
+		$line = $this->outcomeLine(outcome: $outcome);
+
+		if ($outcome['status'] === PackageInstallerInterface::INSTALLED || $outcome['status'] === PackageInstallerInterface::CURRENT) {
+			$output->info($line);
 			return;
 		}
 
-		foreach ($outcomes as $outcome) {
-			$line = $outcome['package'] . ' ' . $outcome['version'] . ': ' . $outcome['status'] . '. ' . $outcome['message'];
-			foreach ((array)($outcome['errors'] ?? []) as $error) {
-				$line .= ' ' . $error;
-			}
+		$output->warning($line);
+	}//end reportOutcome()
 
-			if ($outcome['status'] === PackageInstaller::INSTALLED || $outcome['status'] === PackageInstaller::CURRENT) {
-				$output->info($line);
-				continue;
-			}
-
-			$output->warning($line);
+	/**
+	 * One package's outcome as a line, with its errors.
+	 *
+	 * @param array<string, mixed> $outcome The package's outcome.
+	 *
+	 * @return string The line.
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	private function outcomeLine(array $outcome): string {
+		$line = $outcome['package'] . ' ' . $outcome['version'] . ': ' . $outcome['status'] . '. ' . $outcome['message'];
+		foreach ((array)($outcome['errors'] ?? []) as $error) {
+			$line .= ' ' . $error;
 		}
 
-		if (in_array(PackageInstaller::INSTALLED, array_column($outcomes, 'status'), true) === true) {
-			$this->importRegisterAgain(output: $output);
-		}
-	}//end run()
+		return $line;
+	}//end outcomeLine()
 
 	/**
 	 * Import the register configuration again, unforced, under the system identity.
@@ -133,7 +178,7 @@ class InstallShippedPackages implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function importRegisterAgain(IOutput $output): void {
 		$result = [];

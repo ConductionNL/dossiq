@@ -20,18 +20,17 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\AppInfo\Application;
-use DateTimeImmutable;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Calendar\HearingCalendarWriter;
+use OCA\Dossiq\Service\Calendar\PlannedEventFields;
 use OCP\Calendar\ICalendarEventBuilder;
-use OCP\Calendar\ICalendarIsWritable;
-use OCP\Calendar\ICreateFromString;
 use OCP\Calendar\IManager as ICalendarManager;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -41,7 +40,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Writes the calendar event for a hearing.
  *
- * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class HearingCalendarService {
 
@@ -63,12 +63,28 @@ class HearingCalendarService {
 	private const PRINCIPAL_PREFIX = 'principals/users/';
 
 	/**
+	 * Reads the event's start and writes its description.
+	 *
+	 * @var PlannedEventFields
+	 */
+	private readonly PlannedEventFields $eventFields;
+
+	/**
+	 * Writes the event into the calendars of each principal.
+	 *
+	 * @var HearingCalendarWriter
+	 */
+	private readonly HearingCalendarWriter $calendars;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ICalendarManager $calendarManager Calendar manager, writes the hearing event
 	 * @param IUserManager $userManager Resolves a participant to an account
 	 * @param IUserSession $userSession The organiser of the hearing
 	 * @param LoggerInterface $logger Logger
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly ICalendarManager $calendarManager,
@@ -76,6 +92,8 @@ class HearingCalendarService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->eventFields = new PlannedEventFields(logger: $logger);
+		$this->calendars = new HearingCalendarWriter(calendarManager: $calendarManager, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -96,114 +114,145 @@ class HearingCalendarService {
 	 *
 	 * @return string The event UID, or an empty string when nothing was written.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function createEvent(array $data): string {
-		$participants = $data['participants'] ?? [];
-		if (is_array($participants) === false || $participants === []) {
+		$participants = $this->plannedParticipants(data: $data);
+		if ($participants === []) {
 			return '';
 		}
 
-		$start = $this->readStart(data: $data);
+		$start = $this->eventFields->start(data: $data);
 		if ($start === null) {
 			return '';
 		}
 
-		$organiser = $this->userSession->getUser();
-		$attendees = $this->resolveParticipants(participants: $participants);
+		return $this->writeHearing(hearing: new PlannedHearing(data: $data, start: $start, participants: $participants));
+	}//end createEvent()
 
-		$ics = $this->buildEvent(
-			data: $data,
-			start: $start,
-			participants: $participants,
-			organiser: $organiser,
-			attendees: $attendees
-		);
+	/**
+	 * Build the hearing's event and write it into every calendar it reaches.
+	 *
+	 * @param PlannedHearing $hearing The hearing data, its start and the planned participants.
+	 *
+	 * @return string The event UID, or an empty string when nothing was written.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function writeHearing(PlannedHearing $hearing): string {
+		[$ics, $organiser, $attendees] = $this->hearingEvent(hearing: $hearing);
 
 		$uid = $this->readUid(ics: $ics);
 		if ($uid === '') {
 			return '';
 		}
 
-		$written = 0;
-		foreach ($this->principalsFor(organiser: $organiser, attendees: $attendees) as $principal) {
-			if ($this->writeToCalendar(principal: $principal, uid: $uid, ics: $ics) === true) {
-				$written++;
-			}
-		}
-
+		$event = new HearingCalendarEvent(uid: $uid, ics: $ics);
+		$written = $this->calendars->writeForAll(event: $event, principals: $this->principalsFor(organiser: $organiser, attendees: $attendees));
 		if ($written === 0) {
-			$this->logger->warning(
-				'No writable calendar found for the hearing, event not stored',
-				['app' => Application::APP_ID],
-			);
 			return '';
 		}
 
-		$this->logger->info(
-			'Hearing written to ' . $written . ' calendars for ' . count($participants) . ' participants',
-			['app' => Application::APP_ID, 'calendarEventId' => $uid],
-		);
+		$this->logWritten(written: $written, participants: $hearing->participants, uid: $uid);
 
 		return $uid;
-	}//end createEvent()
+	}//end writeHearing()
 
 	/**
-	 * Read the hearing's start moment, or nothing when the date is unreadable.
+	 * The hearing's ICS, with the organiser and the attendees it names.
 	 *
-	 * An unreadable date must not become an event at "now": a hearing on the
-	 * wrong day in someone's calendar is worse than no hearing in it.
+	 * @param PlannedHearing $hearing The hearing data, its start and the planned participants.
+	 *
+	 * @return array{0: string, 1: IUser|null, 2: array<int, mixed>} The ICS, the organiser and the attendees.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function hearingEvent(PlannedHearing $hearing): array {
+		$organiser = $this->userSession->getUser();
+		$attendees = $this->resolveParticipants(participants: $hearing->participants);
+
+		$parties = [$organiser, $attendees];
+		$ics = $this->buildEvent(hearing: $hearing, parties: $parties);
+
+		return [$ics, ...$parties];
+	}//end hearingEvent()
+
+	/**
+	 * Log how many calendars the hearing reached.
+	 *
+	 * @param int $written How many calendars were written.
+	 * @param array<int, string> $participants The planned participants.
+	 * @param string $uid The event UID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 */
+	private function logWritten(int $written, array $participants, string $uid): void {
+		$this->logger->info(
+			'Hearing written to ' . $written . ' calendars for ' . count($participants) . ' participants',
+			['app' => AppIdentity::APP_ID, 'calendarEventId' => $uid],
+		);
+	}//end logWritten()
+
+	/**
+	 * The participants a hearing plans, empty when it plans none or stores them in another shape.
 	 *
 	 * @param array<string, mixed> $data Hearing data.
 	 *
-	 * @return DateTimeImmutable|null
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @return array<int|string, mixed> Participants as stored.
 	 */
-	private function readStart(array $data): ?DateTimeImmutable {
-		$date = (string)($data['date'] ?? '');
-		try {
-			return new DateTimeImmutable($date);
-		} catch (\Exception $e) {
-			$this->logger->warning(
-				'Hearing has no readable date, no calendar event written: ' . $date,
-				['app' => Application::APP_ID],
-			);
-			return null;
+	private function plannedParticipants(array $data): array {
+		$participants = $data['participants'] ?? [];
+		if (is_array($participants) === false) {
+			return [];
 		}
-	}//end readStart()
+
+		return $participants;
+	}//end plannedParticipants()
 
 	/**
 	 * Serialise the hearing as one VEVENT.
 	 *
-	 * @param array<string, mixed> $data Hearing data.
-	 * @param DateTimeImmutable $start When the hearing starts.
-	 * @param array<int, mixed> $participants Participants as stored.
-	 * @param IUser|null $organiser The account scheduling the hearing.
-	 * @param array<int, array{uid: string, email: string, name: string}> $attendees Addressable attendees.
+	 * @param PlannedHearing $hearing The hearing data, its start and the participants as stored.
+	 * @param array{0: IUser|null, 1: array<int, array<string, string>>} $parties The organiser and the addressable attendees.
 	 *
 	 * @return string The event as ICS.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function buildEvent(
-		array $data,
-		DateTimeImmutable $start,
-		array $participants,
-		?IUser $organiser,
-		array $attendees,
-	): string {
+	private function buildEvent(PlannedHearing $hearing, array $parties): string {
+		$data = $hearing->data;
+		$start = $hearing->start;
 		$builder = $this->calendarManager->createEventBuilder();
 		$builder->setSummary(self::EVENT_SUMMARY_PREFIX . (string)($data['complaint'] ?? ''));
 		$builder->setStartDate($start);
 		$builder->setEndDate($start->setTimestamp($start->getTimestamp() + self::EVENT_DURATION_SECONDS));
-		$builder->setDescription($this->describeHearing(data: $data, participants: $participants));
+		$builder->setDescription($this->eventFields->description(data: $data, participants: $hearing->participants));
 
 		$location = (string)($data['location'] ?? '');
 		if ($location !== '') {
 			$builder->setLocation($location);
 		}
 
+		$this->withParties(builder: $builder, parties: $parties);
+
+		return $builder->toIcs();
+	}//end buildEvent()
+
+	/**
+	 * Put the organiser, when they have an address, and the attendees on the event.
+	 *
+	 * @param ICalendarEventBuilder $builder The event being built.
+	 * @param array{0: IUser|null, 1: array<int, array<string, string>>} $parties The organiser and the addressable attendees.
+	 *
+	 * @return void
+	 */
+	private function withParties(ICalendarEventBuilder $builder, array $parties): void {
+		[$organiser, $attendees] = $parties;
 		if ($organiser !== null && (string)$organiser->getEMailAddress() !== '') {
 			$builder->setOrganizer(
 				(string)$organiser->getEMailAddress(),
@@ -214,9 +263,7 @@ class HearingCalendarService {
 		foreach ($attendees as $attendee) {
 			$builder->addAttendee($attendee['email'], $attendee['name']);
 		}
-
-		return $builder->toIcs();
-	}//end buildEvent()
+	}//end withParties()
 
 	/**
 	 * Read the UID out of a serialised event.
@@ -229,7 +276,7 @@ class HearingCalendarService {
 	 *
 	 * @return string The UID, or an empty string when it carries none.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function readUid(string $ics): string {
 		$matches = [];
@@ -239,7 +286,7 @@ class HearingCalendarService {
 
 		$this->logger->warning(
 			'Calendar event for hearing carried no UID, nothing written',
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
 
 		return '';
@@ -253,7 +300,7 @@ class HearingCalendarService {
 	 *
 	 * @return array<int, string> Principal URIs, each one once.
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function principalsFor(?IUser $organiser, array $attendees): array {
 		$principals = [];
@@ -279,129 +326,42 @@ class HearingCalendarService {
 	 *
 	 * @return array<int, array{uid: string, email: string, name: string}>
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/archive/2026-06-13-complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function resolveParticipants(array $participants): array {
 		$resolved = [];
 		foreach ($participants as $participant) {
-			if (is_string($participant) === false || trim($participant) === '') {
-				continue;
+			$attendee = $this->attendeeFor(participant: $participant);
+			if ($attendee !== []) {
+				$resolved[] = $attendee;
 			}
-
-			$user = $this->userManager->get(trim($participant));
-			if ($user === null) {
-				continue;
-			}
-
-			$email = (string)$user->getEMailAddress();
-			if ($email === '') {
-				continue;
-			}
-
-			$resolved[] = [
-				'uid' => $user->getUID(),
-				'email' => $email,
-				'name' => $user->getDisplayName(),
-			];
 		}
 
 		return $resolved;
 	}//end resolveParticipants()
 
 	/**
-	 * Write one ICS into the first writable calendar a principal owns.
+	 * One participant as an addressable attendee: an account id whose account has an address.
 	 *
-	 * @param string $principal Principal URI to write for.
-	 * @param string $uid Event UID, used as the object name.
-	 * @param string $ics The event, already serialised.
+	 * @param mixed $participant The participant as stored.
 	 *
-	 * @return bool True when a calendar took the event.
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @return array{uid: string, email: string, name: string}|array{} The attendee, empty when it cannot be invited.
 	 */
-	private function writeToCalendar(string $principal, string $uid, string $ics): bool {
-		try {
-			$calendars = $this->calendarManager->getCalendarsForPrincipal($principal);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Could not read calendars for ' . $principal . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
-			return false;
+	private function attendeeFor(mixed $participant): array {
+		if (is_string($participant) === false || trim($participant) === '') {
+			return [];
 		}
 
-		foreach ($calendars as $calendar) {
-			if (($calendar instanceof ICreateFromString) === false) {
-				continue;
-			}
-
-			// ICreateFromString extends ICalendar, so isDeleted() is always
-			// there: a calendar in the trash must not take a new hearing.
-			if ($calendar->isDeleted() === true) {
-				continue;
-			}
-
-			if ($calendar instanceof ICalendarIsWritable && $calendar->isWritable() === false) {
-				continue;
-			}
-
-			try {
-				$calendar->createFromString($uid . '.ics', $ics);
-				return true;
-			} catch (\Throwable $e) {
-				$this->logger->warning(
-					'Calendar refused the hearing event for ' . $principal . ': ' . $e->getMessage(),
-					['app' => Application::APP_ID],
-				);
-			}
+		$user = $this->userManager->get(trim($participant));
+		if ($user === null) {
+			return [];
 		}
 
-		return false;
-	}//end writeToCalendar()
-
-	/**
-	 * Describe the hearing in the body of the calendar event.
-	 *
-	 * The description names every planned participant, including the ones that
-	 * are a bare name rather than an account: they cannot be invited, and the
-	 * people who can be need to know they are expected too.
-	 *
-	 * @param array<string, mixed> $data Hearing data.
-	 * @param array<int, mixed> $participants Participants as stored.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
-	 */
-	private function describeHearing(array $data, array $participants): string {
-		$lines = ['Hoorgesprek over klacht ' . (string)($data['complaint'] ?? '')];
-
-		$type = (string)($data['type'] ?? '');
-		if ($type !== '') {
-			$lines[] = 'Vorm: ' . $type;
+		$email = (string)$user->getEMailAddress();
+		if ($email === '') {
+			return [];
 		}
 
-		$talkUrl = (string)($data['talkRoomUrl'] ?? '');
-		if ($talkUrl !== '') {
-			$lines[] = 'Gespreksruimte: ' . $talkUrl;
-		}
-
-		$names = [];
-		foreach ($participants as $participant) {
-			if (is_string($participant) === false) {
-				continue;
-			}
-
-			$name = trim($participant);
-			if ($name !== '') {
-				$names[] = $name;
-			}
-		}
-
-		if ($names !== []) {
-			$lines[] = 'Deelnemers: ' . implode(', ', $names);
-		}
-
-		return implode("\n", $lines);
-	}//end describeHearing()
+		return ['uid' => $user->getUID(), 'email' => $email, 'name' => $user->getDisplayName()];
+	}//end attendeeFor()
 }//end class

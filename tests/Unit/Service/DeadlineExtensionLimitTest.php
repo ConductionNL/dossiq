@@ -41,6 +41,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
  * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\ExtensionRun
+ * @uses \OCA\Dossiq\Service\ExtensionLimits
  */
 class DeadlineExtensionLimitTest extends TestCase {
 	use BindsTermFixtures;
@@ -160,7 +162,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
 	public function testTheRollDoesNotCountAgainstTheCeiling(): void {
 		$timers = $this->createMock(TermijnTimerService::class);
@@ -188,7 +190,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testTheStatutoryTermOfACaseIsExtendedByDays(): void {
 		$this->termService->method('instancesForCase')->willReturn([
@@ -213,7 +215,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testTheDaysCountFromTheNamedBaseAndTheEndIsRolled(): void {
 		$termService = $this->createMock(TermijnService::class);
@@ -251,7 +253,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testASecondExtensionOfACaseTermIsAConflict(): void {
 		$termService = $this->createMock(TermijnService::class);
@@ -277,7 +279,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
+	 * @spec openspec/specs/woo-case-type/spec.md#requirement-woo-deadline-tracking-and-extension
 	 */
 	public function testACaseWithoutARunningTermRefuses(): void {
 		$this->termService->method('instancesForCase')->willReturn([]);
@@ -335,7 +337,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
+	 * @spec openspec/specs/termijn-pause-extension/spec.md#requirement-an-extensions-end-date-is-rolled-and-reaches-the-case-req-ote-03
 	 */
 	public function testASundayEndDateIsRolledToMonday(): void {
 		$this->declarations->method('forCase')->willReturn(
@@ -366,7 +368,7 @@ class DeadlineExtensionLimitTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function testAnExtensionForgetsTheRungsThatLieAheadAgain(): void {
 		$this->declarations->method('forCase')->willReturn(

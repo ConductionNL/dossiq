@@ -66,6 +66,31 @@ class TermEventEntry {
 	];
 
 	/**
+	 * The source text of each fixed sentence, which the history translates for its reader.
+	 *
+	 * The stored message stays the Dutch sentence the portal and the exports
+	 * read; the case history reads the key in the reader's language.
+	 *
+	 * @var array<string, string>
+	 */
+	private const SENTENCE_KEYS = [
+		'Wettelijke termijn gestart' => 'Statutory deadline started',
+		'Geplande einddatum vastgelegd' => 'Planned end date set',
+		'Interne streefdatum vastgelegd' => 'Internal target date set',
+		'Fasetermijn gestart' => 'Phase deadline started',
+		'Termijn gestart' => 'Deadline started',
+		'Termijn gestart bij zaak-aanmaak' => 'Deadline started when the case was created',
+		'Termijngebeurtenis vastgelegd' => 'Deadline event recorded',
+		'Aanvulling ontvangen; termijn hervat' => 'Supplement received; the deadline runs again',
+		'Aanvulling ontvangen' => 'Supplement received',
+		'De aanvraag om aanvulling kon niet worden verzonden, dus de termijn loopt door.'
+			=> 'The request for a supplement could not be sent, so the deadline keeps running.',
+		'Dwangsom-berekening gestart na grace period' => 'Penalty calculation started after the grace period',
+		'Termijn overschreden zonder beschikking' => 'Deadline passed without a decision',
+		'Pauzetermijn verlopen zonder aanvulling' => 'Pause ended without a supplement',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
@@ -105,20 +130,33 @@ class TermEventEntry {
 			return;
 		}
 
-		$message = trim($rationale);
-		if ($message === '') {
-			$message = 'Termijngebeurtenis vastgelegd';
-		}
-
 		$this->write(
-			caseId: $caseId,
-			message: $message,
-			instance: $instance,
-			event: $type,
-			basis: $basis,
-			occurredAt: ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			line: new TermEventLine(
+				caseId: $caseId,
+				message: self::eventSentence(rationale: $rationale),
+				instance: $instance,
+				event: $type,
+				basis: $basis,
+				occurredAt: ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			)
 		);
 	}//end recordEvent()
+
+	/**
+	 * The sentence a handler reads for a term event: the rationale, or a plain default.
+	 *
+	 * @param string $rationale The sentence the caller supplied.
+	 *
+	 * @return string The sentence.
+	 */
+	private static function eventSentence(string $rationale): string {
+		$message = trim($rationale);
+		if ($message === '') {
+			return 'Termijngebeurtenis vastgelegd';
+		}
+
+		return $message;
+	}//end eventSentence()
 
 	/**
 	 * Record the start of a term that writes no TermijnGebeurtenis of its own.
@@ -159,51 +197,77 @@ class TermEventEntry {
 		}
 
 		$this->write(
-			caseId: $caseId,
-			message: $message,
-			instance: $instance,
-			event: 'start',
-			basis: '',
-			occurredAt: (string)($instance['startDate'] ?? ''),
+			line: new TermEventLine(
+				caseId: $caseId,
+				message: $message,
+				instance: $instance,
+				event: 'start',
+				basis: '',
+				occurredAt: (string)($instance['startDate'] ?? ''),
+			)
 		);
 	}//end recordStart()
 
 	/**
 	 * Write one entry of the term-event kind.
 	 *
-	 * @param string               $caseId     The case the term hangs on.
-	 * @param string               $message    The sentence a handler reads.
-	 * @param array<string, mixed> $instance   The term instance, as stored.
-	 * @param string               $event      The event type.
-	 * @param string               $basis      The legal basis, '' when there is none.
-	 * @param string               $occurredAt When it happened.
+	 * @param TermEventLine $line The case, sentence, term instance, event, basis and moment.
 	 *
 	 * @return void
 	 */
-	private function write(
-		string $caseId,
-		string $message,
-		array $instance,
-		string $event,
-		string $basis,
-		string $occurredAt,
-	): void {
+	private function write(TermEventLine $line): void {
+		$instance = $line->instance;
 		$this->timeline->record(
-			caseId: $caseId,
+			caseId: $line->caseId,
 			kind: TimelineKinds::TERM_EVENT,
-			message: $message,
-			fields: [
-				'event' => $event,
-				'term' => (string)($instance['kind'] ?? TermKind::STATUTORY),
-				'occurredAt' => $occurredAt,
-				'dueAt' => $this->dueAt(instance: $instance),
-				'startedAt' => (string)($instance['startDate'] ?? ''),
-				'basis' => $basis,
-				'termijnId' => (string)($instance['id'] ?? ''),
-			],
+			message: $line->message,
+			fields: array_merge(
+				[
+					'event' => $line->event,
+					'term' => (string)($instance['kind'] ?? TermKind::STATUTORY),
+					'occurredAt' => $line->occurredAt,
+					'dueAt' => $this->dueAt(instance: $instance),
+					'startedAt' => (string)($instance['startDate'] ?? ''),
+					'basis' => $line->basis,
+					'termijnId' => (string)($instance['id'] ?? ''),
+				],
+				self::messageKey(message: $line->message, due: $this->dueAt(instance: $instance))
+			),
 			visibility: CaseTimeline::INTERNAL,
 		);
 	}//end write()
+
+	/**
+	 * The translatable source of a fixed sentence, with the due date it names.
+	 *
+	 * A start sentence may end in ", uiterlijk <date>"; that tail becomes the
+	 * `{date}` of the key. A sentence that is not fixed (it names a case or a
+	 * channel) gets no key and reads as stored.
+	 *
+	 * @param string $message The sentence as stored.
+	 * @param string $due     The due date the sentence may end in.
+	 *
+	 * @return array<string, mixed> `messageKey` and `messageVars`, or nothing.
+	 *
+	 * @spec openspec/specs/case-history-surface/spec.md
+	 */
+	private static function messageKey(string $message, string $due): array {
+		if (isset(self::SENTENCE_KEYS[$message]) === true) {
+			return ['messageKey' => self::SENTENCE_KEYS[$message], 'messageVars' => []];
+		}
+
+		$tail = ', uiterlijk ' . $due;
+		if ($due === '' || str_ends_with($message, $tail) === false) {
+			return [];
+		}
+
+		$sentence = substr($message, 0, -strlen($tail));
+		if (isset(self::SENTENCE_KEYS[$sentence]) === false) {
+			return [];
+		}
+
+		return ['messageKey' => self::SENTENCE_KEYS[$sentence] . ', due {date}', 'messageVars' => ['date' => $due]];
+	}//end messageKey()
 
 	/**
 	 * When the term falls due now, after any pause or extension.

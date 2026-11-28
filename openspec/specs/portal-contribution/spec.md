@@ -224,13 +224,13 @@ and from a notice link.
 #### Scenario: The resident menu
 - **GIVEN** a resident signed in on the site
 - **WHEN** the site builds the menu from dossiq's contribution
-- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Voortgang van uw zaken", "Een bericht beantwoorden" and "Mijn verzoeken"
+- **THEN** dossiq's pages MUST sit under "Mijn zaken en verzoeken" as "Mijn verzoeken" and "Mijn afspraken", beside the site's "Mijn taken", as the menu board `MijnMenu` draws it
 - **AND** "Mijn zaken" and "Berichten" MUST appear once, as the site's own sections
 
 #### Scenario: A case opens from the site's case list
 - **GIVEN** a resident with a dossiq case in the site's "Mijn zaken"
 - **WHEN** they open it
-- **THEN** the page "Voortgang van uw zaken" MUST open with that case selected
+- **THEN** the case MUST open on its own case page, as the board `Zaak` draws it
 
 ### Requirement: The decision notice says what happened
 When the decision on a Woo request case is published for the first time and a resident follows the case
@@ -254,24 +254,33 @@ republish MUST NOT write a second message. A message that cannot be written MUST
 
 ### Requirement: The case page offers bezwaar and klacht for the case on screen
 
-The resident's case page SHALL declare "Bezwaar maken" and "Klacht indienen"
-as calls to action with `withRecord: true`, and each action SHALL name
-`againstCaseId` as its `recordField`, guarded against the citizen's own cases.
-The overview SHALL NOT declare them. A klacht's case reference SHALL NOT be
-required.
+The citizen actions `createBezwaar` and `createKlacht` SHALL declare `onCase`
+on their `contestedCase` cross reference, so portaliq lists them on the page of
+the resident's own case and fills in that case. The bezwaar SHALL come first.
+The bezwaar's placement SHALL carry a window of 42 days from the case field
+`decisionSentOn` and a closing sentence. Each action SHALL carry a
+`successMessage`. Neither the overview nor the case page SHALL declare them as
+calls to action. A klacht's case reference SHALL NOT be required.
 
 #### Scenario: A resident objects from their case page
 
-- **GIVEN** a resident on the page of one of their cases
-- **WHEN** they press "Bezwaar maken"
-- **THEN** the bezwaar SHALL carry that case in `againstCaseId`
-- @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalCasePageTest.php::testTheCasePageCarriesTheResidentsOwnCase and PortalContributionProviderTest::testTheReplyActionNamesTheFieldARecordLandsIn}
+- **GIVEN** a resident on the page of one of their cases, whose decision was sent less than six weeks ago
+- **WHEN** portaliq lists the actions placed on that case
+- **THEN** "Bezwaar maken" SHALL be listed, placed on `contestedCase`, before "Klacht indienen"
+- @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalCasePageTest.php::testBezwaarAndKlachtArePlacedOnTheCase}
+
+#### Scenario: The bezwaar closes after its term
+
+- **GIVEN** a case whose decision was sent more than 42 days ago
+- **WHEN** the resident opens its page
+- **THEN** portaliq SHALL show the bezwaar's closing sentence instead of a button
+- @e2e exclude {the window is computed by portaliq; dossiq's declaration is asserted in tests/Unit/Portal/PortalCasePageTest.php::testBezwaarAndKlachtArePlacedOnTheCase}
 
 #### Scenario: A klacht without a case is still accepted
 
 - **GIVEN** the "Klacht indienen" page, which opens no case
 - **WHEN** the resident files a klacht
-- **THEN** the klacht SHALL be accepted without `againstCaseId`
+- **THEN** the klacht SHALL be accepted without `contestedCase`
 - @e2e exclude {a declaration; asserted in tests/Unit/Portal/PortalContributionProviderTest.php::testEveryCitizenCreateNamingACaseGuardsIt}
 
 ### Requirement: The case page orders its blocks as the Zaak board
@@ -371,14 +380,15 @@ not reachable from each of its open statuses.
 - **WHEN** they save a withdrawal onto Ingetrokken while Ontvangen
 - **THEN** the save MUST be refused with a sentence naming Ingetrokken
 
-### Requirement: The Woo request action declares its four steps (REQ-SWS-001)
-The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw vraag"
-(`onderwerp`, `omschrijving`), "Periode en documenten" (`periodeVan`, `periodeTot`,
-`documentSoorten`, `toelichting`), "Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`,
-`verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
-field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
-`description` and `fields`; the review step MUST carry `review: true` and no fields. The
-labels MUST be the ones of `DossiqWoo.dc.html`. No field MUST be declared `required`: portaliq
+### Requirement: The Woo request action declares its three steps (REQ-SWS-001)
+The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`: "Uw verzoek"
+(`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`, `documentSoorten`, `toelichting`),
+"Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`, `verzoekerType`) and "Controleren en
+versturen" as a review of every answer. Every whitelisted field MUST belong to exactly one
+step. Each step MUST use the keys `id`, `title`, `description` and `fields`; the review step
+MUST carry `review: true` and no fields. The step titles MUST be the ones of the portal boards
+`WooVerzoek`, `WooVerzoekGegevens` and `WooVerzoekControleren`. The period and the kinds of
+document MUST keep their input, their options and the checks the route makes on them. No field MUST be declared `required`: portaliq
 drops `required` on an action without a schema (portaliq REQ-SMF-023). The steps, draft and
 confirmation follow portaliq REQ-SMF-020 to REQ-SMF-022, which cover endpoint actions with
 `fields`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
@@ -387,8 +397,13 @@ and assertion.
 #### Scenario: A resident moves through the steps
 - **GIVEN** a resident signed in with DigiD on a site that renders declared steps
 - **WHEN** they start "Informatie opvragen (Woo-verzoek)"
-- **THEN** the form MUST show step 1 of 4, "Uw vraag", and only its two fields
-- **AND** step 4 MUST list every answer with a link to change the step it came from
+- **THEN** the form MUST show step 1 of 3, "Uw verzoek", with the question, the period and the kinds of document
+- **AND** step 3 MUST list every answer with a link to change the step it came from
+
+#### Scenario: The period and the kinds of document keep their checks
+- **GIVEN** the declared action
+- **WHEN** a resident sends an end date before the start date, a date that does not exist, or a kind of document that is not on the list
+- **THEN** the route MUST refuse the request and name that field
 
 #### Scenario: No form-only required field
 - **GIVEN** the declared action
@@ -513,6 +528,7 @@ portal inbox and close the follow-up.
 - **THEN** the timeline MUST show the question with an open follow-up
 - **AND** after the handler presses Reply and sends an answer, the follow-up
   MUST be closed and the answer MUST be in the resident's inbox
+
 ### Requirement: The resident sees what the organisation still needs from them (REQ-SRPD-001)
 An `aanvullingsverzoek` on a case that has a `portalSubject` MUST carry the same
 `portalSubject`, written when the request is asked. The citizen contribution, served to
@@ -538,13 +554,13 @@ The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
 `thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
 projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
 collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
-`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
-or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
+`portalTurn`, so a case card reads "Wacht op u" when it is `applicant` and "In behandeling" when it is
+`thirdParty` or `us`. A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
-- **THEN** the case card MUST read "U bent aan zet"
+- **THEN** the case card MUST read "Wacht op u"
 
 #### Scenario: The card reads one declared field
 - **GIVEN** the `mijnZaken` collection
@@ -554,7 +570,7 @@ or "De gemeente is aan zet". A closed case MUST show no such line. This is a new
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
 - **WHEN** the overview lists it
-- **THEN** the card MUST read "De gemeente is aan zet"
+- **THEN** the card MUST read "In behandeling"
 
 ### Requirement: A case hands the portal its steps (REQ-SRPD-003)
 The provider MUST answer `caseSteps(caseId)` with the case type's statuses in `order`, folded
@@ -630,3 +646,174 @@ sign in before the form opens.
 - **GIVEN** a site page with the start points widget and dossiq installed
 - **WHEN** a signed-out visitor opens it
 - **THEN** it MUST list "Informatie opvragen (Woo-verzoek)", "Bezwaar maken" and "Klacht indienen" with their summaries
+
+### Requirement: REQ-PORTAL-030: The citizen contribution MUST offer the resident's permits as products tagged with their theme
+
+Dossiq MUST record a `permit` for the resident when a case whose case type declares `issuesPermit` gets a granted decision, with the decision's validity and the details the case type names, and MUST mark it revoked when a later decision revokes it. The citizen contribution MUST declare a collection `mijnVergunningen` on schema `permit`, scoped by `portalSubject`, with `kind: products`, the permit's `theme`, and the title, validity, meta and count fields portaliq's products contract reads. It MUST NOT project a revoked permit. It MUST declare an `update` action that asks for a new licence plate by opening a change case, and MUST NOT let the portal write the permit itself.
+
+#### Scenario: a granted resident permit shows on the theme page
+- **WHEN** a "Parkeervergunning bewoners" case of resident S gets a granted decision effective 1 January 2026 until 31 December 2026
+- **THEN** a permit for S exists with theme `parkeren`, title "Bewonersvergunning binnenstad", the licence plate from the case and those dates
+- **AND** dossiq's citizen contribution for S lists it in `mijnVergunningen` with `kind: products`
+- @e2e exclude cross-app render belongs to portaliq's ThemaOverzicht e2e; the contribution and the issuing are covered by PHPUnit
+
+#### Scenario: a revoked permit leaves the list
+- **WHEN** a later decision on that case revokes the permit
+- **THEN** the permit's status is `revoked` and it is no longer in the collection
+- @e2e exclude backend listener; covered by PHPUnit
+
+#### Scenario: the resident asks for a new licence plate
+- **WHEN** resident S submits "Kenteken wijzigen" with plate GZ-123-X on her permit
+- **THEN** a change case is opened with the permit and the new plate, and the permit's plate is unchanged until that case is decided
+- @e2e exclude cross-app write path; covered by PHPUnit and portaliq's action e2e
+
+#### Scenario: another resident's permit
+- **WHEN** resident T reads `mijnVergunningen`
+- **THEN** S's permit is not returned
+- @e2e exclude scope check; covered by PHPUnit
+
+### Requirement: The Woo request form asks dates as dates and the requester as a choice (REQ-WDI-004)
+
+Both Woo request actions (`startWooVerzoek`, `startWooVerzoekAlgemeen`) SHALL declare `periodeVan` and `periodeTot` with `input: date`, and `verzoekerType` as choices whose Dutch words (Inwoner, Journalist, Organisatie) stand over the values the route keeps.
+
+#### Scenario: The period step
+- GIVEN a resident opens the Woo request from the overview tile or from a dossier
+- WHEN she reaches the period step
+- THEN the two dates are asked as dates
+- @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestAsksDatesAsDatesAndTheRequesterAsAChoice`; the rendering is portaliq's
+
+### Requirement: The Woo request starts from the signed-in resident's name and e-mail address
+
+Both Woo request actions MUST declare `prefill: name` on `verzoekerNaam` and `prefill: email` on `verzoekerEmail`, so portaliq starts those fields from the signed-in resident's own details. The resident MUST still be able to change them.
+
+#### Scenario: Step 3 knows who is asking
+- GIVEN Henk Bakker is signed in to the portal
+- WHEN he reaches "Uw gegevens" in the Woo request
+- THEN his name and e-mail address are already filled in
+- @e2e exclude pinned by `PortalContributionProviderTest::testTheWooRequestPrefillsTheRequesterFromTheProfile`; the filling itself is portaliq's and pinned there
+
+### Requirement: A case records the day its decision was sent (REQ-CAP-001)
+
+Sending a decision SHALL write the day it went out on its case, in the
+server-set date field `decisionSentOn`. A later decision on the same case SHALL
+overwrite it. A decision without a case SHALL write nothing.
+
+#### Scenario: Sending a decision stamps its case
+
+- **GIVEN** a case with a signed decision
+- **WHEN** the decision is sent on 2026-09-01
+- **THEN** the case SHALL carry `decisionSentOn` 2026-09-01
+- @e2e exclude {a server-side stamp; asserted in tests/Unit/Service/RemedyTermBindingTest.php::testSendingStampsTheDaySentOnTheCase}
+
+
+### Requirement: The requester answers a question from Mijn zaken, and the answer lands on the open request (REQ-WDS-001)
+
+The citizen manifest SHALL declare an endpoint action `beantwoordVraag` on the collection `vragenAanU`, for the audiences `citizen` and `client`, scoped to the row's `portalSubject`. It SHALL take `antwoord` (text, required, at most 4000 characters). It SHALL declare `files: {field: bijlagen, max: 5, maxBytes: 10485760}`, so the requester can add up to five files of at most 10 MB under "Bestanden toevoegen" (board ZaakWooVerzoek); portaliq forwards them multipart (portaliq row-action-carries-files REQ-RAF-001). dossiq SHALL check the number and size again and refuse with 422 before anything is written, and SHALL store each file in the case's folder, where the document projection files it as an incoming document; a file that cannot be stored SHALL be logged and SHALL NOT undo the answer. dossiq SHALL accept it only for a request in the state `open` on a case of the same portal subject; any other request SHALL be refused with 404 and nothing written. On acceptance dossiq SHALL call `AanvullingsverzoekResolutionService::recordAnswer(caseId, received: [], complete: false, userId: 'portal', when: now)`, store the text on the request as the requester's answer, and call `ApplicantPortalActs::recordWrite()` with act `answer`, naming `documents` among the fields when files were stored, so the handler is told. The request SHALL stay `open` and the term SHALL stay paused until the handler records the request complete, as `termijn-pause-extension` already requires.
+
+#### Scenario: The requester answers the clarification question
+- **GIVEN** a Woo case 2026-0087 with an open `aanvullingsverzoek` of kind `verduidelijking`, asked on 6 October 2026
+- **WHEN** the requester sends the answer "Het gaat om de speeltuinen in Oosthaven, 2023 tot nu" through `beantwoordVraag`
+- **THEN** the request carries that answer and stays `open`
+- **AND** the handler gets one notification and one timeline entry on the case
+- **AND** the term of the case is still paused
+- e2e: `tests/e2e/woo-dossier-shared-with-the-requester.spec.ts` "the requester answers the clarification question"
+
+#### Scenario: The answer brings a file
+<!-- @e2e exclude Multipart through portaliq's live forward; proven by PortalWooAnswerTest::testTheAttachmentsAreFiledOnTheCase (file stored on the case) and portaliq's PortalRowActionControllerTest::testDeclaredFilesAreForwardedWithTheBody. Live pass: the e2e above with a file added. -->
+- **GIVEN** the same open request
+- **WHEN** the requester adds `speeltuinen.pdf` under "Bestanden toevoegen" and sends the answer
+- **THEN** `speeltuinen.pdf` is stored in the case's folder and shows among the case's incoming documents
+- **AND** the handler's notification names the documents with the answer
+
+#### Scenario: Somebody else's question is not answerable
+<!-- @e2e exclude Fail-closed scope check at the portal seam; proven by PortalWooAnswerTest::testAnotherSubjectsRequestIsRefused, which asserts 404 and zero writes. -->
+- **GIVEN** an open request whose `portalSubject` is not the caller's
+- **WHEN** `beantwoordVraag` names it
+- **THEN** the answer is 404 and nothing on the request or the case changes
+
+#### Scenario: An answered request is not answered twice
+<!-- @e2e exclude State guard; proven by PortalWooAnswerTest::testAClosedRequestIsRefused. -->
+- **GIVEN** a request the handler closed as complete
+- **WHEN** `beantwoordVraag` names it
+- **THEN** the answer is 404 and nothing is written
+
+### Requirement: The applicant reads the decision date and the state of the term (REQ-WDS-002)
+
+The applicant term note is a capability of every case type, not of one procedure (decision 182). On every save of a case, dossiq SHALL write on the case, which is the row the portal reads, `legalDecisionDate`, the date part of the case `deadline` that `one-term-engine` keeps, and `termNote`, one sentence of at most 200 characters. dossiq SHALL compute no date for either, and SHALL write only the fields whose value changed. `termNote` SHALL read:
+
+- while a request for completion (`aanvullingsverzoek`) is open, which the case carries as `waitingOnApplicant` with `waitingOnApplicantSince`: "De termijn staat stil sinds {day}. Hij loopt weer zodra wij uw antwoord hebben.", where `{day}` is the day the request was sent, in words;
+- after an extension: "Wij hebben de termijn met {period} verlengd. De reden: {reason}", where `{period}` is the case type's `extensionPeriod` in words (`P14D` reads "twee weken") and `{reason}` is the reason of the last `extend` entry in the case's lifecycle journal. A case type whose period cannot be read as one unit gives "Wij hebben de termijn verlengd." A sentence longer than 200 characters SHALL be cut and end in "…";
+- otherwise: empty.
+
+While the term stands still, `legalDecisionDate` SHALL be empty: the date is not known until the term runs again. Both fields SHALL be on the fields of the citizen cases collection.
+
+The Woo case type takes part by its configuration alone: its `extensionPeriod` is `P14D` (Woo art. 4.4 lid 2, two weeks), and its extension reason is the reason the handler gives when extending.
+
+#### Scenario: A paused term says why and gives no date
+- **GIVEN** a Woo case with an open `aanvullingsverzoek` asked on 6 October 2026
+- **WHEN** the case is saved
+- **THEN** `termNote` reads "De termijn staat stil sinds 6 oktober 2026. Hij loopt weer zodra wij uw antwoord hebben."
+- **AND** `legalDecisionDate` is empty
+- e2e: `tests/e2e/woo-dossier-shared-with-the-requester.spec.ts` "a paused term says why"
+
+#### Scenario: An extension is told with its reason
+<!-- @e2e exclude Text projection; proven by ApplicantTermNoteListenerTest::testAnExtensionWritesItsReasonAndTheTermsDeadline, which reads the reason from the case's journal, the period from the case type, and the deadline the statutory term's listener wrote into the same save. -->
+- **GIVEN** a Woo case extended once with the reason "Wij moeten derden om hun mening vragen."
+- **WHEN** the case is saved
+- **THEN** `termNote` reads "Wij hebben de termijn met twee weken verlengd. De reden: Wij moeten derden om hun mening vragen."
+- **AND** `legalDecisionDate` is the date part of the case deadline
+
+#### Scenario: Another case type tells its own period
+<!-- @e2e exclude Text projection; proven by ApplicantTermNoteTest::testThePeriodIsToldInWords, which runs the periods case types ship (P14D, P42D, P1M) and the unreadable ones. -->
+- **GIVEN** a case of a type whose `extensionPeriod` is `P42D`, extended once with the reason "Het advies is nog niet binnen."
+- **WHEN** the case is saved
+- **THEN** `termNote` reads "Wij hebben de termijn met zes weken verlengd. De reden: Het advies is nog niet binnen."
+
+#### Scenario: The request closes and the date is back
+<!-- @e2e exclude State projection; proven by ApplicantTermNoteListenerTest::testAClosedRequestClearsTheSentenceAndBringsTheDateBack. -->
+- **GIVEN** a case whose `termNote` says the term stands still
+- **WHEN** the handler closes the request and the case is saved
+- **THEN** `termNote` is empty and `legalDecisionDate` is the date part of the case deadline
+
+### Requirement: The requester sees where the decision became public (REQ-WDS-003)
+
+When `wooPublicationStatus` becomes `published`, dossiq SHALL write `resultLink` `{label: "Bekijk wat openbaar is gemaakt", url: wooPublicationUrl}` on the portal case. When it becomes `withdrawn`, dossiq SHALL clear `resultLink`. dossiq SHALL never write a `resultLink` whose url is not the case's `wooPublicationUrl`.
+
+#### Scenario: The link appears after publishing
+- **GIVEN** a Woo case whose decision dossiq has just published into OpenCatalogi
+- **WHEN** the requester opens the case in Mijn zaken
+- **THEN** the case shows "Bekijk wat openbaar is gemaakt", linking to the publication
+- e2e: `tests/e2e/woo-dossier-shared-with-the-requester.spec.ts` "the link appears after publishing"
+
+#### Scenario: The link goes with a withdrawn publication
+<!-- @e2e exclude State projection; proven by WooPortalResultLinkTest::testWithdrawingClearsTheLink. -->
+- **GIVEN** a published Woo case with a `resultLink`
+- **WHEN** the publication is withdrawn
+- **THEN** `resultLink` is empty
+
+### Requirement: A clarification asks one question in plain words (REQ-WDS-004)
+
+An `aanvullingsverzoek` SHALL accept the kind `verduidelijking` on a case of the Woo case type only. It SHALL carry one `summary` (the question) and no `missingItems`. `recordAnswer()` on it SHALL accept an empty `received` list with `complete` true once an answer is stored. The question the requester reads SHALL be the `summary` as written. The Woo legal ground the handler names (Woo art. 4.1 lid 5) SHALL stay at the desk.
+
+#### Scenario: A clarification is asked on a Woo case
+<!-- @e2e exclude Schema and service contract; proven by WooClarificationTest::testAClarificationHasNoItems and ::testItClosesOnceAnswered. -->
+- **GIVEN** a Woo case in the status Ontvangst
+- **WHEN** the handler asks "Over welke speeltuinen en welke jaren gaat uw verzoek?" as a `verduidelijking`
+- **THEN** the request is open with that question and no items
+- **AND** the term of the case stands still
+
+#### Scenario: A clarification is refused on another case type
+<!-- @e2e exclude Validation; proven by WooClarificationTest::testOnlyAWooCaseTakesAClarification. -->
+- **GIVEN** a case of the type Omgevingsvergunning
+- **WHEN** a request of kind `verduidelijking` is created on it
+- **THEN** it is refused and nothing is stored
+
+### Requirement: The requester never reads the officer's work on a Woo case (REQ-WDS-005)
+
+No collection, field or document the citizen manifest offers SHALL carry a Woo document assessment, the search plan or corpus of the request, a redaction proposal, the name of a reviewer, or a document whose status is not `final` or `archived`. The rule of `PortalCaseDocuments` SHALL hold for the Woo case type without exception.
+
+#### Scenario: Assessments stay at the desk
+<!-- @e2e exclude Negative projection; proven by WooRequesterSeesNoDeskWorkTest, which walks every collection and field the citizen manifest declares and fails on any Woo assessment, corpus or reviewer key. -->
+- **GIVEN** a Woo case with 40 assessed documents, 12 of them withheld
+- **WHEN** the requester opens the case in Mijn zaken
+- **THEN** no assessment, ground, reviewer or unpublished document is in any answer to the portal

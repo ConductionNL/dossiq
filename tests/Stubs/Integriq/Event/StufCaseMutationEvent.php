@@ -22,7 +22,7 @@
  *
  * @link https://www.Integriq.nl
  *
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Integriq\Event;
 /**
  * A zaak kennisgeving (zakLk01).
  *
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
  */
 class StufCaseMutationEvent extends StufProviderQueryEvent {
 
@@ -61,7 +61,7 @@ class StufCaseMutationEvent extends StufProviderQueryEvent {
 	 *
 	 * @return string T, W, V or E; '' when absent.
 	 *
-	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getMutatiesoort(): string {
 		return $this->mutatiesoort;
@@ -73,7 +73,7 @@ class StufCaseMutationEvent extends StufProviderQueryEvent {
 	 *
 	 * @return array<string, string> StUF element name to value.
 	 *
-	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function getFields(): array {
 		return $this->fields;
@@ -103,7 +103,7 @@ class StufCaseMutationEvent extends StufProviderQueryEvent {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-dossiq-answers-stuf-provider-questions-through-integriq
 	 */
 	public function accept(string $appId, string $identification): void {
 		$this->setAnswer(appId: $appId, payload: ['identification' => $identification]);

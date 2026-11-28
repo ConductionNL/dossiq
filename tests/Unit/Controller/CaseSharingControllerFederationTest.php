@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseFederationController;
+use OCA\Dossiq\Controller\Support\FederatedTokenCalls;
 use OCA\Dossiq\Controller\CaseSharingController;
 use OCA\Dossiq\Service\CaseCollaborationService;
 use OCA\Dossiq\Service\CaseSharingService;
@@ -81,11 +82,13 @@ class CaseSharingControllerFederationTest extends TestCase {
 		$this->federationController = new CaseFederationController(
 			request: $this->request,
 			caseSharingService: $this->sharingService,
-			caseTransferService: $this->transferService,
 			collabService: $this->collaborationService,
 			userSession: $this->userSession,
-			throttler: $this->createMock(IThrottler::class),
-			logger: $this->createMock(LoggerInterface::class),
+			tokens: new FederatedTokenCalls(
+				caseTransferService: $this->transferService,
+				throttler: $this->createMock(originalClassName: IThrottler::class),
+				logger: $this->createMock(originalClassName: LoggerInterface::class),
+			),
 		);
 	}//end setUp()
 
@@ -135,6 +138,26 @@ class CaseSharingControllerFederationTest extends TestCase {
 
 		self::assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testHandleTransferAllowsAUserWithCaseAccess()
+
+	/**
+	 * A transfer whose case cannot be resolved is refused like an access denial.
+	 *
+	 * @return void
+	 */
+	public function testHandleTransferRefusesATransferWithoutAResolvableCase(): void {
+		$this->authenticate();
+		$this->request->method('getParam')->willReturnCallback(static fn (string $k, $d = null) => $k === 'action' ? 'accept' : $d);
+
+		$this->transferService->method('getCaseIdForTransfer')->with('transfer-1')->willReturn(null);
+		$this->sharingService->expects(self::never())->method('canUserAccessCase');
+		$this->transferService->expects(self::never())->method('acceptTransfer');
+		$this->transferService->expects(self::never())->method('rejectTransfer');
+
+		$response = $this->controller->handleTransfer('transfer-1');
+
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame(['success' => false, 'error' => 'Access denied: you are not assigned to this case'], $response->getData());
+	}//end testHandleTransferRefusesATransferWithoutAResolvableCase()
 
 	/**
 	 * @return void

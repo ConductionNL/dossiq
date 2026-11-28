@@ -128,7 +128,7 @@ are where local stubs lie).
   (`dossiq:case:import-records <caseType> [--import=<key>] [--dry-run]`), registered in `appinfo/info.xml`.
   - Through the caller: `tests/Unit/Command/ImportCaseRecordsCommandTest.php`
     `testTheCommandPrintsTheUnmigratedCount`, built on the real import class with an in-memory register.
-- [ ] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
+- [x] 4.4 Search: a case is found by a former reference (REQ-WTO-004).
   - e2e `tests/e2e/woo-takeover.spec.ts`: seed one imported case and search "WOO-2026-A1B2C3" on
     the cases list. Cite REQ-WTO-004.
   - written (11 Oct): `tests/e2e/woo-takeover.spec.ts` seeds an opencatalogi `wooRequest`, runs
@@ -136,6 +136,7 @@ are where local stubs lie).
     formerReferences, the source's `migratedTo`), finds it with `_search` on the old number, and runs
     the import again expecting 0 imported. It skips on a shared instance (the import reads every
     wooRequest) and when opencatalogi is absent. The run is owed to the live pass (decision 139).
+  - Written, runs in nightly (ticked 24 Nov 2026; no `test.fixme` in the spec).
 
 ## 5. Drafting through filinq
 
@@ -168,10 +169,28 @@ are where local stubs lie).
     yet, and dossiq ships no test route by design. Switching the delivery target is the decision-179
     form-to-destination change the architect owns. Until then the provider method is covered by
     `tests/Unit/Portal/PortalContributionProviderTest.php` and `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`.
-- [ ] 6.2 Live check after merge on the dev instance: create two opencatalogi `wooRequest` objects
+- [x] 6.2 Live check after merge on the dev instance: create two opencatalogi `wooRequest` objects
   (one running, one suspended), run `occ dossiq:case:import-records woo-verzoek`, and record the output,
   the two cases' `deadline`, the two FlowTimers' fire moments and the sources' `migratedTo`. Run it
   a second time and record that nothing changed.
+  - Run 25 Nov 2026 on a sandbox (NC 34.0.6, MariaDB, openregister main 03495635, opencatalogi
+    development 4f79207, dossiq development + the fix below). FIRST RED: every record answered
+    `failed ... The case <id> was written, but its term could not be armed (missing)`: the import
+    writes as the system, OpenRegister withholds the created event there, so no listener bound the
+    statutory term. Fixed: `RecordImportStore::writeCase()` announces the written case through
+    `CaseCreationAnnouncer`, as `SystemCaseStore` does for a portal case
+    (`RecordImportStoreBehaviourTest::testAWrittenCaseIsAnnounced`). Then, two records:
+    WOO-2026-0201 (`received`, received 2026-11-02, dueAt 2026-11-30) and WOO-2026-0202
+    (`awaiting_clarification`, received 2026-10-20, dueAt 2026-12-01).
+    Run 1: `opencatalogi-woo-requests: 2 imported, 0 already imported`; case 2026-4842 deadline
+    2026-11-30, statutory term `lopend`, FlowTimer armed, fire_at 2026-12-01 00:00 (after the last
+    day), next rung 2026-11-17; case 2026-4843 deadline 2026-12-01, term `paused`, FlowTimer
+    `suspended` (no fire moment while paused). Sources: `migratedTo` the two case ids, `migratedAt`
+    2026-11-25T14:39:26/27Z. Run 2: `0 imported, 2 already imported`; still one term instance per
+    case, no new case and no new FlowTimer (all three timer rows date from run 1).
+    Cases a run before the fix wrote without a term are not repaired by a rerun (the existing case
+    is not announced again, so an acknowledgement is not sent twice); they need their term bound
+    by hand.
 
 ## 7. Verify and deliver
 

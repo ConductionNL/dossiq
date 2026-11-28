@@ -42,8 +42,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Command;
 
-use OCA\Dossiq\Service\Intake\IntakeObjectDrain;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\IntakeObjectDrainInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -110,15 +110,15 @@ class DrainIntakeObjectsCommand extends Command {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container       Resolves OpenRegister's form submit.
-	 * @param SettingsService    $settingsService Register, schemas and the object service.
-	 * @param IntakeObjectDrain  $drain           The generic drain.
+	 * @param SettingsServiceInterface    $settingsService Register, schemas and the object service.
+	 * @param IntakeObjectDrainInterface  $drain           The generic drain.
 	 * @param IUserSession       $userSession     The session the drain runs under.
 	 * @param IGroupManager      $groupManager    Finds an administrator to run as.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly SettingsService $settingsService,
-		private readonly IntakeObjectDrain $drain,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly IntakeObjectDrainInterface $drain,
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 	) {
@@ -154,6 +154,7 @@ class DrainIntakeObjectsCommand extends Command {
 	 * @return int 0 when nothing is pending, 1 otherwise.
 	 *
 	 * @spec openspec/changes/a-request-form-opens-the-case-at-once/specs/case-intake-destination/spec.md#requirement-a-portal-filing-must-not-be-held-in-an-intermediate-object
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$apply = (bool)$input->getOption('apply');
@@ -163,8 +164,17 @@ class DrainIntakeObjectsCommand extends Command {
 		$objectService = $this->settingsService->getObjectService();
 		$submitter = $this->formSubmit();
 		$admin = $this->admin(output: $output);
+		$setup = new PortalDrainSetup(
+			objectService: $objectService,
+			submitter: $submitter,
+			admin: $admin,
+			register: $register,
+			caseSchema: $caseSchema,
+			sourceSchema: $sourceSchema
+		);
 
-		if ($objectService === null || $submitter === null || $admin === null || $register === '' || $caseSchema === '') {
+		$ready = $this->prerequisitesMet(setup: $setup);
+		if ($ready === false) {
 			$output->writeln('<error>OpenRegister with its form submit (openregister#4563) and the dossiq register are needed to drain.</error>');
 			return Command::FAILURE;
 		}
@@ -180,58 +190,48 @@ class DrainIntakeObjectsCommand extends Command {
 			schema: $sourceSchema,
 			filters: ['_limit' => 10000]
 		);
+		$calls = new PortalDrainCalls(setup: $setup, deliveredField: (string)self::PLAN['deliveredField']);
 		$report = $this->drain->drain(
 			sources: $sources,
 			plan: self::PLAN,
-			existing: fn (array $source): string => $this->caseHolding(
-				objectService: $objectService,
-				register: $register,
-				caseSchema: $caseSchema,
-				source: $source
-			),
-			submit: fn (array $case): array => $this->submit(
-				submitter: $submitter,
-				register: $register,
-				caseSchema: $caseSchema,
-				case: $case,
-				admin: $admin
-			),
-			markSource: function (array $source, string $caseId) use ($objectService, $register, $sourceSchema): void {
-				$this->markSource(objectService: $objectService, register: $register, schema: $sourceSchema, source: $source, caseId: $caseId);
-			},
+			existing: $calls->existingCase(),
+			submit: $calls->submitter(),
+			markSource: $calls->sourceMarker(),
 			apply: $apply
 		);
 
-		return $this->print(report: $report, apply: $apply, output: $output);
+		return $this->print(report: [...$report, 'applied' => $apply], output: $output);
 	}//end execute()
+
+	/**
+	 * Whether OpenRegister, its form submit, an admin and the dossiq register are all in hand.
+	 *
+	 * @param PortalDrainSetup $setup The object service, form submit, admin, register and case schema.
+	 *
+	 * @return bool
+	 */
+	private function prerequisitesMet(PortalDrainSetup $setup): bool {
+		return !($setup->objectService === null || $setup->submitter === null || $setup->admin === null
+			|| $setup->register === '' || $setup->caseSchema === '');
+	}//end prerequisitesMet()
+
+
+
 
 	/**
 	 * Print the report.
 	 *
-	 * @param array<string, array<int, mixed>> $report The report.
-	 * @param bool                             $apply  Whether cases were written.
-	 * @param OutputInterface                  $output The output.
+	 * @param array<string, mixed> $report The report, and under `applied` whether cases were written.
+	 * @param OutputInterface      $output The output.
 	 *
 	 * @return int 0 when nothing is pending.
 	 */
-	private function print(array $report, bool $apply, OutputInterface $output): int {
-		foreach ($report['delivered'] as $row) {
-			$outcome = ' (dry run)';
-			if ($row['case'] !== '') {
-				$outcome = ' -> case ' . $row['case'];
-			}
-
-			$output->writeln('  delivered ' . $row['source'] . $outcome);
-		}
-
-		foreach ($report['refused'] as $row) {
-			$codes = array_map(static fn (array $finding): string => ($finding['property'] ?? '') . ':' . ($finding['code'] ?? ''), $row['findings']);
-			$output->writeln('  <error>refused</error> ' . $row['source'] . ' ' . implode(', ', $codes));
-		}
+	private function print(array $report, OutputInterface $output): int {
+		$this->printRows(report: $report, output: $output);
 
 		$pending = count($report['refused']);
 		$hint = '';
-		if ($apply === false) {
+		if ($report['applied'] === false) {
 			$pending += count($report['delivered']);
 			$hint = ' Dry run: pass --apply to open the cases.';
 		}
@@ -255,80 +255,31 @@ class DrainIntakeObjectsCommand extends Command {
 	}//end print()
 
 	/**
-	 * Submit one case through OpenRegister's form submit.
+	 * Print one line per delivered and per refused source.
 	 *
-	 * @param object               $submitter  The FormSubmitService.
-	 * @param string               $register   The register id.
-	 * @param string               $caseSchema The case schema id.
-	 * @param array<string, mixed> $case       The case.
-	 * @param IUser                $admin      The subject the case is written for.
-	 *
-	 * @return array<string, mixed> `id`, or `findings`.
-	 */
-	private function submit(object $submitter, string $register, string $caseSchema, array $case, IUser $admin): array {
-		try {
-			$answer = $submitter->submit(
-				destination: ['register' => $register, 'schema' => $caseSchema],
-				mapping: null,
-				payload: $case,
-				subject: $admin
-			);
-		} catch (Throwable $e) {
-			$findings = [['property' => '', 'code' => 'refused', 'message' => $e->getMessage()]];
-			if (method_exists($e, 'getFindings') === true && $e->getFindings() !== []) {
-				$findings = $e->getFindings();
-			}
-
-			return ['findings' => $findings];
-		}
-
-		return ['id' => (string)($answer['id'] ?? '')];
-	}//end submit()
-
-	/**
-	 * The id of a case that already carries this source's id as its earlier reference.
-	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register id.
-	 * @param string               $caseSchema    The case schema id.
-	 * @param array<string, mixed> $source        The source object.
-	 *
-	 * @return string The case id, or the empty string.
-	 */
-	private function caseHolding(object $objectService, string $register, string $caseSchema, array $source): string {
-		$sourceId = trim((string)($source['id'] ?? ''));
-		if ($sourceId === '') {
-			return '';
-		}
-
-		$rows = $this->searchObjectsAsArraysUnscoped(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			filters: ['externalReference' => $sourceId, '_limit' => 1]
-		);
-
-		return trim((string)(($rows[0] ?? [])['id'] ?? ''));
-	}//end caseHolding()
-
-	/**
-	 * Record the case id on the source, so the next run skips it.
-	 *
-	 * @param object               $objectService The object service.
-	 * @param string               $register      The register id.
-	 * @param string               $schema        The source schema id.
-	 * @param array<string, mixed> $source        The source object.
-	 * @param string               $caseId        The case id.
+	 * @param array<string, array<int, mixed>> $report The report.
+	 * @param OutputInterface                  $output The output.
 	 *
 	 * @return void
 	 */
-	private function markSource(object $objectService, string $register, string $schema, array $source, string $caseId): void {
-		$sourceId = (string)($source['id'] ?? '');
-		$payload = array_merge($source, [(string)self::PLAN['deliveredField'] => $caseId]);
-		unset($payload['@self'], $payload['id'], $payload['uuid']);
+	private function printRows(array $report, OutputInterface $output): void {
+		foreach ($report['delivered'] as $row) {
+			$outcome = ' (dry run)';
+			if ($row['case'] !== '') {
+				$outcome = ' -> case ' . $row['case'];
+			}
 
-		$objectService->saveObject(object: $payload, register: $register, schema: $schema, uuid: $sourceId);
-	}//end markSource()
+			$output->writeln('  delivered ' . $row['source'] . $outcome);
+		}
+
+		foreach ($report['refused'] as $row) {
+			$codes = array_map(static fn (array $finding): string => ($finding['property'] ?? '') . ':' . ($finding['code'] ?? ''), $row['findings']);
+			$output->writeln('  <error>refused</error> ' . $row['source'] . ' ' . implode(', ', $codes));
+		}
+	}//end printRows()
+
+
+
 
 	/**
 	 * OpenRegister's form submit, or null on an OpenRegister without it.

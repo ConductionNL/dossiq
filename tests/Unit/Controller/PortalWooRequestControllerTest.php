@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\PortalWooRequestController;
+use OCA\Dossiq\Controller\Support\SubmissionMadeOnce;
 use OCA\Dossiq\Portal\PortalAssertionVerifier;
 use OCA\Dossiq\Tests\Unit\Portal\PortalAssertionVerifierTest;
 use OCA\Dossiq\Woo\WooRequestIntake;
@@ -68,7 +69,7 @@ class PortalWooRequestControllerTest extends TestCase {
 			appName: 'dossiq',
 			request: $request,
 			verifier: new PortalAssertionVerifier(config: null, secretOverride: 'a-dedicated-portaliq-secret-0123'),
-			intake: $this->intake,
+			submissions: new SubmissionMadeOnce(intake: $this->intake),
 			throttler: $this->createMock(IThrottler::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
@@ -107,6 +108,7 @@ class PortalWooRequestControllerTest extends TestCase {
 				'verzoekerType' => null,
 				'origin' => 'portal',
 				'originReference' => null,
+				'audience' => 'client',
 			]
 		)->willReturn(['caseId' => 'case-1', 'caseUrl' => 'https://x/case-1']);
 
@@ -163,6 +165,27 @@ class PortalWooRequestControllerTest extends TestCase {
 		self::assertSame('2026-0003', $response->getData()['identifier']);
 		self::assertSame('2026-10-30', $response->getData()['deadline']);
 	}//end testTheNewAnswersReachTheIntakeAndTheCaseNumberComesBack()
+
+	/**
+	 * The audience, which says how the resident logged in, comes from the
+	 * assertion; one in the body is never read.
+	 *
+	 * @return void
+	 */
+	public function testTheAssertedAudienceReachesTheIntakeAndTheBodysIsIgnored(): void {
+		$controller = $this->controller(
+			assertion: PortalAssertionVerifierTest::mint(['audience' => 'business']),
+			body: ['onderwerp' => 'Parkeerbeleid', 'audience' => 'client', 'intakeIdentification' => 'digid']
+		);
+		$this->intake->expects(self::once())->method('start')->with(
+			self::callback(
+				callback: static fn (array $request): bool => $request['audience'] === 'business'
+					&& array_key_exists('intakeIdentification', $request) === false
+			)
+		)->willReturn(['caseId' => 'case-1', 'caseUrl' => 'https://x/case-1']);
+
+		self::assertSame(expected: 201, actual: $controller->start()->getStatus());
+	}//end testTheAssertedAudienceReachesTheIntakeAndTheBodysIsIgnored()
 
 	/**
 	 * The branch a company session carries on the assertion reaches the

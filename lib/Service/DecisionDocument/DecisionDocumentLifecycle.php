@@ -122,6 +122,48 @@ class DecisionDocumentLifecycle {
 		string $actor,
 		?DateTimeImmutable $moment = null,
 	): array {
+		self::assertMove(document: $document, to: $to);
+
+		return $this->changesTo(
+			to: $to,
+			move: new DecisionDocumentMove(definition: $definition, document: $document, actor: $actor, moment: ($moment ?? new DateTimeImmutable()))
+		);
+	}//end transition()
+
+	/**
+	 * The fields that move the document to the status.
+	 *
+	 * @param string               $to   The target status, already allowed from the current one.
+	 * @param DecisionDocumentMove $move The kind's definition, the document, the acting user and the moment.
+	 *
+	 * @return array<string, mixed> The changes.
+	 *
+	 * @throws RefusedException 422 when the document is invalid or unsigned; 403 or 503 from the authority
+	 *                          check; 503 when no number can be issued.
+	 */
+	private function changesTo(string $to, DecisionDocumentMove $move): array {
+		$stamp = $move->moment->format(DateTimeInterface::ATOM);
+
+		return match ($to) {
+			'approved' => $this->approve(move: $move),
+			'signed' => $this->sign(move: $move),
+			'sent' => ['currentStatus' => 'sent', 'sentAt' => $stamp],
+			'archived' => ['currentStatus' => 'archived', 'archivedAt' => $stamp],
+			default => ['currentStatus' => 'draft', 'approvedBy' => null, 'approvedAt' => null],
+		};
+	}//end changesTo()
+
+	/**
+	 * Refuse a move the lifecycle does not allow from the document's current status.
+	 *
+	 * @param array<string, mixed> $document The document, with its `currentStatus` (draft when absent).
+	 * @param string               $to       The status it would move to.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When the move is not allowed.
+	 */
+	private static function assertMove(array $document, string $to): void {
 		$from = (string)($document['currentStatus'] ?? 'draft');
 		if (in_array($to, (self::TRANSITIONS[$from] ?? []), true) === false) {
 			throw new RefusedException(
@@ -130,32 +172,21 @@ class DecisionDocumentLifecycle {
 				status: RefusedException::STATUS_REFUSED,
 			);
 		}
-
-		$moment = ($moment ?? new DateTimeImmutable());
-		$stamp = $moment->format(DateTimeInterface::ATOM);
-
-		return match ($to) {
-			'approved' => $this->approve(definition: $definition, document: $document, actor: $actor, stamp: $stamp),
-			'signed' => $this->sign(definition: $definition, document: $document, moment: $moment),
-			'sent' => ['currentStatus' => 'sent', 'sentAt' => $stamp],
-			'archived' => ['currentStatus' => 'archived', 'archivedAt' => $stamp],
-			default => ['currentStatus' => 'draft', 'approvedBy' => null, 'approvedAt' => null],
-		};
-	}//end transition()
+	}//end assertMove()
 
 	/**
 	 * Approval: valid, and decided by someone who holds the authority.
 	 *
-	 * @param DecisionDocumentDefinition $definition The kind's definition.
-	 * @param array<string, mixed> $document The document.
-	 * @param string $actor The approving user.
-	 * @param string $stamp The moment, ISO 8601.
+	 * @param DecisionDocumentMove $move The kind's definition, the document, the approving user and the moment.
 	 *
 	 * @return array<string, mixed> The changes.
 	 *
 	 * @throws RefusedException 422 when invalid; 403 or 503 from the authority.
 	 */
-	private function approve(DecisionDocumentDefinition $definition, array $document, string $actor, string $stamp): array {
+	private function approve(DecisionDocumentMove $move): array {
+		$definition = $move->definition;
+		$document = $move->document;
+		$actor = $move->actor;
 		$problems = $this->validator->problems(definition: $definition, document: $document);
 		if ($problems !== []) {
 			throw new RefusedException(
@@ -174,21 +205,22 @@ class DecisionDocumentLifecycle {
 			);
 		}
 
-		return ['currentStatus' => 'approved', 'approvedBy' => $actor, 'approvedAt' => $stamp];
+		return ['currentStatus' => 'approved', 'approvedBy' => $actor, 'approvedAt' => $move->moment->format(DateTimeInterface::ATOM)];
 	}//end approve()
 
 	/**
 	 * Signing: the signature is present, and the document takes its number.
 	 *
-	 * @param DecisionDocumentDefinition $definition The kind's definition.
-	 * @param array<string, mixed> $document The document.
-	 * @param DateTimeImmutable $moment The moment.
+	 * @param DecisionDocumentMove $move The kind's definition, the document and the moment.
 	 *
 	 * @return array<string, mixed> The changes.
 	 *
 	 * @throws RefusedException 422 when unsigned; 503 when no number can be issued.
 	 */
-	private function sign(DecisionDocumentDefinition $definition, array $document, DateTimeImmutable $moment): array {
+	private function sign(DecisionDocumentMove $move): array {
+		$definition = $move->definition;
+		$document = $move->document;
+		$moment = $move->moment;
 		if ($definition->signed === true && empty($document['signature']) === true) {
 			throw new RefusedException(
 				rule: 'decision-document-unsigned',

@@ -15,15 +15,17 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Term\TermNoticeSources;
 use OCA\Dossiq\Controller\WOOAssessmentController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Cases\HandlerActsAsSystem;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\Notification\RequesterNoticeSender;
@@ -39,7 +41,7 @@ use OCA\Dossiq\Service\WOOAnonymisationAssistService;
 use OCA\Dossiq\Service\WOODeadlineService;
 use OCA\Dossiq\Service\WOODecisionService;
 use OCA\Dossiq\Service\WOODocumentAssessmentService;
-use OCA\Dossiq\Service\WooPublicationService;
+use OCA\Dossiq\Service\Publication\OutcomePublisher;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCA\Dossiq\Tests\Support\MakesRealTermNoticeSender;
@@ -57,15 +59,21 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Controller\WOOAssessmentController
- * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @covers \OCA\Dossiq\Service\WOODeadlineService
+ * @uses \OCA\Dossiq\Service\Notification\DeadlineWarningNotice
  * @covers \OCA\Dossiq\Service\Termijn\ExtensionNotice
+ * @covers \OCA\Dossiq\Service\Term\TermNoticeSources
+ * @uses \OCA\Dossiq\Service\Support\LetterDays
  * @uses \OCA\Dossiq\Service\CaseAccessGuard
  * @uses \OCA\Dossiq\Service\Notification\RequesterNoticeSender
+ * @uses \OCA\Dossiq\Service\Notification\CaseNoticeLog
+ * @uses \OCA\Dossiq\Service\Notification\PortalInboxChannel
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
+ * @uses \OCA\Dossiq\Service\Term\TermLetter
  * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\Email\OutboundCaseMail
+ * @uses \OCA\Dossiq\Service\Email\OutboundMailPolicy
  * @uses \OCA\Dossiq\Service\Email\MailTransportPolicy
  * @uses \OCA\Dossiq\Service\Email\SenderIdentity
  * @uses \OCA\Dossiq\Service\Email\IntakeAccount
@@ -87,6 +95,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\NoticeNotSentException
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses   \OCA\Dossiq\Service\Support\ReadableDay
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndAsk
+ * @uses \OCA\Dossiq\Service\ExtensionRun
  */
 class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -161,8 +172,10 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 
 		$email = $this->realTermNoticeSender();
 		$notifications = new TermijnNotificationService(
-			termService: $terms,
-			sender: $email,
+			notices: new TermNoticeSources(
+				termService: $terms,
+				sender: $email,
+			),
 			logger: $logger,
 			requester: new RequesterNoticeSender(email: $email, settings: $settings, appManager: $apps, writer: new CaseFieldWriter()),
 		);
@@ -199,12 +212,13 @@ class WOOAssessmentControllerExtensionNoticeTest extends TestCase {
 			$this->createMock(WOODocumentAssessmentService::class),
 			$deadlines,
 			$this->createMock(WOODecisionService::class),
-			$this->createMock(WooPublicationService::class),
+			$this->createMock(originalClassName: OutcomePublisher::class),
 			$this->createMock(WOOAnonymisationAssistService::class),
 			$session,
 			new CaseAccessGuard(settingsService: $settings, groupManager: $groups, logger: $logger),
 			$logger,
 			$this->createMock(IL10N::class),
+			$this->createMock(HandlerActsAsSystem::class),
 			$notice,
 		);
 	}//end controller()

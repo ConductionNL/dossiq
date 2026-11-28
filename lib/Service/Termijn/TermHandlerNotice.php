@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -36,9 +36,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Notification\Notifier;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\NotifierInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FindsInConfiguredSchema;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
@@ -47,10 +48,11 @@ use Throwable;
 /**
  * Notifies a case's assignee on the term rungs its definition names.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 class TermHandlerNotice {
 	use SearchesObjects;
+	use FindsInConfiguredSchema;
 
 	/**
 	 * Build the service.
@@ -74,7 +76,7 @@ class TermHandlerNotice {
 	 *
 	 * @return bool True when a notification went out.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function tell(array $instance, int $threshold): bool {
 		try {
@@ -99,42 +101,76 @@ class TermHandlerNotice {
 	 * @return bool True when a notification went out.
 	 */
 	private function tellOrFail(array $instance, int $threshold): bool {
-		$definition = $this->read(configKey: 'termijn_definitie_schema', id: (string) ($instance['deadlineDefinition'] ?? ''));
-		if ($definition === null || in_array($threshold, $this->thresholdsOf(definition: $definition), true) === false) {
+		if ($this->rungIsNamed(instance: $instance, threshold: $threshold) === false) {
 			return false;
 		}
 
 		$caseId   = (string) ($instance['case'] ?? '');
-		$case     = $this->read(configKey: 'case_schema', id: $caseId);
-		$assignee = $case['assignee'] ?? null;
-		if (is_string($assignee) === false || $assignee === '') {
+		$assignee = $this->assigneeOf(caseId: $caseId);
+		if ($assignee === '') {
 			// A case nobody holds has nobody to tell; the escalation itself is already recorded.
 			return false;
 		}
 
-		$subject = Notifier::SUBJECT_TERM_NEARING;
-		if ($threshold === 0) {
-			$subject = Notifier::SUBJECT_TERM_EXCEEDED;
+		$deadline = (string) ($instance['endDateCurrent'] ?? '');
+		$this->send(assignee: $assignee, params: ['caseId' => $caseId, 'daysRemaining' => $threshold, 'deadline' => $deadline]);
+
+		return true;
+	}//end tellOrFail()
+
+	/**
+	 * Whether the term's definition tells the handler at this rung.
+	 *
+	 * @param array<string, mixed> $instance  The term instance the rung fired on.
+	 * @param int                  $threshold Days before the end the rung stands for.
+	 *
+	 * @return bool True when the definition names the rung.
+	 */
+	private function rungIsNamed(array $instance, int $threshold): bool {
+		$definition = $this->read(configKey: 'termijn_definitie_schema', id: (string) ($instance['deadlineDefinition'] ?? ''));
+
+		return $definition !== null && in_array($threshold, $this->thresholdsOf(definition: $definition), true) === true;
+	}//end rungIsNamed()
+
+	/**
+	 * The user who holds the case, '' when nobody does.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return string The assignee's user id.
+	 */
+	private function assigneeOf(string $caseId): string {
+		$assignee = ($this->read(configKey: 'case_schema', id: $caseId)['assignee'] ?? null);
+		if (is_string($assignee) === false) {
+			return '';
+		}
+
+		return $assignee;
+	}//end assigneeOf()
+
+	/**
+	 * Send the notification: the term ran out at rung 0, it is nearing otherwise.
+	 *
+	 * @param string                                                     $assignee Who is told.
+	 * @param array{caseId: string, daysRemaining: int, deadline: string} $params   The subject parameters.
+	 *
+	 * @return void
+	 */
+	private function send(string $assignee, array $params): void {
+		$subject = NotifierInterface::SUBJECT_TERM_NEARING;
+		if ($params['daysRemaining'] === 0) {
+			$subject = NotifierInterface::SUBJECT_TERM_EXCEEDED;
 		}
 
 		$notification = $this->notifications->createNotification();
 		$notification
-			->setApp(Application::APP_ID)
+			->setApp(AppIdentity::APP_ID)
 			->setUser($assignee)
 			->setDateTime(new DateTime())
-			->setObject('case', $caseId)
-			->setSubject(
-				$subject,
-				[
-					'caseId'        => $caseId,
-					'daysRemaining' => $threshold,
-					'deadline'      => (string) ($instance['endDateCurrent'] ?? ''),
-				]
-			);
+			->setObject('case', $params['caseId'])
+			->setSubject($subject, $params);
 		$this->notifications->notify($notification);
-
-		return true;
-	}//end tellOrFail()
+	}//end send()
 
 	/**
 	 * The days a definition tells the handler at, as integers.
@@ -161,13 +197,6 @@ class TermHandlerNotice {
 	 * @return array<string, mixed>|null The object, or null when absent or unreadable.
 	 */
 	private function read(string $configKey, string $id): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register      = (string) $this->settingsService->getConfigValue('register');
-		$schema        = (string) $this->settingsService->getConfigValue($configKey);
-		if ($objectService === null || $register === '' || $schema === '' || $id === '') {
-			return null;
-		}
-
-		return $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
+		return $this->findInConfiguredSchema(schemaKey: $configKey, id: $id);
 	}//end read()
 }//end class

@@ -46,7 +46,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 
 declare(strict_types=1);
@@ -59,7 +59,6 @@ use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -69,11 +68,9 @@ use Throwable;
 /**
  * Hands a requester notice to a real transport and answers what it said.
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 class RequesterNoticeSender {
-
-	use SearchesObjects;
 
 	public const STATUS_SENT = 'sent';
 	public const STATUS_NOT_SENT = 'not-sent';
@@ -102,6 +99,20 @@ class RequesterNoticeSender {
 	];
 
 	/**
+	 * Puts a notice in the requester's portal inbox.
+	 *
+	 * @var PortalInboxChannel
+	 */
+	private readonly PortalInboxChannel $portalInbox;
+
+	/**
+	 * Keeps each notice and its result on the case's outbound communications.
+	 *
+	 * @var CaseNoticeLog
+	 */
+	private readonly CaseNoticeLog $noticeLog;
+
+	/**
 	 * Constructor.
 	 *
 	 * Every collaborator but the e-mail transport is optional: a channel whose
@@ -125,6 +136,8 @@ class RequesterNoticeSender {
 		private readonly CaseContactDirectory $contacts = new CaseContactDirectory(),
 		private readonly LoggerInterface $logger = new NullLogger(),
 	) {
+		$this->portalInbox = new PortalInboxChannel(appManager: $appManager, logger: $logger);
+		$this->noticeLog = new CaseNoticeLog(writer: $writer, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -134,7 +147,7 @@ class RequesterNoticeSender {
 	 *
 	 * @return string The moment; `stage` for a template not named in MOMENTS.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
 	public function momentFor(string $template): string {
 		return (self::MOMENTS[$template] ?? 'stage');
@@ -149,137 +162,144 @@ class RequesterNoticeSender {
 	 * @param array<string, mixed> $rendered `subject` and `body`.
 	 * @param string               $moment   The moment (REQ-WRN-006).
 	 * @param array<string, mixed> $options  `recipient` (an address the caller holds), `instanceId`,
-	 *                                       `dedupeKey`, `recordExtras` (more keys for the record).
+	 *                                       `dedupeKey`, `recordExtras` (more keys for the record),
+	 *                                       `channels` (the channels to try, in the declared order;
+	 *                                       all of them when absent).
 	 *
 	 * @return array<string, mixed> The delivery result, with the `record` it appended.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-the-channel-follows-the-requester-in-a-declared-order-req-wrn-002
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-type-may-send-its-acknowledgement-by-e-mail-as-well-req-ack-copy-001
 	 */
 	public function send(array $case, string $template, array $rendered, string $moment, array $options = []): array {
-		$attemptedAt = (new DateTimeImmutable())->format('c');
-		$notice = [
-			'template' => $template,
+		$delivery = new NoticeDelivery();
+		$delivery->case = $case;
+		$delivery->template = $template;
+		$delivery->moment = $moment;
+		$delivery->options = $options;
+		$delivery->attemptedAt = (new DateTimeImmutable())->format('c');
+		$delivery->notice = $this->noticeOf(delivery: $delivery, rendered: $rendered);
+
+		return $this->deliver(delivery: $delivery);
+	}//end send()
+
+	/**
+	 * Try the channels, record the outcome on the case and log it.
+	 *
+	 * @param NoticeDelivery $delivery The delivery, its notice built.
+	 *
+	 * @return array<string, mixed> The delivery result, with the `record` it appended.
+	 */
+	private function deliver(NoticeDelivery $delivery): array {
+		$this->tryChannels(delivery: $delivery);
+
+		$result = $this->result(delivery: $delivery);
+		$result['record'] = $this->recordOn(
+			case: $delivery->case,
+			record: $this->noticeLog->record(result: $result, extras: (array)($delivery->options['recordExtras'] ?? []))
+		);
+		$this->logOutcome(result: $result);
+
+		return $result;
+	}//end deliver()
+
+	/**
+	 * The notice as the channels send it.
+	 *
+	 * @param NoticeDelivery       $delivery The delivery.
+	 * @param array<string, mixed> $rendered The rendered notice: subject and body.
+	 *
+	 * @return array<string, string>
+	 */
+	private function noticeOf(NoticeDelivery $delivery, array $rendered): array {
+		return [
+			'template' => $delivery->template,
 			'subject' => (string)($rendered['subject'] ?? ''),
 			'body' => (string)($rendered['body'] ?? ''),
-			'instanceId' => (string)($options['instanceId'] ?? ''),
-			'dedupeKey' => (string)($options['dedupeKey'] ?? ''),
-			'recipient' => (string)($options['recipient'] ?? ''),
-			'moment' => $moment,
+			'instanceId' => (string)($delivery->options['instanceId'] ?? ''),
+			'dedupeKey' => (string)($delivery->options['dedupeKey'] ?? ''),
+			'recipient' => (string)($delivery->options['recipient'] ?? ''),
+			'moment' => $delivery->moment,
 		];
+	}//end noticeOf()
 
-		$tried = [];
-		$sent = null;
-		foreach ([self::CHANNEL_PORTAL, self::CHANNEL_DIGITAL_POST, self::CHANNEL_EMAIL] as $channel) {
-			$answer = $this->through(channel: $channel, case: $case, notice: $notice);
-			if ($answer === null) {
-				continue;
-			}
-
-			if ($answer['sent'] === true) {
-				$sent = $answer + ['channel' => $channel];
+	/**
+	 * Offer the notice to each allowed channel in order, until one sends it.
+	 *
+	 * @param NoticeDelivery $delivery The delivery; its sent and tried channels are filled in.
+	 *
+	 * @return void
+	 */
+	private function tryChannels(NoticeDelivery $delivery): void {
+		$order = [self::CHANNEL_PORTAL, self::CHANNEL_DIGITAL_POST, self::CHANNEL_EMAIL];
+		foreach (array_intersect($order, (array)($delivery->options['channels'] ?? $order)) as $channel) {
+			if ($this->tryChannel(delivery: $delivery, channel: $channel) === true) {
 				break;
 			}
+		}
+	}//end tryChannels()
 
-			$tried[] = ['channel' => $channel, 'reasonCode' => $answer['reasonCode'], 'reason' => $answer['reason']];
+	/**
+	 * Offer the notice to one channel; a channel that does not apply is skipped.
+	 *
+	 * @param NoticeDelivery $delivery The delivery.
+	 * @param string         $channel  The channel.
+	 *
+	 * @return bool Whether the channel sent it.
+	 */
+	private function tryChannel(NoticeDelivery $delivery, string $channel): bool {
+		$answer = $this->through(channel: $channel, delivery: $delivery);
+		if ($answer === null) {
+			return false;
 		}
 
-		$result = $this->result(sent: $sent, tried: $tried, moment: $moment, template: $template, attemptedAt: $attemptedAt);
-		$result['record'] = $this->record(case: $case, result: $result, extras: (array)($options['recordExtras'] ?? []));
+		if ($answer['sent'] === true) {
+			$delivery->sent = $answer + ['channel' => $channel];
+			return true;
+		}
 
+		$delivery->tried[] = ['channel' => $channel, 'reasonCode' => $answer['reasonCode'], 'reason' => $answer['reason']];
+		return false;
+	}//end tryChannel()
+
+	/**
+	 * Log what became of the notice.
+	 *
+	 * @param array<string, mixed> $result The delivery result.
+	 *
+	 * @return void
+	 */
+	private function logOutcome(array $result): void {
 		$this->logger->info(
 			'Dossiq requester notice: {template} is {status}',
 			[
-				'template' => $template,
+				'template' => $result['template'],
 				'status' => $result['status'],
 				'channel' => $result['channel'],
 				'reasonCode' => (string)($result['reasonCode'] ?? ''),
 			]
 		);
-
-		return $result;
-	}//end send()
+	}//end logOutcome()
 
 	/**
 	 * Ask one channel, or null when the channel is not offered for this requester.
 	 *
-	 * @param string               $channel The channel.
-	 * @param array<string, mixed> $case    The case row.
-	 * @param array<string, mixed> $notice  The notice.
+	 * @param string         $channel  The channel.
+	 * @param NoticeDelivery $delivery The delivery: the case row and the notice.
 	 *
 	 * @return array<string, mixed>|null `{sent: true, messageId, sentAt}` or `{sent: false, reasonCode, reason}`.
 	 */
-	private function through(string $channel, array $case, array $notice): ?array {
+	private function through(string $channel, NoticeDelivery $delivery): ?array {
 		return match ($channel) {
-			self::CHANNEL_PORTAL => $this->portalInbox(case: $case, notice: $notice),
-			self::CHANNEL_DIGITAL_POST => $this->digitalPostTo(case: $case, notice: $notice),
-			default => $this->emailTo(case: $case, notice: $notice),
+			self::CHANNEL_PORTAL => $this->portalInbox->deliver(
+				case: $delivery->case,
+				notice: $delivery->notice,
+				store: $this->storeFor(schemaKey: 'portaal_bericht_schema')
+			),
+			self::CHANNEL_DIGITAL_POST => $this->digitalPostTo(case: $delivery->case, notice: $delivery->notice),
+			default => $this->emailTo(case: $delivery->case, notice: $delivery->notice),
 		};
 	}//end through()
-
-	/**
-	 * The portal inbox: a `portaalBericht` from the organisation to the case's portal subject.
-	 *
-	 * @param array<string, mixed> $case   The case row.
-	 * @param array<string, mixed> $notice The notice.
-	 *
-	 * @return array<string, mixed>|null Null when the case has no portal subject or portaliq is absent.
-	 */
-	private function portalInbox(array $case, array $notice): ?array {
-		$subject = trim((string)($case['portalSubject'] ?? ''));
-		if ($subject === '' || $this->appManager?->isInstalled(self::PORTAL_APP) !== true) {
-			return null;
-		}
-
-		$store = $this->storeFor(schemaKey: 'portaal_bericht_schema');
-		if ($store === null) {
-			return $this->refused(code: 'portal-inbox-unavailable', reason: 'The portal inbox is not configured, so the notice could not be put there.');
-		}
-
-		[$objectService, $register, $schema] = $store;
-
-		$sentAt = (new DateTimeImmutable())->format('c');
-		$message = [
-			'caseId' => (string)($case['id'] ?? ''),
-			'caseReference' => (string)($case['identifier'] ?? ''),
-			'recipientRef' => $subject,
-			'senderRef' => 'dossiq',
-			'senderType' => 'medewerker',
-			'senderName' => 'Gemeente',
-			'subject' => $notice['subject'],
-			'content' => $notice['body'],
-			'direction' => 'handler_to_citizen',
-			'sentAt' => $sentAt,
-		];
-
-		try {
-			// As the system: a background job has no user, and the requester's
-			// inbox is not a register the acting handler holds a grant on.
-			$saved = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->saveObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					object: $message
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Dossiq requester notice: the portal inbox refused it', ['exception' => $e]);
-			return $this->refused(code: 'portal-inbox-failed', reason: 'The portal inbox did not accept the notice.');
-		}
-
-		$row = [];
-		if (is_array($saved) === true) {
-			$row = $saved;
-		}
-
-		$messageId = $this->idOf(row: $row);
-		if ($messageId === '') {
-			return $this->refused(code: 'portal-inbox-failed', reason: 'The portal inbox did not accept the notice.');
-		}
-
-		return ['sent' => true, 'messageId' => $messageId, 'sentAt' => $sentAt];
-	}//end portalInbox()
 
 	/**
 	 * Digital post over integriq, when the requester's BSN is known.
@@ -291,28 +311,62 @@ class RequesterNoticeSender {
 	 */
 	private function digitalPostTo(array $case, array $notice): ?array {
 		$bsn = trim((string)($case['initiatorSourceId'] ?? ''));
-		if ($this->digitalPost === null
-			|| ($case['initiatorType'] ?? '') !== 'person'
-			|| preg_match('/^\d{9}$/', $bsn) !== 1
-		) {
+		if ($this->takesDigitalPost(case: $case, bsn: $bsn) === false) {
 			return null;
 		}
 
 		try {
-			$answer = $this->digitalPost->sendMessage(
-				caseId: (string)($case['id'] ?? ''),
-				bsn: $bsn,
-				subject: $notice['subject'],
-				body: $notice['body'],
-				typeCode: $notice['template'],
-				attachmentFileId: null,
-				category: $this->postCategoryFor(template: $notice['template'], moment: $notice['moment']),
-			);
+			$answer = $this->postNotice(case: $case, notice: $notice);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq requester notice: digital post threw', ['exception' => $e]);
 			return $this->refused(code: 'digital-post-failed', reason: 'Digital post did not accept the notice.');
 		}
 
+		return $this->digitalPostAnswer(answer: $answer);
+	}//end digitalPostTo()
+
+	/**
+	 * Whether digital post is there and the requester is a person with a BSN.
+	 *
+	 * @param array<string, mixed> $case The case row.
+	 * @param string               $bsn  The requester's BSN, trimmed.
+	 *
+	 * @return bool
+	 */
+	private function takesDigitalPost(array $case, string $bsn): bool {
+		return $this->digitalPost !== null
+			&& ($case['initiatorType'] ?? '') === 'person'
+			&& preg_match('/^\d{9}$/', $bsn) === 1;
+	}//end takesDigitalPost()
+
+	/**
+	 * Send the notice as digital post to the requester's BSN.
+	 *
+	 * @param array<string, mixed>  $case   The case row.
+	 * @param array<string, string> $notice The notice.
+	 *
+	 * @return array<string, mixed> What digital post answered.
+	 */
+	private function postNotice(array $case, array $notice): array {
+		return $this->digitalPost->sendMessage(
+			caseId: (string)($case['id'] ?? ''),
+			bsn: trim((string)($case['initiatorSourceId'] ?? '')),
+			subject: $notice['subject'],
+			body: $notice['body'],
+			typeCode: $notice['template'],
+			attachmentFileId: null,
+			category: $this->postCategoryFor(template: $notice['template'], moment: $notice['moment']),
+		);
+	}//end postNotice()
+
+	/**
+	 * Sent with integriq's tracked message id, or refused.
+	 *
+	 * @param array<string, mixed> $answer What digital post answered.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function digitalPostAnswer(array $answer): array {
 		if (($answer['refused'] ?? false) === true) {
 			return $this->refused(
 				code: (string)($answer['code'] ?? 'refused'),
@@ -331,7 +385,7 @@ class RequesterNoticeSender {
 		}
 
 		return ['sent' => true, 'messageId' => $messageId, 'sentAt' => (string)($answer['sentAt'] ?? (new DateTimeImmutable())->format('c'))];
-	}//end digitalPostTo()
+	}//end digitalPostAnswer()
 
 	/**
 	 * E-mail through TermNoticeSender, to the address the caller holds or the case carries.
@@ -362,13 +416,24 @@ class RequesterNoticeSender {
 			return $this->refused(code: $e->getReasonCode(), reason: $e->getMessage());
 		}
 
+		return $this->emailAnswer(dispatch: $dispatch);
+	}//end emailTo()
+
+	/**
+	 * The sent answer for an e-mail dispatch.
+	 *
+	 * @param array<string, mixed> $dispatch The dispatch answer.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function emailAnswer(array $dispatch): array {
 		return [
 			'sent' => true,
 			'messageId' => (string)($dispatch['messageId'] ?? ''),
 			'sentAt' => (string)($dispatch['sentOn'] ?? (new DateTimeImmutable())->format('c')),
 			'duplicate' => (($dispatch['duplicate'] ?? false) === true),
 		];
-	}//end emailTo()
+	}//end emailAnswer()
 
 	/**
 	 * The e-mail address: the caller's, the Woo requester's, a contact's, the mail intake sender's.
@@ -432,36 +497,54 @@ class RequesterNoticeSender {
 	}//end refused()
 
 	/**
-	 * The delivery result.
+	 * The delivery result: what was sent through which channel, or why nothing was.
 	 *
-	 * @param array<string, mixed>|null                                        $sent        The channel that took it, or null.
-	 * @param list<array{channel: string, reasonCode: string, reason: string}> $tried       Every channel that refused.
-	 * @param string                                                           $moment      The moment.
-	 * @param string                                                           $template    The template.
-	 * @param string                                                           $attemptedAt When.
+	 * @param NoticeDelivery $delivery The delivery after the channels answered.
 	 *
-	 * @return array<string, mixed> The result.
+	 * @return array<string, mixed>
 	 */
-	private function result(?array $sent, array $tried, string $moment, string $template, string $attemptedAt): array {
+	private function result(NoticeDelivery $delivery): array {
 		$result = [
-			'moment' => $moment,
-			'template' => $template,
-			'channelsTried' => $tried,
-			'attemptedAt' => $attemptedAt,
+			'moment' => $delivery->moment,
+			'template' => $delivery->template,
+			'channelsTried' => $delivery->tried,
+			'attemptedAt' => $delivery->attemptedAt,
 		];
 
-		if ($sent !== null) {
-			return $result + [
-				'status' => self::STATUS_SENT,
-				'channel' => (string)$sent['channel'],
-				'messageId' => (string)$sent['messageId'],
-				'sentAt' => (string)$sent['sentAt'],
-				'duplicate' => (($sent['duplicate'] ?? false) === true),
-			];
+		if ($delivery->sent !== null) {
+			return $result + $this->sentOutcome(sent: $delivery->sent);
 		}
 
+		return $result + $this->notSentOutcome(tried: $delivery->tried);
+	}//end result()
+
+	/**
+	 * The outcome of a notice a channel sent.
+	 *
+	 * @param array<string, mixed> $sent The sending channel's answer, with that channel.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function sentOutcome(array $sent): array {
+		return [
+			'status' => self::STATUS_SENT,
+			'channel' => (string)$sent['channel'],
+			'messageId' => (string)$sent['messageId'],
+			'sentAt' => (string)$sent['sentAt'],
+			'duplicate' => (($sent['duplicate'] ?? false) === true),
+		];
+	}//end sentOutcome()
+
+	/**
+	 * The outcome of a notice no channel sent: no channel at all, or the last refusal.
+	 *
+	 * @param array<int, array{channel: string, reasonCode: string, reason: string}> $tried The channels that refused.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function notSentOutcome(array $tried): array {
 		if ($tried === []) {
-			return $result + [
+			return [
 				'status' => self::STATUS_NOT_SENT,
 				'channel' => '',
 				'reasonCode' => 'no-channel',
@@ -471,13 +554,13 @@ class RequesterNoticeSender {
 
 		$last = $tried[array_key_last($tried)];
 
-		return $result + [
+		return [
 			'status' => self::STATUS_NOT_SENT,
 			'channel' => '',
 			'reasonCode' => $last['reasonCode'],
 			'reason' => $last['reason'],
 		];
-	}//end result()
+	}//end notSentOutcome()
 
 	/**
 	 * Append the record of this notice to the case, from the transport's answer.
@@ -487,67 +570,23 @@ class RequesterNoticeSender {
 	 * possible.
 	 *
 	 * @param array<string, mixed> $case   The case row.
-	 * @param array<string, mixed> $result The delivery result.
-	 * @param array<string, mixed> $extras More keys from the caller.
+	 * @param array<string, mixed> $record The record of this notice.
 	 *
 	 * @return array<string, mixed> The record.
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-every-requester-notice-is-stored-on-the-case-with-its-result-req-wrn-006
 	 */
-	private function record(array $case, array $result, array $extras): array {
-		$record = $extras + [
-			'moment' => $result['moment'],
-			'template' => $result['template'],
-			'channel' => $result['channel'],
-			'status' => $result['status'],
-			'channelsTried' => $result['channelsTried'],
-			'attemptedAt' => $result['attemptedAt'],
-		];
-		foreach (['messageId', 'sentAt', 'reasonCode', 'reason'] as $key) {
-			if (isset($result[$key]) === true) {
-				$record[$key] = $result[$key];
-			}
-		}
-
+	private function recordOn(array $case, array $record): array {
 		$caseId = (string)($case['id'] ?? '');
 		$store = $this->storeFor(schemaKey: 'case_schema');
 		if ($caseId === '' || $store === null || $this->writer === null) {
 			return $record;
 		}
 
-		[$objectService, $register, $schema] = $store;
-
-		try {
-			$stored = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseId)
-			);
-			$list = [];
-			if (is_array($stored) === true) {
-				$list = ($stored['outboundCommunications'] ?? []);
-			}
-
-			if (is_array($list) === false) {
-				$list = [];
-			}
-
-			$list[] = $record;
-			$this->writer->write(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				case: ['id' => $caseId],
-				changes: ['outboundCommunications' => array_values($list)],
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq requester notice: case {case} could not record the notice',
-				['case' => $caseId, 'reason' => $e->getMessage()]
-			);
-		}//end try
+		$this->noticeLog->append(location: [...$store, $caseId], record: $record);
 
 		return $record;
-	}//end record()
+	}//end recordOn()
 
 	/**
 	 * The object service, the register and one schema, or null when any is missing.
@@ -566,16 +605,4 @@ class RequesterNoticeSender {
 
 		return [$objectService, $register, $schema];
 	}//end storeFor()
-
-	/**
-	 * The id of a saved row.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or ''.
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
-	}//end idOf()
 }//end class

@@ -458,6 +458,12 @@ if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') ===
 	include_once __DIR__ . '/Stubs/Decidiq/Event/GovernanceBodyStateRequestedEvent.php';
 }
 
+// The meeting command (decidiq meeting-requested-event), which SessionMeeting
+// dispatches to open a planned session as a meeting. One spelling only.
+if (class_exists('\\OCA\\Decidiq\\Event\\MeetingRequestedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Decidiq/Event/MeetingRequestedEvent.php';
+}
+
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
 // The connection-registry events (adopt-connection-registry) ride the same loop:
 // IntegrationStatusService sends them by name, exactly like the delivery seam.
@@ -484,8 +490,29 @@ if (class_exists('\\OCA\\Decidiq\\Event\\GovernanceBodyStateRequestedEvent') ===
 // (woo-requests-gather-documents-from-sources): WooSources searches and fetches
 // integriq's Microsoft 365 connection by name.
 // The three StUF-ZDS events ride it too (stuf onto integriq, decision 193):
-// StufIntegriqBridge sends outbound StUF and forwards confirmations by name.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent', 'SourceRequestedEvent', 'OutboundSendDecisionRequestedEvent', 'DocumentSearchRequestedEvent', 'DocumentFetchRequestedEvent', 'StufZdsCaseRequestedEvent', 'StufZdsCaseConcludedEvent', 'StufZdsConfirmationReceivedEvent', 'StufProviderQueryEvent', 'StufCaseQueryEvent', 'StufPersonQueryEvent', 'StufCaseMutationEvent', 'StufDocumentMutationEvent', 'StufProviderRequestReceivedEvent'] as $stubEvent) {
+// StufIntegriqBridge sends outbound StUF by name.
+$integriqStubEvents = [
+	'DeliveryRequestedEvent',
+	'DeliveryConcludedEvent',
+	'ConnectionStatusReportedEvent',
+	'ConnectionRefreshRequestedEvent',
+	'IntakeMessageRoutedEvent',
+	'DigitalPostSendRequestedEvent',
+	'DigitalPostDeliveredEvent',
+	'MessageReceivedEvent',
+	'SourceRequestedEvent',
+	'OutboundSendDecisionRequestedEvent',
+	'DocumentSearchRequestedEvent',
+	'DocumentFetchRequestedEvent',
+	'StufZdsCaseRequestedEvent',
+	'StufZdsCaseConcludedEvent',
+	'StufProviderQueryEvent',
+	'StufCaseQueryEvent',
+	'StufPersonQueryEvent',
+	'StufCaseMutationEvent',
+	'StufDocumentMutationEvent',
+];
+foreach ($integriqStubEvents as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
@@ -641,6 +668,10 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletedEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectDeletedEventStub.php';
+}
+
 // people-on-the-case: OpenRegister's three person-link events, so
 // PersonLinkListenerTest can exercise handle() against the real getLink()
 // shape on a bare container. Declaration-only stubs, shared with psalm and
@@ -660,7 +691,9 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\FlowEmailSentEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/FlowEmailSentEvent.php';
 }
 
-foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stubEvent) {
+// Filinq's signing events (signing-through-filinq): a decision asks filinq for a
+// signature and hears how the request ended. SigningProvenance first: both events take it.
+foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent', 'SigningProvenance', 'DocumentSigningRequestedEvent', 'SigningConcludedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Filinq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Filinq/Event/' . $stubEvent . '.php';
 	}
@@ -670,7 +703,7 @@ foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stub
 // REQ-IPY-005): Money\PayoutRequester raises and withdraws a payout through them.
 // Verbatim copies, loaded only when the real classes are absent, shared with
 // psalm and phpstan.
-foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent'] as $stubEvent) {
+foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent', 'PayablesRequestedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Shillinq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Shillinq/Event/' . $stubEvent . '.php';
 	}
@@ -680,6 +713,26 @@ foreach (['PayableRaisedEvent', 'PayableCancelRequestedEvent'] as $stubEvent) {
 // by name, so only the tests need the class.
 if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {
 	include_once __DIR__ . '/Stubs/Filinq/Exception/DetectionUnavailableException.php';
+}
+
+// Filinq's review gate (partly-public-documents-get-a-redacted-copy): the
+// redaction step is tested against filinq's own guard, gate and run identity,
+// with the marks kept in memory.
+if (class_exists('\\OCA\\Filinq\\Exception\\RedactionNotReviewedException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/RedactionNotReviewedException.php';
+}
+
+// Filinq's anonymise options (redaction-four-eyes-setting): the redaction
+// client passes the acting user, the output format and whether the run is a
+// Woo case through them.
+if (class_exists('\\OCA\\Filinq\\Service\\AnonymizeOptions') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Service/AnonymizeOptions.php';
+}
+
+foreach (['DetectionRunIdentity', 'RedactionReviewGate', 'RedactionReviewMarkRepository', 'RedactionOutputGuard'] as $stubRedaction) {
+	if (class_exists('\\OCA\\Filinq\\Service\\Redaction\\' . $stubRedaction) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Service/Redaction/' . $stubRedaction . '.php';
+	}
 }
 
 // case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
@@ -729,6 +782,11 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
 }
 
+// identity-survives-a-move: a move out of the register is a deleting event to a guard.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectLeavingEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/ObjectLeavingEventStub.php';
+}
+
 // termijnbewaking-op-engine-timers: the business-timer surface the termijn
 // mapping arms and the fired-listener consumes. The event stub mirrors the
 // REAL engine constructor signature — a stub that agrees with the caller
@@ -736,6 +794,8 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 if (class_exists('\\OCA\\OpenRegister\\Db\\FlowTimer') === false) {
 	include_once __DIR__ . '/Stubs/Db/FlowTimer.php';
 }
+
+include_once __DIR__ . '/Stubs/Service/Flow/Timer/TimerFiringStubs.php';
 
 if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/FlowTimerFiredEventStub.php';

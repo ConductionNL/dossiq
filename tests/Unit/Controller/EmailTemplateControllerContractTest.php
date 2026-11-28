@@ -37,6 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\EmailSettingsController;
+use OCA\Dossiq\Controller\Support\MailIntakeSettings;
 use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
@@ -56,6 +58,8 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for EmailTemplateController.
  *
  * @covers \OCA\Dossiq\Controller\EmailTemplateController
+ * @covers \OCA\Dossiq\Controller\EmailSettingsController
+ * @covers \OCA\Dossiq\Controller\Support\MailIntakeSettings
  */
 class EmailTemplateControllerContractTest extends TestCase {
 
@@ -130,6 +134,13 @@ class EmailTemplateControllerContractTest extends TestCase {
 	private EmailTemplateController $controller;
 
 	/**
+	 * The mail settings controller under test (the settings routes left EmailTemplateController).
+	 *
+	 * @var EmailSettingsController
+	 */
+	private EmailSettingsController $settings;
+
+	/**
 	 * Build the controller with all collaborators mocked.
 	 *
 	 * @return void
@@ -151,12 +162,19 @@ class EmailTemplateControllerContractTest extends TestCase {
 			request: $this->request,
 			templateService: $this->templateService,
 			settingsService: $this->settingsService,
-			appConfig: $this->appConfig,
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			caseAccessGuard: $this->caseAccessGuard,
-			mailGateway: $this->mailGateway,
-			blocklist: $this->blocklist,
+		);
+		$this->settings   = new EmailSettingsController(
+			request: $this->request,
+			userSession: $this->userSession,
+			settings: new MailIntakeSettings(
+				appConfig: $this->appConfig,
+				blocklist: $this->blocklist,
+				mailGateway: $this->mailGateway,
+				templateService: $this->templateService,
+			),
 		);
 	}//end setUp()
 
@@ -174,6 +192,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				return ($overrides[$key] ?? $default);
 			}
 		);
+		$this->request->method('getParams')->willReturn($overrides);
 	}//end withRequestParams()
 
 	/**
@@ -207,7 +226,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$responses = [
 			'createTemplate' => $this->controller->createTemplate(caseTypeId: 'ct-1'),
 			'prefillDraft' => $this->controller->prefillDraft(caseId: 'case-1', templateId: 'tpl-1'),
-			'saveSettings' => $this->controller->saveSettings(),
+			'saveSettings' => $this->settings->saveSettings(),
 			'variables' => $this->controller->variables(caseTypeId: 'ct-1'),
 		];
 
@@ -244,7 +263,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 
 	/**
 	 * An admin's create reaches the backend with the caseType from the ROUTE and
-	 * the name/subject/body from the request body, and answers 200 with the
+	 * the name/subject/body, moment and channel from the request body, and answers 200 with the
 	 * created template.
 	 *
 	 * @return void
@@ -257,6 +276,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 				'name' => 'Ontvangstbevestiging',
 				'subject' => 'Uw aanvraag',
 				'body' => 'Beste {{contactNaam}}',
+				'moment' => 'case-received',
+				'channel' => 'mailbox-then-email',
 			]
 		);
 
@@ -268,6 +289,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 					'name' => 'Ontvangstbevestiging',
 					'subject' => 'Uw aanvraag',
 					'body' => 'Beste {{contactNaam}}',
+					'moment' => 'case-received',
+					'channel' => 'mailbox-then-email',
 				]
 			)
 			->willReturn(['id' => 'tpl-9', 'version' => 1]);
@@ -399,7 +422,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				}
 			);
 
-		$response = $this->controller->saveSettings();
+		$response = $this->settings->saveSettings();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('7', $written['email_mail_account_id']['value']);
@@ -451,7 +474,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 				}
 			);
 
-		$response = $this->controller->saveSettings();
+		$response = $this->settings->saveSettings();
 
 		$this->assertSame(['saved' => true], $response->getData());
 		$this->assertSame(['Spammer@Voorbeeld.NL', ' @reclame.nl'], $replaced);
@@ -525,4 +548,34 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['results' => $templates], $response->getData());
 	}//end testListTemplatesReturnsTheResultsOfTheRouteCaseType()
+
+	/**
+	 * An update forwards a moment or channel the request names, null included
+	 * (it clears the field), and leaves out one the request does not name.
+	 *
+	 * @return void
+	 */
+	public function testUpdateTemplateForwardsOnlyTheDeliveryFieldsTheRequestNames(): void {
+		$this->signIn(uid: 'admin');
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withRequestParams(overrides: ['body' => 'Nieuw', 'moment' => null]);
+
+		$this->templateService->expects($this->once())
+			->method('updateTemplate')
+			->with(
+				't-1',
+				$this->callback(
+					callback: static function (array $data): bool {
+						return array_key_exists('moment', $data) === true
+							&& $data['moment'] === null
+							&& array_key_exists('channel', $data) === false;
+					}
+				)
+			)
+			->willReturn(['id' => 't-2', 'version' => 2]);
+
+		$response = $this->controller->updateTemplate(templateId: 't-1');
+
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+	}//end testUpdateTemplateForwardsOnlyTheDeliveryFieldsTheRequestNames()
 }//end class

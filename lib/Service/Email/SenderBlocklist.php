@@ -29,14 +29,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SenderBlocklistInterface;
 use OCP\IAppConfig;
 
 /**
@@ -44,19 +45,14 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class SenderBlocklist {
-
-	/**
-	 * The app-config key holding the block half.
-	 */
-	public const BLOCKLIST_KEY = 'email_intake_blocklist';
+class SenderBlocklist implements SenderBlocklistInterface {
 
 	/**
 	 * Constructor.
@@ -75,10 +71,10 @@ class SenderBlocklist {
 	 *
 	 * @return array<int, string> The entries, lowercased.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function entries(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::BLOCKLIST_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::BLOCKLIST_KEY, '');
 		$parts = preg_split('/[\s,;]+/', strtolower(trim($raw)));
 		if ($parts === false) {
 			return [];
@@ -94,7 +90,7 @@ class SenderBlocklist {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function replace(array $entries): void {
 		$cleaned = [];
@@ -108,7 +104,7 @@ class SenderBlocklist {
 		}
 
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::BLOCKLIST_KEY,
 			implode(',', array_values(array_unique($cleaned)))
 		);
@@ -127,7 +123,7 @@ class SenderBlocklist {
 	 *
 	 * @return boolean True when the address is blocked.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function blocks(string $email): bool {
 		$address = InboundMessage::addressIn(value: $email);
@@ -156,7 +152,7 @@ class SenderBlocklist {
 	 *
 	 * @return boolean True when the address is on the allow half.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function allows(string $email): bool {
 		$address = InboundMessage::addressIn(value: $email);

@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\MandaatCheckService;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\AreaRouting;
+use OCA\Dossiq\Service\Routing\CaseRoleSource;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
@@ -53,9 +54,12 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Beschikking\MandaatVerifier
  * @covers \OCA\Dossiq\Service\MandaatCheckService
+ * @uses \OCA\Dossiq\Service\Mandate\MandateConditions
+ * @uses \OCA\Dossiq\Service\Mandate\MandateRows
  * @covers \OCA\Dossiq\Service\RoleResolverService
  * @covers \OCA\Dossiq\Service\Support\RefusesWhenIndeterminate
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
+ * @uses \OCA\Dossiq\Service\Tenant\MandateMatrix
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Routing\AreaRouting
  * @uses \OCA\Dossiq\Service\Routing\RoleResolutionCache
@@ -299,9 +303,10 @@ class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 		$delegation = $this->createMock(originalClassName: RoleDelegationResolver::class);
 		$delegation->method('apply')->willReturn([]);
 
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		return new RoleResolverService(
 			registry: $registry,
-			settingsService: $this->findAllSettings(throws: $throws),
+			roleSource: new CaseRoleSource(settingsService: $this->findAllSettings(throws: $throws), logger: $logger),
 			// A REAL cache over the SAME factory double, which answers a miss,
 			// so every resolve in this suite still runs the strategy. Only the
 			// wiring line moved when the cache was split out.
@@ -311,7 +316,7 @@ class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 			// rule with no area map, so this suite's subject is unchanged, and
 			// a double would hide the day that stops being true.
 			area: new AreaRouting(),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			logger: $logger,
 		);
 	}//end roleResolver()
 

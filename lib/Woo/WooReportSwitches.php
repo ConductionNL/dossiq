@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,8 +22,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Service\Settings\RenamedSettingKeys;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -37,24 +38,37 @@ use OCP\IUserSession;
  * report cannot be switched on without a named group that exists. An unset,
  * empty or unreadable value reads as off: off is the safe state.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
  */
 class WooReportSwitches {
 
 	/**
 	 * Throughput per reviewer per day (row 16.10).
 	 */
-	public const THROUGHPUT = 'wooReviewerThroughputReport';
+	public const THROUGHPUT = 'reviewerThroughputReport';
 
 	/**
 	 * The collection by sender, recipient and domain (row 16.11).
 	 */
-	public const PARTIES = 'wooCollectionPartiesReport';
+	public const PARTIES = 'collectionPartiesReport';
 
 	/**
 	 * The Nextcloud group whose members read the throughput report.
 	 */
-	public const READERS = 'wooReviewerThroughputReaders';
+	public const READERS = 'reviewerThroughputReaders';
+
+	/**
+	 * Each setting's earlier, procedure-named key. Read when the current key
+	 * was never written, and accepted on a save, so an instance configured
+	 * before the rename keeps its reports.
+	 *
+	 * @var array<string, string>
+	 */
+	public const LEGACY_KEYS = [
+		self::THROUGHPUT => 'wooReviewerThroughputReport',
+		self::PARTIES => 'wooCollectionPartiesReport',
+		self::READERS => 'wooReviewerThroughputReaders',
+	];
 
 	/**
 	 * The refusal rule when the throughput report has no existing reader group.
@@ -88,7 +102,7 @@ class WooReportSwitches {
 	 *
 	 * @return bool True when the organisation switched the report on.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function isOn(string $switch): bool {
 		if ($switch !== self::THROUGHPUT && $switch !== self::PARTIES) {
@@ -111,7 +125,7 @@ class WooReportSwitches {
 	 *
 	 * @return string The group id.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function readerGroup(): string {
 		return trim($this->stored(key: self::READERS));
@@ -127,7 +141,7 @@ class WooReportSwitches {
 	 *
 	 * @return bool True when the user is in the existing reader group.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	public function maySeeThroughput(string $userId): bool {
 		$group = $this->readerGroup();
@@ -148,7 +162,7 @@ class WooReportSwitches {
 	 *
 	 * @return array{throughput: bool, parties: bool} What the user is offered.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function offeredToCurrentUser(): array {
 		$user = $this->userSession?->getUser();
@@ -175,9 +189,10 @@ class WooReportSwitches {
 	 *
 	 * @throws RefusedException When the throughput report would be on with no existing reader group.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public function assertSaveAllowed(array $data): void {
+		$data = (new RenamedSettingKeys(earlierKeys: self::LEGACY_KEYS))->carry(data: $data);
 		if (array_key_exists(self::THROUGHPUT, $data) === false && array_key_exists(self::READERS, $data) === false) {
 			return;
 		}
@@ -206,7 +221,7 @@ class WooReportSwitches {
 	 *
 	 * @return bool True for 'true', '1', 'yes' or 'on'.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	public static function truthy(mixed $value): bool {
 		if (is_bool($value) === true) {
@@ -224,7 +239,13 @@ class WooReportSwitches {
 	 * @return string The stored value.
 	 */
 	private function stored(string $key): string {
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		$value = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
+		$legacy = (self::LEGACY_KEYS[$key] ?? null);
+		if ($value !== '' || $legacy === null || $this->appConfig->hasKey(AppIdentity::APP_ID, $key) === true) {
+			return $value;
+		}
+
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $legacy, '');
 	}//end stored()
 
 	/**

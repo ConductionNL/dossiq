@@ -128,24 +128,53 @@ class TransitionAuthorizer {
 			return true;
 		}
 
+		return $this->inAnyGroup(userId: $userId, authorization: $authorization);
+	}//end isTransitionGroupAuthorized()
+
+	/**
+	 * Whether the user is in one of the authorised groups.
+	 *
+	 * @param string            $userId        The acting user UID.
+	 * @param array<int, mixed> $authorization The authorised group ids.
+	 *
+	 * @return bool True when the user is in one of them.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function inAnyGroup(string $userId, array $authorization): bool {
 		foreach ($authorization as $groupId) {
 			$groupId = (string)$groupId;
 			if ($groupId === '') {
 				continue;
 			}
 
-			try {
-				if ($this->groupManager->isInGroup($userId, $groupId) === true) {
-					return true;
-				}
-			} catch (\Throwable $e) {
-				$this->logger->error(
-					'StatusTransitionService: group membership check failed',
-					['exception' => $e->getMessage(), 'groupId' => $groupId],
-				);
+			if ($this->inGroup(userId: $userId, groupId: $groupId) === true) {
+				return true;
 			}
 		}
 
 		return false;
-	}//end isTransitionGroupAuthorized()
+	}//end inAnyGroup()
+
+	/**
+	 * Whether the user is in the group; a failed check is logged and reads as no.
+	 *
+	 * @param string $userId  The acting user UID.
+	 * @param string $groupId The group.
+	 *
+	 * @return bool True when the user is in the group.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	private function inGroup(string $userId, string $groupId): bool {
+		try {
+			return $this->groupManager->isInGroup($userId, $groupId) === true;
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'StatusTransitionService: group membership check failed',
+				['exception' => $e->getMessage(), 'groupId' => $groupId],
+			);
+			return false;
+		}
+	}//end inGroup()
 }//end class

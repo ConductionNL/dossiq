@@ -27,6 +27,7 @@ import {
 	seedCase,
 	seedDocument,
 	showObject,
+	uploadFixtureFile,
 } from './helpers/fixtures.ts'
 import { openHeaderActionsMenu, PAGE_LOAD } from './helpers/nav.ts'
 
@@ -35,6 +36,19 @@ const ADMIN_USER = 'admin'
 
 /** One case per scenario, so no test depends on another's writes. */
 const cases: Record<string, string> = {}
+
+/** The fixture file of the public document, in the admin's Files root. */
+const attachmentName = `${RUN_PREFIX}-woo-besluit-bijlage.pdf`
+
+/**
+ * The WebDAV path of a file in the admin's Files root.
+ *
+ * @param name The file name.
+ * @return The path.
+ */
+function davPath(name: string): string {
+	return `/remote.php/dav/files/${encodeURIComponent(ADMIN_USER)}/${encodeURIComponent(name)}`
+}
 
 /**
  * The headers a dossiq write needs.
@@ -71,9 +85,13 @@ test.describe('Publish a Woo decision from the case', () => {
 
 		// The ready case gets one document assessed as public and an assembled
 		// decision, through the same routes a handler's screens use.
+		// A public document is published with its bytes, and a document whose
+		// file cannot be read refuses the publish (`documents_unreadable`), so
+		// the fixture carries a real file in the admin's Files.
 		const document = await seedDocument(api, token, {
 			title: `${RUN_PREFIX} Woo besluit bijlage`,
 			case: cases.ready,
+			fileId: await uploadFixtureFile(api, token, attachmentName),
 		})
 		const assessed = await api.post(
 			`/index.php/apps/${REGISTER}/api/cases/${cases.ready}/woo/assessment`,
@@ -107,12 +125,14 @@ test.describe('Publish a Woo decision from the case', () => {
 
 	test.afterAll(async ({ playwright, baseURL }) => {
 		const api = await playwright.request.newContext({ baseURL })
-		await cleanupRunObjects(api, await getRequestToken(api))
+		const token = await getRequestToken(api)
+		await cleanupRunObjects(api, token)
+		await api.fetch(davPath(attachmentName), { method: 'DELETE', headers: { requesttoken: token } })
 		await api.dispose()
 	})
 
 	// @e2e openspec/specs/woo-publication-via-opencatalogi/spec.md#scenario-no-woo-decision-yet
-	test('a case without a Woo decision answers 409 no_woo_decision', async ({
+	test('a case without a Woo decision is not at the publication step: 422, nothing sent', async ({
 		request,
 	}) => {
 		const token = await getRequestToken(request)
@@ -125,8 +145,13 @@ test.describe('Publish a Woo decision from the case', () => {
 			body?.reason === 'opencatalogi_unavailable',
 			'OpenCatalogi is not installed on this instance',
 		)
-		expect(res.status()).toBe(409)
-		expect(body.reason).toBe('no_woo_decision')
+		// The step check comes first (REQ-ACC-13): a case without a decision
+		// never reached `wooPublicationStatus` ready, so the publish is refused
+		// before anything is read or sent.
+		expect(res.status()).toBe(422)
+		expect(body.error).toBe('not-at-this-step')
+		const after = await showObject(request, 'case', cases.none)
+		expect(after.wooPublicationStatus ?? '').not.toBe('published')
 	})
 
 	// @e2e openspec/specs/woo-publication-via-opencatalogi/spec.md#scenario-unpublished-decision-shows-a-publish-action

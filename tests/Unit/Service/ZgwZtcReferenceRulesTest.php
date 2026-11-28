@@ -31,12 +31,13 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwZtcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The ObjectService shape the ZTC rules call with named arguments.
  */
 interface ZtcObjectServiceStub {
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
@@ -84,7 +85,7 @@ class ZgwZtcReferenceRulesTest extends TestCase {
 		if ($searches !== null) {
 			$objectService = $this->createMock(ZtcObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static fn (string $id, string $register, string $schema): ?array => $objects[$id] ?? null
+				static fn (string $id, ?ObjectFindOptions $options = null): ?array => $objects[$id] ?? null
 			);
 			$objectService->method('buildSearchQuery')->willReturnCallback(
 				static fn (array $requestParams, string $register, string $schema): array => $requestParams

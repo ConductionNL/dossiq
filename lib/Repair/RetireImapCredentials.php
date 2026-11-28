@@ -45,14 +45,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -64,7 +64,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 class RetireImapCredentials implements IRepairStep {
 
@@ -116,7 +116,7 @@ class RetireImapCredentials implements IRepairStep {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function getName(): string {
 		return 'Remove the stored mailbox and SMTP passwords now that Nextcloud Mail holds the account';
@@ -129,11 +129,11 @@ class RetireImapCredentials implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function run(IOutput $output): void {
 		$removed = 0;
-		foreach ([Application::APP_ID, self::OLD_APP_ID] as $appId) {
+		foreach ([AppIdentity::APP_ID, self::OLD_APP_ID] as $appId) {
 			$removed += $this->removeFrom(appId: $appId);
 		}
 
@@ -144,7 +144,7 @@ class RetireImapCredentials implements IRepairStep {
 		$output->info('Removed ' . $removed . ' stored mailbox connection values.');
 		$this->logger->info(
 			'Dossiq: removed {count} stored mailbox connection values; Nextcloud Mail holds the account now',
-			['count' => $removed, 'app' => Application::APP_ID]
+			['count' => $removed, 'app' => AppIdentity::APP_ID]
 		);
 	}//end run()
 
@@ -155,7 +155,7 @@ class RetireImapCredentials implements IRepairStep {
 	 *
 	 * @return integer How many values were removed.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function removeFrom(string $appId): int {
 		$removed = 0;

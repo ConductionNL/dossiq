@@ -18,26 +18,35 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\ZaakdossierService
+ * @uses \OCA\Dossiq\Service\DocumentUpload
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CasePartyIndex
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\Zaakdossier\Dispatch
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class DocumentCorrespondentsWriteTest extends TestCase {
 	private const CONFIG = [
@@ -80,7 +89,9 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if (isset($this->rows[$id]) === false) {
 					throw new \OCP\AppFramework\Db\DoesNotExistException('not found: ' . $id);
 				}
@@ -124,7 +135,10 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The saved row.
 			 */
-			public function saveObject(array $object, string|int|null $register = null, string|int|null $schema = null, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saves[] = ['schema' => $schema, 'object' => $object];
 				$uuid = ($uuid ?? ('new-' . count($this->saves)));
 				unset($object['@self'], $object['id']);
@@ -189,6 +203,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 				settingsService: $settings,
 				groupManager: $this->createMock(originalClassName: IGroupManager::class),
 				logger: $logger,
+				exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 			),
 			statusLifecycle: new InformatieobjectStatusLifecycle(settingsService: $settings, logger: $logger),
 			normaliser: new InformatieobjectMetadataNormaliser(),
@@ -199,6 +214,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 				people: $people,
 				settingsService: $settings,
 				store: new DocumentRecordStore(settingsService: $settings),
+				labels: new DocumentListingLabels(settingsService: $settings),
 			),
 		);
 	}//end setUp()

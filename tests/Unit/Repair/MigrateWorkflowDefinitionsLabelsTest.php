@@ -21,7 +21,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -37,14 +37,19 @@ use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * What the backfill writes, and what it heals.
  *
  * @covers \OCA\Dossiq\Repair\MigrateWorkflowDefinitions
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillSchemas
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillTarget
+ * @covers \OCA\Dossiq\Service\Workflow\BackfillCaseType
  * @covers \OCA\Dossiq\Service\Workflow\BackfilledTemplateLabels
  *
- * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+ * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
  * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  * @uses \OCA\Dossiq\Service\Workflow\BackfilledTemplateShape
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -64,7 +69,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testANewBasisTemplateIsNamedInText(): void {
 		$this->runStep(caseType: self::caseType(), versions: []);
@@ -80,7 +85,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testABasisTemplateStoredWithArrayLabelsIsHealed(): void {
 		$this->runStep(caseType: self::caseType(pinned: true), versions: [self::brokenTemplate()]);
@@ -104,7 +109,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/translatable-titles-read-as-text/specs/case-types/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-translatable-titles-read-as-text/specs/case-types/spec.md
 	 */
 	public function testATemplateTheBackfillDidNotWriteIsLeftAlone(): void {
 		$template = array_merge(self::brokenTemplate(), ['description' => 'Mijn eigen flow']);
@@ -122,7 +127,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function testACaseTypeHoldingOnlyADraftStillGetsItsBasisTemplate(): void {
 		$this->runStep(caseType: self::caseType(), versions: [self::template(lifecycle: 'draft')]);
@@ -145,7 +150,7 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 	 *
 	 * @dataProvider lifecyclesThatAreNotADraft
 	 *
-	 * @spec openspec/changes/vth-package/specs/vth-workflow-templates/spec.md
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
 	 */
 	public function testACaseTypeHoldingMoreThanDraftsIsLeftAlone(string $lifecycle): void {
 		$this->runStep(
@@ -225,7 +230,10 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The payload, with an id.
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->writes->append(['save', $schema, $object]);
 				return array_merge($object, ['id' => ($uuid ?? 'new-template')]);
 			}//end saveObject()
@@ -240,7 +248,11 @@ class MigrateWorkflowDefinitionsLabelsTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The fields.
 			 */
-			public function patchObject(string $objectId, array $data, string $register, string $schema): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->writes->append(['patch', $schema, $data]);
 				return $data;
 			}//end patchObject()

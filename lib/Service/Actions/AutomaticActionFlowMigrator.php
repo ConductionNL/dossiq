@@ -36,11 +36,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Actions;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Flow\RetiredNodeMap;
-use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
-use OCA\Dossiq\Service\Flow\UnmappableStep;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\AutomaticActionFlowMigratorInterface;
+use OCA\Dossiq\Service\Flow\FlowMigrationSummary;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\ProjectsOntoFlows;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -52,15 +52,9 @@ use Throwable;
  *
  * @spec openspec/changes/page-topology-cleanup/tasks.md
  */
-class AutomaticActionFlowMigrator {
-	/**
-	 * The flow-node id space Dossiq's configured-action catalogue registered under.
-	 *
-	 * Every node in it has since gone to the app that owns what it did, so an
-	 * action type is looked up in the retired-node table as this prefix plus
-	 * the type, and becomes whatever that table says replaces it.
-	 */
-	private const NODE_PREFIX = 'dossiq.action.';
+class AutomaticActionFlowMigrator implements AutomaticActionFlowMigratorInterface {
+	use ProjectsOntoFlows;
+
 
 	/**
 	 * Prefix of the `notes` marker that ties a flow back to its source action.
@@ -73,27 +67,22 @@ class AutomaticActionFlowMigrator {
 	private const MARKER_PREFIX = 'dossiq:automaticAction:';
 
 	/**
-	 * How many flows to page through when rebuilding the marker map.
-	 */
-	private const FLOW_PAGE = 100;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister.
 	 * @param ContainerInterface $container Service container, for by-name resolution.
 	 * @param IAppConfig $appConfig App configuration.
 	 * @param LoggerInterface $logger Logger.
-	 * @param RetiredNodeMap $map What each retired action type became.
-	 * @param RetiredNodeTranslator $translator Turns an action's config into its replacement's.
+	 * @param ActionFlowSteps $flowSteps What each action becomes as flow steps, or why it cannot.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
-		private readonly RetiredNodeMap $map,
-		private readonly RetiredNodeTranslator $translator,
+		private readonly ActionFlowSteps $flowSteps,
 	) {
 	}//end __construct()
 
@@ -110,12 +99,12 @@ class AutomaticActionFlowMigrator {
 	public function migrate(IUser $user, bool $dryRun): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $this->emptySummary(note: 'OpenRegister is not available.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister is not available.');
 		}
 
 		$flowService = $this->flowService();
 		if ($flowService === null) {
-			return $this->emptySummary(note: 'OpenRegister exposes no FlowService on this instance.');
+			return FlowMigrationSummary::empty(note: 'OpenRegister exposes no FlowService on this instance.');
 		}
 
 		return $objectService->runAs(
@@ -129,39 +118,22 @@ class AutomaticActionFlowMigrator {
 	 *
 	 * By name and not by type-hint: Dossiq must install and boot on an instance
 	 * without OpenRegister, where the class does not exist to hint against.
+	 * Kept over the ProjectsOntoFlows copy because this command logs the miss
+	 * at debug level, not as a warning.
 	 *
 	 * @return object|null The FlowService, or null.
 	 */
 	private function flowService(): ?object {
 		try {
-			return $this->container->get('OCA\OpenRegister\Service\Flow\FlowService');
+			return $this->container->get(self::FLOW_SERVICE);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq: FlowService could not be resolved',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
 	}//end flowService()
-
-	/**
-	 * A summary describing a run that could not start.
-	 *
-	 * @param string $note Why nothing happened.
-	 *
-	 * @return array<string, mixed> The summary.
-	 */
-	private function emptySummary(string $note): array {
-		return [
-			'total' => 0,
-			'created' => 0,
-			'updated' => 0,
-			'skipped' => 0,
-			'failed' => 0,
-			'rows' => [],
-			'note' => $note,
-		];
-	}//end emptySummary()
 
 	/**
 	 * Walk every action and project it, inside the acting user's context.
@@ -173,19 +145,15 @@ class AutomaticActionFlowMigrator {
 	 */
 	private function migrateAll(object $flowService, bool $dryRun): array {
 		$actions = $this->fetchActions();
-		$existing = $this->existingByMarker(flowService: $flowService);
+		$run = new ActionMigrationRun(
+			flowService: $flowService,
+			existing: $this->existingByMarker(flowService: $flowService),
+		);
+		$run->dryRun = $dryRun;
 
-		$summary = $this->emptySummary(note: '');
-		$summary['total'] = count($actions);
-		unset($summary['note']);
-
+		$summary = $this->startSummary(total: count($actions));
 		foreach ($actions as $action) {
-			$row = $this->migrateOne(
-				action: $action,
-				existing: $existing,
-				flowService: $flowService,
-				dryRun: $dryRun,
-			);
+			$row = $this->migrateOne(action: $action, run: $run);
 			$summary[$row['outcome']] = ($summary[$row['outcome']] + 1);
 			$summary['rows'][] = $row;
 		}
@@ -194,16 +162,30 @@ class AutomaticActionFlowMigrator {
 	}//end migrateAll()
 
 	/**
+	 * The summary a run starts from, before any action is tallied.
+	 *
+	 * @param int $total How many actions the run walks.
+	 *
+	 * @return array<string, mixed> The summary.
+	 */
+	private function startSummary(int $total): array {
+		$summary = FlowMigrationSummary::empty(note: '');
+		$summary['total'] = $total;
+		unset($summary['note']);
+
+		return $summary;
+	}//end startSummary()
+
+	/**
 	 * Project one action, returning the row that describes what happened.
 	 *
 	 * @param array<string, mixed> $action The stored automaticAction.
-	 * @param array<string, string> $existing Marker → flow uuid.
-	 * @param object $flowService OpenRegister's FlowService.
-	 * @param bool $dryRun Report only.
+	 * @param ActionMigrationRun $run The pass this action is part of.
 	 *
 	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function migrateOne(array $action, array $existing, object $flowService, bool $dryRun): array {
+	private function migrateOne(array $action, ActionMigrationRun $run): array {
 		$marker = $this->marker(action: $action);
 		if ($marker === null) {
 			return [
@@ -213,48 +195,77 @@ class AutomaticActionFlowMigrator {
 			];
 		}
 
-		$type = (string)($action['type'] ?? '');
-		try {
-			$steps = $this->steps(type: $type, config: $this->config(action: $action));
-		} catch (UnmappableStep $e) {
-			return [
-				'outcome' => 'skipped',
-				'marker' => $marker,
-				'detail' => '"' . $type . '" cannot become a flow step: ' . $e->getMessage(),
-			];
+		$projected = new ProjectedAction(action: $action, marker: $marker);
+		$refusal = $this->flowSteps->resolveSteps(projected: $projected);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		foreach ($steps as $step) {
-			if ($this->nodeExists(nodeType: $step['type']) === false) {
-				return [
-					'outcome' => 'skipped',
-					'marker' => $marker,
-					'detail' => 'no node implements "' . $step['type'] . '" (for "' . $type . '"); a flow around it would never run',
-				];
-			}
-		}
+		return $this->writeProjection(projected: $projected, run: $run);
+	}//end migrateOne()
 
-		$uuid = ($existing[$marker] ?? null);
-		if ($dryRun === true) {
-			return [
-				'outcome' => $this->outcomeFor(uuid: $uuid),
-				'marker' => $marker,
-				'detail' => 'dry run — no write',
-			];
+
+
+
+
+	/**
+	 * Write the action's flow, or report what a dry run would have done.
+	 *
+	 * @param ProjectedAction $projected The action with its steps.
+	 * @param ActionMigrationRun $run The pass this action is part of.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 */
+	private function writeProjection(ProjectedAction $projected, ActionMigrationRun $run): array {
+		$uuid = ($run->existing[$projected->marker] ?? null);
+		if ($run->dryRun === true) {
+			return $this->dryRunRow(marker: $projected->marker, uuid: $uuid);
 		}
 
 		return $this->writeFlow(
-			flowService: $flowService,
-			document: (new AutomaticActionFlowDocument())->build(action: $action, marker: $marker, steps: $steps),
-			marker: $marker,
+			flowService: $run->flowService,
+			document: $this->flowDocument(projected: $projected),
+			marker: $projected->marker,
 			uuid: $uuid,
 		);
-	}//end migrateOne()
+	}//end writeProjection()
+
+	/**
+	 * The row a dry run reports for an action it would have written.
+	 *
+	 * @param string      $marker The action's provenance marker.
+	 * @param string|null $uuid   The existing flow uuid, or null.
+	 *
+	 * @return array{outcome: string, marker: string, detail: string} The outcome row.
+	 */
+	private function dryRunRow(string $marker, ?string $uuid): array {
+		return [
+			'outcome' => $this->outcomeFor(uuid: $uuid),
+			'marker' => $marker,
+			'detail' => 'dry run — no write',
+		];
+	}//end dryRunRow()
+
+	/**
+	 * The flow document an action with its steps becomes.
+	 *
+	 * @param ProjectedAction $projected The action with its steps.
+	 *
+	 * @return array<string, mixed> The flow document.
+	 */
+	private function flowDocument(ProjectedAction $projected): array {
+		return (new AutomaticActionFlowDocument())->build(
+			action: $projected->action,
+			marker: $projected->marker,
+			steps: $projected->steps,
+		);
+	}//end flowDocument()
 
 	/**
 	 * Write (or rewrite) the flow, converting a throw into a failed row.
 	 *
-	 * One unusable action must never abort the rest of the migration.
+	 * One unusable action must never abort the rest of the migration. Kept over
+	 * the ProjectsOntoFlows copy because the log line names automatic actions.
 	 *
 	 * @param object $flowService OpenRegister's FlowService.
 	 * @param array<string, mixed> $document The flow document.
@@ -269,7 +280,7 @@ class AutomaticActionFlowMigrator {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not migrate an automaticAction to a flow',
-				['app' => Application::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'marker' => $marker, 'exception' => $e->getMessage()]
 			);
 			return ['outcome' => 'failed', 'marker' => $marker, 'detail' => $e->getMessage()];
 		}
@@ -281,96 +292,8 @@ class AutomaticActionFlowMigrator {
 		];
 	}//end writeFlow()
 
-	/**
-	 * Whether writing against this uuid counts as a create or an update.
-	 *
-	 * A method rather than a ternary at both call sites: phpcs.xml forbids
-	 * inline IF, and the summary keys are the two outcomes' names, so getting
-	 * this wrong would mis-tally the run rather than fail it.
-	 *
-	 * @param string|null $uuid The existing flow uuid, or null.
-	 *
-	 * @return string Either `created` or `updated`.
-	 */
-	private function outcomeFor(?string $uuid): string {
-		if ($uuid === null) {
-			return 'created';
-		}
 
-		return 'updated';
-	}//end outcomeFor()
 
-	/**
-	 * Whether OpenRegister's node registry knows this node id.
-	 *
-	 * Checked BEFORE writing, because a flow whose action node does not resolve
-	 * is the exact failure this programme already paid for once: `spawnCase` sat
-	 * in shipped data naming a handler nothing implemented, and every transition
-	 * that ran it reported success while doing nothing.
-	 *
-	 * @param string $nodeType The fully-qualified node id.
-	 *
-	 * @return bool True when a node answers to it.
-	 */
-	private function nodeExists(string $nodeType): bool {
-		try {
-			$registry = $this->container->get('OCA\OpenRegister\Service\Flow\FlowNodeRegistry');
-			$registry->get($nodeType);
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: no flow node answers to this id',
-				['app' => Application::APP_ID, 'node' => $nodeType, 'exception' => $e->getMessage()]
-			);
-			return false;
-		}
-
-		return true;
-	}//end nodeExists()
-
-	/**
-	 * The steps one action becomes.
-	 *
-	 * @param string               $type   The action type.
-	 * @param array<string, mixed> $config The action's decoded config.
-	 *
-	 * @return array<int, array{type: string, config: array<string, mixed>}> The steps.
-	 *
-	 * @throws UnmappableStep When the action has no faithful equivalent.
-	 */
-	private function steps(string $type, array $config): array {
-		$nodeType = self::NODE_PREFIX . $type;
-		$row = $this->map->rowFor(type: $nodeType);
-		if ($row === null) {
-			return [['type' => $nodeType, 'config' => $config]];
-		}
-
-		return $this->translator->stepsFor(row: $row, config: $config);
-	}//end steps()
-
-	/**
-	 * Decode the action's handler config.
-	 *
-	 * Stored as a JSON string by the schema. A value that does not decode to an
-	 * array yields an empty config rather than a fatal: the flow is still worth
-	 * creating so an admin can see and repair it in the flow editor.
-	 *
-	 * @param array<string, mixed> $action The stored automaticAction.
-	 *
-	 * @return array<string, mixed> The handler config.
-	 */
-	private function config(array $action): array {
-		$raw = ($action['config'] ?? '');
-		if (is_array($raw) === true) {
-			return $raw;
-		}
-
-		$decoded = json_decode((string)$raw, true);
-		if (is_array($decoded) === false) {
-			return [];
-		}
-
-		return $decoded;
-	}//end config()
 
 	/**
 	 * The provenance marker for one action, or null when it cannot be identified.
@@ -399,42 +322,6 @@ class AutomaticActionFlowMigrator {
 	}//end marker()
 
 	/**
-	 * Map the markers of already-migrated flows to their uuids.
-	 *
-	 * Paged: an instance with more than one page of Dossiq flows would otherwise
-	 * look empty past the first, and every action beyond it would be created a
-	 * second time on the next run.
-	 *
-	 * @param object $flowService OpenRegister's FlowService.
-	 *
-	 * @return array<string, string> Marker → flow uuid.
-	 */
-	private function existingByMarker(object $flowService): array {
-		$map = [];
-		$offset = 0;
-
-		while (true) {
-			$page = $flowService->findAll(Application::APP_ID, null, null, self::FLOW_PAGE, $offset);
-			if (is_array($page) === false || $page === []) {
-				return $map;
-			}
-
-			foreach ($page as $flow) {
-				$notes = (string)($flow->getNotes() ?? '');
-				if (str_starts_with($notes, self::MARKER_PREFIX) === true) {
-					$map[$notes] = (string)$flow->getUuid();
-				}
-			}
-
-			if (count($page) < self::FLOW_PAGE) {
-				return $map;
-			}
-
-			$offset += self::FLOW_PAGE;
-		}
-	}//end existingByMarker()
-
-	/**
 	 * Read every stored automaticAction object.
 	 *
 	 * @return array<int, array<string, mixed>> The actions.
@@ -445,17 +332,42 @@ class AutomaticActionFlowMigrator {
 			return [];
 		}
 
-		$register = $this->appConfig->getValueString(Application::APP_ID, 'register', '');
-		$schema = $this->appConfig->getValueString(Application::APP_ID, 'automatic_action_schema', '');
-		if ($register === '' || $schema === '') {
+		$filters = $this->actionFilters();
+		if ($filters === null) {
 			return [];
 		}
 
-		$results = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $schema]]);
+		$results = $objectService->findAll(['filters' => $filters]);
 		if (is_array($results) === false) {
 			return [];
 		}
 
+		return $this->actionRows(results: $results);
+	}//end fetchActions()
+
+	/**
+	 * The register/schema filter the actions live under, or null when unconfigured.
+	 *
+	 * @return array{register: string, schema: string}|null The filters.
+	 */
+	private function actionFilters(): ?array {
+		$register = $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', '');
+		$schema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'automatic_action_schema', '');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
+
+		return ['register' => $register, 'schema' => $schema];
+	}//end actionFilters()
+
+	/**
+	 * Turn the search results into plain action arrays.
+	 *
+	 * @param array<int, mixed> $results The objects the search returned.
+	 *
+	 * @return array<int, array<string, mixed>> The actions.
+	 */
+	private function actionRows(array $results): array {
 		$out = [];
 		foreach ($results as $entry) {
 			if (is_object($entry) === true && method_exists($entry, 'jsonSerialize') === true) {
@@ -466,5 +378,5 @@ class AutomaticActionFlowMigrator {
 		}
 
 		return $out;
-	}//end fetchActions()
+	}//end actionRows()
 }//end class

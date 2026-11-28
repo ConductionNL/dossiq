@@ -34,9 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
-use OCA\Dossiq\Portal\PortalSubmissionLedger;
-use OCA\Dossiq\Woo\WooRequestIntake;
+use OCA\Dossiq\Controller\Support\SubmissionMadeOnce;
+use OCA\Dossiq\Controller\Support\VerifiesPortalAssertions;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
 use OCA\Dossiq\Woo\WooRequestRefused;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -49,7 +49,6 @@ use OCP\IRequest;
 use OCP\L10N\IFactory;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Starts a Woo request for the resident portaliq vouches for.
@@ -57,6 +56,7 @@ use Throwable;
  * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
  */
 class PortalWooRequestController extends Controller {
+	use VerifiesPortalAssertions;
 
 	/**
 	 * The brute-force action a rejected assertion counts against.
@@ -89,11 +89,6 @@ class PortalWooRequestController extends Controller {
 	];
 
 	/**
-	 * The ledger scope of this action's submission keys.
-	 */
-	private const SUBMISSION_SCOPE = 'woo-verzoek';
-
-	/**
 	 * The status each refusal answers with.
 	 */
 	private const STATUS = [
@@ -105,24 +100,25 @@ class PortalWooRequestController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string                  $appName   The app name.
-	 * @param IRequest                $request   The request.
-	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
-	 * @param WooRequestIntake        $intake    The one Woo request creation path.
-	 * @param IThrottler              $throttler Counts rejected assertions.
-	 * @param LoggerInterface         $logger    Logger.
-	 * @param IFactory|null           $l10n      Gives the translator a refusal is worded in.
-	 * @param PortalSubmissionLedger|null $ledger Makes a submission once (REQ-PSM-001); none when null.
+	 * @param string                           $appName     The app name.
+	 * @param IRequest                         $request     The request.
+	 * @param PortalAssertionVerifierInterface $verifier    Verifies portaliq's assertion.
+	 * @param SubmissionMadeOnce               $submissions Opens the case through the one creation path, once
+	 *                                                      per submission key (REQ-PSM-001).
+	 * @param IThrottler                       $throttler   Counts rejected assertions.
+	 * @param LoggerInterface                  $logger      Logger.
+	 * @param IFactory|null                    $l10n        Gives the translator a refusal is worded in.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
-		private readonly WooRequestIntake $intake,
+		private readonly PortalAssertionVerifierInterface $verifier,
+		private readonly SubmissionMadeOnce $submissions,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 		private readonly ?IFactory $l10n = null,
-		private readonly ?PortalSubmissionLedger $ledger = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -136,20 +132,17 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function start(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
-		if ($claims === null) {
-			$this->registerRejectedAssertion();
-			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if (in_array((string)($claims['audience'] ?? ''), self::AUDIENCES, true) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$claims = $this->portalClaims();
+		if ($claims instanceof JSONResponse) {
+			return $claims;
 		}
 
 		$request = $this->intakeRequest(claims: $claims);
@@ -157,8 +150,8 @@ class PortalWooRequestController extends Controller {
 		// ONE CASE PER SUBMISSION. A resend with the key of a send that made a
 		// case gets that case back; one that comes while the first is still
 		// being made hears so, instead of making a second (REQ-PSM-001).
-		$key = $this->submissionKey();
-		$replay = $this->replay(subjectRef: $request['subjectRef'], key: $key);
+		$key = $this->submissions->key(request: $this->request);
+		$replay = $this->submissions->replay(subjectRef: $request['subjectRef'], key: $key);
 		if ($replay !== null) {
 			return $replay;
 		}
@@ -167,14 +160,16 @@ class PortalWooRequestController extends Controller {
 	}//end start()
 
 	/**
-	 * What the intake reads: the resident and the branch from the verified
-	 * assertion only, the whitelisted fields from the body.
+	 * What the intake reads: the resident, the branch and the audience (how
+	 * they logged in) from the verified assertion only, the whitelisted
+	 * fields from the body.
 	 *
 	 * @param array<string, mixed> $claims The verified assertion.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 * @spec openspec/specs/requester-identified-at-intake/spec.md#requirement-a-portal-intake-records-how-the-requester-logged-in-and-where
 	 */
 	private function intakeRequest(array $claims): array {
 		$request = ['subjectRef' => (string)$claims['sub']];
@@ -192,37 +187,10 @@ class PortalWooRequestController extends Controller {
 
 		$request['origin'] = 'portal';
 		$request['originReference'] = null;
+		$request['audience'] = (string)($claims['audience'] ?? '');
 
 		return $request;
 	}//end intakeRequest()
-
-	/**
-	 * The answer to a resend: the first send's case, or 409 while it is still
-	 * being made; null when this send is the first with its key, or has none.
-	 *
-	 * @param string $subjectRef The resident.
-	 * @param string $key        The key, or ''.
-	 *
-	 * @return JSONResponse|null
-	 *
-	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
-	 */
-	private function replay(string $subjectRef, string $key): ?JSONResponse {
-		if ($key === '' || $this->ledger === null) {
-			return null;
-		}
-
-		$claim = $this->ledger->claim(scope: self::SUBMISSION_SCOPE, subjectRef: $subjectRef, key: $key);
-		if ($claim['state'] === 'answered') {
-			return new JSONResponse(($claim['answer'] ?? []), Http::STATUS_CREATED);
-		}
-
-		if ($claim['state'] === 'processing') {
-			return new JSONResponse(['error' => 'submission_processing'], Http::STATUS_CONFLICT);
-		}
-
-		return null;
-	}//end replay()
 
 	/**
 	 * Open the case, keep its answer for a resend, and let the key go when nothing was made.
@@ -233,58 +201,21 @@ class PortalWooRequestController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function open(array $request, string $key): JSONResponse {
 		try {
-			$answer = $this->intake->start($request);
+			$answer = $this->submissions->open(request: $request, key: $key);
 		} catch (WooRequestRefused $refused) {
-			$this->releaseKey(subjectRef: $request['subjectRef'], key: $key);
 			return new JSONResponse(
 				$this->refusalBody(refused: $refused),
 				(self::STATUS[$refused->getReason()] ?? Http::STATUS_BAD_REQUEST)
 			);
-		} catch (Throwable $failure) {
-			$this->releaseKey(subjectRef: $request['subjectRef'], key: $key);
-			throw $failure;
-		}
-
-		if ($key !== '' && $this->ledger !== null) {
-			$this->ledger->remember(scope: self::SUBMISSION_SCOPE, subjectRef: $request['subjectRef'], key: $key, answer: $answer);
 		}
 
 		return new JSONResponse($answer, Http::STATUS_CREATED);
 	}//end open()
-
-	/**
-	 * The submission key portaliq relayed, or '' when there is none or no ledger.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
-	 */
-	private function submissionKey(): string {
-		if ($this->ledger === null) {
-			return '';
-		}
-
-		return $this->ledger->keyOf((string)$this->request->getHeader(PortalSubmissionLedger::HEADER));
-	}//end submissionKey()
-
-	/**
-	 * Let a key go after a send that made no case, so a corrected resend is a first send.
-	 *
-	 * @param string $subjectRef The resident.
-	 * @param string $key        The key, or ''.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/portal-submission-is-made-once/specs/portal-contribution/spec.md#requirement-a-repeated-portal-submission-returns-the-first-ones-answer-req-psm-001
-	 */
-	private function releaseKey(string $subjectRef, string $key): void {
-		if ($key !== '' && $this->ledger !== null) {
-			$this->ledger->release(scope: self::SUBMISSION_SCOPE, subjectRef: $subjectRef, key: $key);
-		}
-	}//end releaseKey()
 
 	/**
 	 * The answer to a refused request: the reason as a code, the sentence in
@@ -298,7 +229,7 @@ class PortalWooRequestController extends Controller {
 	 *
 	 * @return array<string, mixed> The body.
 	 *
-	 * @spec openspec/changes/portal-woo-request-form-takes-dutch-input/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
+	 * @spec openspec/specs/woo-request-intake/spec.md#requirement-a-refused-woo-request-names-the-field-in-the-residents-language-req-wdi-002
 	 */
 	private function refusalBody(WooRequestRefused $refused): array {
 		$sentence = $refused->getDetail();
@@ -331,17 +262,4 @@ class PortalWooRequestController extends Controller {
 
 		return 'nl';
 	}//end readerLanguage()
-
-	/**
-	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
-	 *
-	 * @return void
-	 */
-	private function registerRejectedAssertion(): void {
-		try {
-			$this->throttler->registerAttempt(action: self::THROTTLE_ACTION, ip: $this->request->getRemoteAddress());
-		} catch (Throwable $e) {
-			$this->logger->warning('PortalWooRequestController: registerAttempt failed', ['error' => $e->getMessage()]);
-		}
-	}//end registerRejectedAssertion()
 }//end class

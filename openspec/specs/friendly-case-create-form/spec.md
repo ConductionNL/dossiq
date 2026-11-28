@@ -7,7 +7,7 @@ The New case dialog asks a case handler for the fields a case handler fills. The
 
 ### Requirement: REQ-FCF-001 The New Case Dialog Is The Plain Form
 
-The `new-case` header action SHALL open the plain schema-driven form, never the properties-and-JSON table. The action SHALL declare `includeFields` naming exactly the fields collected at create time: `caseType`, `title`, `description`, `assignee`, `priority`, `confidentiality`, `intakeChannel`, `startDate`, `plannedEndDate`. The case detail page remains the surface for every other property.
+The `new-case` header action SHALL open the plain schema-driven form, never the properties-and-JSON table. The action SHALL declare `includeFields` naming exactly the fields collected at create time: `caseType`, `title`, `requester`, `intakeChannel`, `description`, `plannedEndDate`, `assignee`, `confidentiality`, `impact`, `urgency`. The case detail page remains the surface for every other property. `startDate` SHALL NOT be asked: dossiq sets it when the case is created (REQ-TERM-042).
 
 #### Scenario: The dialog carries no schema-inspection tabs
 
@@ -17,10 +17,11 @@ The `new-case` header action SHALL open the plain schema-driven form, never the 
 - **AND** it SHALL offer a "Create" button, disabled until the required fields are answered
 
 #### Scenario: The dialog asks only for create-time fields
+@e2e tests/e2e/case-create-form.spec.ts
 
 - **GIVEN** the New case dialog is open
-- **THEN** it SHALL render a field for each of the nine declared `includeFields`
-- **AND** it SHALL render no field for `result`, `workflowTemplate`, `archiveNomination`, `qualityScore`, `casePlanState`, `statusHistory` or `portalSubject`
+- **THEN** it SHALL render a field for each of the ten declared `includeFields`
+- **AND** it SHALL render no field for `startDate`, `result`, `workflowTemplate`, `archiveNomination`, `qualityScore`, `casePlanState`, `statusHistory` or `portalSubject`
 
 ### Requirement: REQ-FCF-002 The Schema States Which Properties A Person Deals With
 
@@ -155,3 +156,30 @@ the platform's matches as a warning with links before save.
 - **WHEN** a handler tries to save
 - **THEN** Save SHALL be disabled
 - **AND** a coordinator SHALL be offered Continue anyway with a reason
+
+### Requirement: REQ-FCF-011 the same New case dialog from a mail
+
+When OpenRegister's Mail panel offers "+ New case from this mail", it SHALL open dossiq's own New case dialog: the `new-case` open-form action of dossiq's pages, with the case type questions, the requester picker (person, organisation or contact) and the duplicate check, seeded with the values OpenRegister filled from the mail over the action's own seeds. Dossiq offers the dialog through OpenRegister's extension point for an app's own create dialog (`window.OCA.OpenRegister.mailCreateDialogs`, from a small script dossiq loads on Mail's page for a signed-in user); the dialog's code loads only when the button is pressed. The dialog resolves with the created case, which the panel then connects to the mail, or with null when it closes without a case. Without dossiq, the panel's generic form stays.
+
+#### Scenario: New case from a mail opens dossiq's dialog
+- **GIVEN** a signed-in user on Mail's page with dossiq installed
+- **WHEN** they press "+ New case from this mail" in OpenRegister's panel
+- **THEN** dossiq's New case dialog MUST open with the mail's title, description and channel filled in
+- **AND** saving it MUST create the case through the same path as dossiq's own New case, and the panel MUST connect the mail to it
+
+#### Scenario: The case type's questions are answered from the mail
+- **GIVEN** a case type whose questions carry a `mailValue` template, such as `{{senderName}}`, `{{sender}}` or `{{subject}}`
+- **WHEN** dossiq's dialog opens from a mail with that case type chosen
+- **THEN** each such question MUST hold its template filled from the mail's values (the placeholders of a schema's `mailObjectTemplate`, which OpenRegister passes as `mail.values`), and the person MAY change it
+- **AND** a question whose template stays empty or names a placeholder the mail has no value for MUST stay empty
+
+#### Scenario: The dialog is closed without a case
+- **GIVEN** dossiq's dialog opened from a mail
+- **WHEN** the person closes it without saving
+- **THEN** nothing MUST be created or connected
+
+#### Scenario: Dossiq offers nothing on other pages
+- **GIVEN** a page of any app other than Mail, or Mail's page without a signed-in user
+- **WHEN** the page renders
+- **THEN** dossiq MUST NOT load its Mail-page script
+

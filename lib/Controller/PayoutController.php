@@ -20,20 +20,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Money\PayoutService;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Controller\Support\ReadsJsonRequests;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\OwningCaseResolverInterface;
+use OCA\Dossiq\Kernel\Contracts\PayoutServiceInterface;
+use OCA\Dossiq\Service\Money\MoneyConfigKeys;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Throwable;
 
@@ -41,26 +44,30 @@ use Throwable;
  * REST surface that prepares a payout.
  *
  *
- * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+ * @spec openspec/specs/payout/spec.md
  */
 class PayoutController extends Controller {
+	use ReadsJsonRequests {
+		jsonBody as protected;
+	}
+
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param PayoutService $payouts Prepares the payout and hands it to finance.
+	 * @param PayoutServiceInterface $payouts Prepares the payout and hands it to finance.
 	 * @param IUserSession $userSession User session.
-	 * @param CaseAccessGuard $caseAccess Per-case authorization guard.
-	 * @param OwningCaseResolver $owningCase Resolves a calculation's owning case.
+	 * @param CaseAccessGuardInterface $caseAccess Per-case authorization guard.
+	 * @param OwningCaseResolverInterface $owningCase Resolves a calculation's owning case.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PayoutService $payouts,
+		private readonly PayoutServiceInterface $payouts,
 		private readonly IUserSession $userSession,
-		private readonly CaseAccessGuard $caseAccess,
-		private readonly OwningCaseResolver $owningCase,
+		private readonly CaseAccessGuardInterface $caseAccess,
+		private readonly OwningCaseResolverInterface $owningCase,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -77,25 +84,14 @@ class PayoutController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md
+	 * @spec openspec/specs/payout/spec.md
 	 */
 	public function prepare(string $id): JSONResponse {
 		$user = $this->userSession->getUser();
-		$caseId = null;
-		if ($user !== null) {
-			$caseId = $this->owningCase->resolveVia(
-				objectId: $id,
-				schemaKey: 'dwangsom_berekening_schema',
-				linkField: 'deadlineInstance',
-				viaSchemaKey: 'termijn_instance_schema',
-				caseField: 'case'
-			);
-		}
+		$caseId = $this->owningCaseOf(user: $user, id: $id);
 
 		// Fails closed: no user, no owning case, or no mutation access all deny.
-		if ($user === null || $caseId === null
-			|| $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
-		) {
+		if ($this->isDenied(user: $user, caseId: $caseId) === true) {
 			return new JSONResponse(['message' => 'Not authorized for calculation ' . $id], Http::STATUS_FORBIDDEN);
 		}
 
@@ -109,21 +105,55 @@ class PayoutController extends Controller {
 	}//end prepare()
 
 	/**
-	 * Decode the JSON request body.
+	 * The case that owns a calculation, read only for a signed-in user.
 	 *
-	 * IRequest::getContent() is protected on the concrete OC request, so the
-	 * payload is read from php://input. Protected so a test can supply it.
+	 * @param IUser|null $user The signed-in user.
+	 * @param string     $id   The calculation id.
 	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/changes/payout-goes-through-finance/specs/payout/spec.md#REQ-PAY-001
+	 * @return string|null The case uuid, null when there is no user or no owning case.
 	 */
-	protected function jsonBody(): array {
-		$body = json_decode((string)file_get_contents('php://input'), true);
-		if (is_array($body) === true) {
-			return $body;
+	private function owningCaseOf(?IUser $user, string $id): ?string {
+		$caseId = null;
+		if ($user !== null) {
+			$caseId = $this->owningCase->resolveVia(
+				objectId: $id,
+				schemaKey: MoneyConfigKeys::ACCRUING_AMOUNT_SCHEMA,
+				linkField: 'deadlineInstance',
+				viaSchemaKey: 'termijn_instance_schema',
+				caseField: 'case'
+			);
 		}
 
-		return [];
-	}//end jsonBody()
+		return $caseId;
+	}//end owningCaseOf()
+
+	/**
+	 * Whether preparing is denied: no user, no owning case, or no mutation access.
+	 *
+	 * @param IUser|null  $user   The signed-in user.
+	 * @param string|null $caseId The owning case.
+	 *
+	 * @return bool
+	 */
+	private function isDenied(?IUser $user, ?string $caseId): bool {
+		return $user === null || $caseId === null
+			|| $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user) === false;
+	}//end isDenied()
+
+	/**
+	 * Deprecated alias of /api/accruing-amounts/{id}/payout, kept for clients of the old URL.
+	 *
+	 * @param string $id Id.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-money-is-configuration/specs/case-money-is-configuration/spec.md (REQ-DQM-003)
+	 *
+	 * @contract exclude Deprecated path alias for prepare(); behaviour covered by the prepare() tests.
+	 */
+	public function prepareLegacyPath(string $id): JSONResponse {
+		return $this->prepare(id: $id);
+	}//end prepareLegacyPath()
 }//end class

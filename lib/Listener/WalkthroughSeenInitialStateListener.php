@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,9 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Onboarding\WalkthroughCompletion;
-use OCP\AppFramework\Http\Events\BeforeTemplateRenderedEvent;
+use OCA\Dossiq\Kernel\Contracts\WalkthroughCompletionInterface;
+use OCA\Dossiq\Listener\Support\ProvidesOnOwnPage;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -40,21 +39,23 @@ use OCP\EventDispatcher\IEventListener;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+ * @spec openspec/specs/first-load-onboarding/spec.md
  */
 class WalkthroughSeenInitialStateListener implements IEventListener {
+
+	use ProvidesOnOwnPage;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IInitialState         $initialState The initial state of the page.
-	 * @param WalkthroughCompletion $completion   Whether the caller has seen the tour.
+	 * @param WalkthroughCompletionInterface $completion   Whether the caller has seen the tour.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly IInitialState $initialState,
-		private readonly WalkthroughCompletion $completion,
+		private readonly WalkthroughCompletionInterface $completion,
 	) {
 	}//end __construct()
 
@@ -65,16 +66,12 @@ class WalkthroughSeenInitialStateListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-page-dutch-labels-one-history-tour-first/specs/first-load-onboarding/spec.md
+	 * @spec openspec/specs/first-load-onboarding/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof BeforeTemplateRenderedEvent === false
-			|| $event->isLoggedIn() === false
-			|| $event->getResponse()->getApp() !== Application::APP_ID
-		) {
-			return;
-		}
-
-		$this->initialState->provideInitialState(WalkthroughCompletion::STATE_KEY, $this->completion->seen());
+		$this->provideOnOwnPage(
+			event: $event,
+			provide: fn () => $this->initialState->provideInitialState(WalkthroughCompletionInterface::STATE_KEY, $this->completion->seen())
+		);
 	}//end handle()
 }//end class

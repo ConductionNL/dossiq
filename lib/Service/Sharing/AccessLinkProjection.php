@@ -43,7 +43,7 @@ class AccessLinkProjection {
 	/**
 	 * The `@self` keys a holder may be shown.
 	 *
-	 * Mirrors `OCA\OpenRegister\Service\Sharing\AccessLinkReader`'s own
+	 * Mirrors `OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader`'s own
 	 * allow-list. Dossiq applies it a second time on everything it renders
 	 * from a link body, so an internal that OpenRegister starts publishing
 	 * tomorrow does not reach a holder through dossiq today.

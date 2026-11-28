@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
+use OCA\Dossiq\Tests\Unit\Support\SeedAsReadInDutch;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
 use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
@@ -33,8 +34,9 @@ class WooBezwaarCaseTypeSeedTest extends TestCase {
 	 */
 	private function seeded(string $schema): array {
 		$dir = dirname(__DIR__, 3) . '/lib/Settings';
-		$base = json_decode((string)file_get_contents($dir . '/dossiq_register.json'), true);
+		$base = SeedAsReadInDutch::resolve(value: json_decode((string)file_get_contents($dir . '/dossiq_register.json'), true));
 		[$merged] = (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $dir . '/register.d');
+		$merged = SeedAsReadInDutch::resolve(value: $merged);
 
 		return array_values(
 			array_filter(

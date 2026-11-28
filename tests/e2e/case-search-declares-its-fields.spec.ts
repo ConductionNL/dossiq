@@ -7,7 +7,7 @@
  *
  * WHY THIS NEEDS A REAL STORE. The declarations are pinned to the byte by
  * `tests/vitest/caseSearchDeclarations.spec.js`, and the refusal reader by
- * `tests/vitest/searchRefusal.spec.js`. What neither can show is that the
+ * the library CnIndexPage refusal spec. What neither can show is that the
  * declaration REACHES the query: `matchType` is read by openregister's
  * `PropertySearchProfile` out of the imported schema, and an import that never
  * ran leaves every property silent while the register JSON on disk reads
@@ -216,9 +216,9 @@ test.describe('The case declares how each of its fields is searched', () => {
 			PAGE_LOAD,
 		)
 
-		const hint = page.getByTestId('case-search-refusal')
+		const hint = page.getByTestId('cn-index-page-search-refusal')
 		await expect(hint).toBeVisible(PAGE_LOAD)
-		await expect(page.getByTestId('case-search-refusal-term')).toContainText(
+		await expect(page.getByTestId('cn-index-page-search-refusal-term')).toContainText(
 			'dakkapel',
 		)
 	})
@@ -232,7 +232,7 @@ test.describe('The case declares how each of its fields is searched', () => {
 			PAGE_LOAD,
 		)
 
-		await expect(page.getByTestId('case-search-refusal')).toHaveCount(0)
+		await expect(page.getByTestId('cn-index-page-search-refusal')).toHaveCount(0)
 	})
 
 	test('the closed cases with no result are one lens away', async ({

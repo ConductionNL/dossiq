@@ -28,6 +28,7 @@ use OCA\Dossiq\Review\ReviewConfiguration;
 use OCA\Dossiq\Review\ReviewDepth;
 use OCA\Dossiq\Review\StoppingRuleMet;
 use OCA\Dossiq\Review\StoppingRules;
+use OCA\Dossiq\Service\Access\CaseReviewerAccess;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -49,10 +50,12 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Controller\RecallController
  * @uses \OCA\Dossiq\Review\RecallSamples
+ * @uses \OCA\Dossiq\Review\RecallSampleStore
  * @uses \OCA\Dossiq\Review\StoppingRules
  * @uses \OCA\Dossiq\Review\StoppingRuleMet
  * @uses \OCA\Dossiq\Review\DocumentRelevance
  * @uses \OCA\Dossiq\Review\ReviewBatches
+ * @uses \OCA\Dossiq\Review\ReviewBatchStore
  * @uses \OCA\Dossiq\Review\ReviewConfiguration
  * @uses \OCA\Dossiq\Review\ReviewDepth
  * @uses \OCA\Dossiq\Review\RecallEstimator
@@ -124,7 +127,12 @@ class RecallControllerTest extends TestCase {
 
 		$reviews = new DocumentRelevance(settingsService: $settings, logger: $logger);
 		$caseDocuments = new WooCaseDocuments(settingsService: $settings, rootFolder: $this->createMock(IRootFolder::class), logger: $logger);
-		$rules = new StoppingRules(settingsService: $settings, reviews: $reviews, logger: $logger);
+		$rules = new StoppingRules(
+			settingsService: $settings,
+			reviews: $reviews,
+			logger: $logger,
+			writes: $this->createMock(originalClassName: \OCA\Dossiq\Review\ReviewWrites::class)
+		);
 		$batches = new ReviewBatches(
 			settingsService: $settings,
 			reviews: $reviews,

@@ -403,11 +403,11 @@ test.describe('An archived case is read-only and says so', () => {
 		await page.goto(`${APP_URL}cases/${cases['Gearchiveerd B']}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const strip = page.getByTestId('case-archived')
+		const strip = page.getByTestId('cn-section-case-archived')
 		await expect(strip, 'the strip names the archive').toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(page.getByTestId('case-archived-headline')).toContainText(
+		await expect(strip.getByTestId('cn-banner-widget-lead')).toContainText(
 			/archi|gearchiveerd/i,
 		)
 
@@ -450,14 +450,18 @@ test.describe('An archived case is read-only and says so', () => {
 		// there.
 		await openHeaderActionsMenu(page)
 		await expect(page.getByTestId('cn-action-add-party')).toBeVisible()
-		await expect(page.getByTestId('case-archived')).toHaveCount(0)
+		await expect(page.getByTestId('cn-section-case-archived').getByTestId('cn-banner-widget-lead')).toHaveCount(0)
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#a-write-shows-the-reason
 	test('a write reaching the server anyway is refused, naming the archive', async () => {
 		const id = cases['Gearchiveerd B']
 
-		const res = await api.put(
+		// A PATCH of one field. A PUT replaces the object, so a body of only
+		// the title is refused by schema validation (the required caseType is
+		// missing) before the archive is ever consulted, and the refusal then
+		// names the wrong reason.
+		const res = await api.patch(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case/${id}`,
 			{
 				headers: { requesttoken: token, 'Content-Type': 'application/json' },

@@ -32,13 +32,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email\Filters;
 
+use OCA\Dossiq\Kernel\Contracts\FilterPipelineInterface;
 use OCA\Dossiq\Service\Email\InboundMessage;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -48,9 +49,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
-class FilterPipeline {
+class FilterPipeline implements FilterPipelineInterface {
 
 	/**
 	 * The filters, sorted once at construction.
@@ -93,7 +94,7 @@ class FilterPipeline {
 	 *
 	 * @return array<int, string> The names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function declaredOrder(): array {
 		return array_map(
@@ -116,7 +117,7 @@ class FilterPipeline {
 	 *
 	 * @return FilterVerdict The deciding verdict, or the written-down default.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function run(InboundMessage $message): FilterVerdict {
 		foreach ($this->ordered as $filter) {

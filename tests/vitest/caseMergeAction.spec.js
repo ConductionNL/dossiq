@@ -8,15 +8,15 @@
  * Every assertion here guards a way this action could ship dark, and each one
  * has a named failure mode rather than a shape:
  *
- *  - an `open-modal` action whose `target` is not a registered modal opens
- *    nothing and warns once to the console, so the target is asserted against
- *    `src/registry.js`;
- *  - a registry-mounted modal whose `open` prop defaults false renders no
- *    markup at all and never warns, so the action is asserted to pass it;
+ *  - the dialog is the library's CnActionDialog configured on the action, so a
+ *    local dialog for the same act must not come back beside it;
+ *  - the survivor is searched for and picked, never defaulted, and the case in
+ *    hand is never offered as its own survivor;
  *  - an icon that is not registered in `src/icons.js` renders no glyph, and
  *    an action with no glyph reads as a gap in the row of header actions;
- *  - the dialog posts to `/api/case/{id}/merge`, so that url is asserted to
- *    have a route behind it: without one the confirm is a 404 toast;
+ *  - the dialog posts `into` and `reason` to `/api/case/{id}/merge`, so that
+ *    url is asserted to have a route behind it: without one the confirm is a
+ *    404 toast;
  *  - the public status page follows `mergedInto` through a dossiq endpoint
  *    that must equally have a route, or a merged case's link stays on the
  *    case nobody works on.
@@ -35,10 +35,7 @@ const manifest = JSON.parse(
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const routes = fs.readFileSync(path.join(ROOT, 'appinfo', 'routes.php'), 'utf8')
-const dialog = fs.readFileSync(
-	path.join(ROOT, 'src', 'dialogs', 'CaseMergeDialog.vue'),
-	'utf8',
-)
+const nl = JSON.parse(fs.readFileSync(path.join(ROOT, 'l10n', 'nl.json'), 'utf8')).translations
 const publicPage = fs.readFileSync(
 	path.join(ROOT, 'src', 'views', 'public', 'PublicStatusPage.vue'),
 	'utf8',
@@ -60,20 +57,33 @@ function mergeAction() {
 }
 
 describe('Merge into, on the case page', () => {
-	it('opens a modal the registry actually holds', () => {
+	it('opens the library action dialog on the case in hand, with no local copy beside it', () => {
 		const action = mergeAction()
 
 		expect(action.type).toBe('open-modal')
-		expect(action.target).toBe('CaseMergeDialog')
-		expect(registrySource).toContain('CaseMergeDialog: {')
-		expect(registrySource).toContain(
-			"import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'",
-		)
+		expect(action.target).toBe('CnActionDialog')
+		expect(action.props.objectId).toBe('@objectId')
+		expect(registrySource).not.toContain('CaseMergeDialog')
+		expect(fs.existsSync(path.join(ROOT, 'src', 'dialogs', 'CaseMergeDialog.vue'))).toBe(false)
 	})
 
-	it('passes the open prop, without which the modal renders nothing', () => {
-		expect(mergeAction().props.open).toBe(true)
-		expect(mergeAction().props.caseId).toBe('@objectId')
+	it('searches the survivor among the cases, leaving out the case in hand and picking none', () => {
+		const [field] = mergeAction().props.config.fields
+
+		expect(field).toMatchObject({ field: 'into', type: 'search', excludeSelf: true, source: { register: 'dossiq', schema: 'case' } })
+		expect(field.default).toBeUndefined()
+		expect(field.required).not.toBe(false)
+	})
+
+	it('asks why, in the words of board DqZaakDialogen', () => {
+		const config = mergeAction().props.config
+		const [field] = config.fields
+
+		expect(config.reason.required).not.toBe(false)
+		expect([config.title, field.label, field.placeholder, config.reason.label, config.confirm.label].map((key) => nl[key]))
+			.toEqual(['Samenvoegen met een andere zaak', 'Zoek de zaak om in op te gaan', 'Zaaknummer of een woord uit de titel', 'Waarom dit één zaak is', 'Samenvoegen'])
+		expect(nl[config.subtitle]).toBe('Partijen, documenten en objecten gaan naar de zaak die je kiest.')
+		expect(nl[config.doneText]).toBeTruthy()
 	})
 
 	it('uses an icon that is registered', () => {
@@ -92,9 +102,7 @@ describe('Merge into, on the case page', () => {
 	})
 
 	it('confirms against a url a route answers', () => {
-		expect(dialog).toContain(
-			'/api/case/${encodeURIComponent(this.targetCaseId)}/merge',
-		)
+		expect(mergeAction().props.config.confirm.request).toEqual({ method: 'POST', url: '/apps/dossiq/api/case/@objectId/merge' })
 		expect(routes).toContain("'url' => '/api/case/{caseId}/merge'")
 		expect(routes).toContain("'name' => 'caseMerge#merge'")
 	})

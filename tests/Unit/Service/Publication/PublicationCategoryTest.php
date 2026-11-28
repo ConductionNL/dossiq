@@ -1,0 +1,187 @@
+<?php
+
+/**
+ * Unit tests for the publication category a decision type names.
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @category  Test
+ * @package   OCA\Dossiq\Tests\Unit\Service\Publication
+ * @author    Conduction B.V. <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2
+ * @link      https://github.com/ConductionNL/dossiq
+ *
+ * @spec openspec/changes/publication-category-from-decision-type/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-is-filed-under-its-decision-types-publication-category
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Service\Publication;
+
+use OCA\Dossiq\Service\Publication\PublicationCategory;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * The category is read from the decision type row, with the former default as fallback.
+ *
+ * @covers \OCA\Dossiq\Service\Publication\PublicationCategory
+ *
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ */
+class PublicationCategoryTest extends TestCase {
+
+	/**
+	 * The seeded Woo decision type.
+	 */
+	private const WOO_TYPE = '3c0f5a00-0000-4000-a000-00000000d001';
+
+	/**
+	 * A category another procedure could name.
+	 */
+	private const DECISIONS = [
+		'code' => 'infocat016',
+		'label' => 'Beschikkingen',
+		'uri' => 'https://identifier.overheid.nl/tooi/def/thes/kern/c_46a81018',
+	];
+
+	/**
+	 * The decision types.
+	 *
+	 * @var InMemoryRegister
+	 */
+	private InMemoryRegister $store;
+
+	/**
+	 * An empty store.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->store = new InMemoryRegister();
+	}//end setUp()
+
+	/**
+	 * A reader over the store.
+	 *
+	 * @return PublicationCategory
+	 */
+	private function categories(): PublicationCategory {
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'decision_type_schema' => 'decisionType'][$key] ?? $default)
+		);
+
+		return new PublicationCategory(settingsService: $settings);
+	}//end categories()
+
+	/**
+	 * The decision type row names the category its decisions are filed under.
+	 *
+	 * @return void
+	 */
+	public function testTheDecisionTypeRowNamesTheCategory(): void {
+		$this->store->seed(schema: 'decisionType', uuid: 'type-1', row: ['name' => 'Subsidiebesluit', 'publicationCategory' => self::DECISIONS]);
+
+		$this->assertSame(expected: self::DECISIONS, actual: $this->categories()->forDecision(decision: ['decisionType' => 'type-1']));
+	}//end testTheDecisionTypeRowNamesTheCategory()
+
+	/**
+	 * The shipped Woo decision type carries the category Woo decisions were always filed under, valid on the schema.
+	 *
+	 * @return void
+	 */
+	public function testTheShippedWooDecisionTypeCarriesItsCategory(): void {
+		$fragment = json_decode((string)file_get_contents(__DIR__ . '/../../../../lib/Settings/register.d/81-woo-verzoek.json'), true);
+		$rows = array_values(array_filter(
+			$fragment['components']['objects'],
+			static fn (array $row): bool => ($row['id'] ?? '') === self::WOO_TYPE
+		));
+		$this->assertCount(expectedCount: 1, haystack: $rows);
+
+		$this->store->seed(schema: 'decisionType', uuid: self::WOO_TYPE, row: $rows[0]);
+		$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $this->categories()->forDecision(decision: ['decisionType' => self::WOO_TYPE]));
+		$this->assertSame(
+			expected: [],
+			actual: (new RealSchemaValidator())->errors(
+				slug: 'decisionType',
+				payload: ['publicationCategory' => $rows[0]['publicationCategory']],
+				creating: false
+			)
+		);
+	}//end testTheShippedWooDecisionTypeCarriesItsCategory()
+
+	/**
+	 * A legacy type name, an unknown or incomplete row, no type, or no store all fall back.
+	 *
+	 * @return void
+	 */
+	public function testEverythingElseFallsBack(): void {
+		$this->store->seed(schema: 'decisionType', uuid: 'bare', row: ['name' => 'Zonder categorie']);
+		$this->store->seed(schema: 'decisionType', uuid: 'half', row: ['publicationCategory' => ['code' => 'infocat016', 'label' => '', 'uri' => 'x']]);
+		$this->store->seed(schema: 'decisionType', uuid: 'odd', row: ['publicationCategory' => 'infocat016']);
+		$categories = $this->categories();
+
+		foreach (['WOO-besluit', 'unknown', 'bare', 'half', 'odd', ''] as $type) {
+			$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $categories->forDecision(decision: ['decisionType' => $type]), message: $type);
+		}
+
+		$this->assertSame(expected: PublicationCategory::FALLBACK, actual: $categories->forDecision(decision: []));
+		$this->assertSame(
+			expected: PublicationCategory::FALLBACK,
+			actual: (new PublicationCategory())->forDecision(decision: ['decisionType' => 'type-1'])
+		);
+	}//end testEverythingElseFallsBack()
+
+	/**
+	 * A decision type read that fails is the publish's failure: no category is guessed.
+	 *
+	 * @return void
+	 */
+	public function testAFailedReadFailsThePublish(): void {
+		$failing = new class {
+			/**
+			 * A store that refuses every read.
+			 *
+			 * @param string $id      The object.
+			 * @param mixed  $options The find options.
+			 *
+			 * @return never
+			 */
+			public function find(string $id, mixed $options = null): never {
+				throw new \RuntimeException(message: 'store refused');
+			}//end find()
+		};
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($failing);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (['register' => 'dossiq', 'decision_type_schema' => 'decisionType'][$key] ?? $default)
+		);
+
+		$this->expectException(exception: \RuntimeException::class);
+		$this->expectExceptionMessage(message: 'store refused');
+		(new PublicationCategory(settingsService: $settings))->forDecision(decision: ['decisionType' => 'type-1']);
+	}//end testAFailedReadFailsThePublish()
+
+	/**
+	 * The fallback is the category the code mapped every decision to before.
+	 *
+	 * @return void
+	 */
+	public function testTheFallbackIsTheFormerDefault(): void {
+		$this->assertSame(
+			expected: [
+				'code' => 'infocat014',
+				'label' => 'Woo-verzoeken en -besluiten',
+				'uri' => 'https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532',
+			],
+			actual: PublicationCategory::FALLBACK
+		);
+	}//end testTheFallbackIsTheFormerDefault()
+}//end class

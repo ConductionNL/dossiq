@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -51,24 +51,29 @@ use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Everything dossiq asks Nextcloud Mail for, in one place.
  *
+ * Every `OCA\Mail` name is written here and nowhere else (design D-1). The
+ * work is done by five collaborators the gateway builds and hands Mail's
+ * resolved objects to, none of which names a Mail symbol: `MailServices`
+ * (resolve a service or an account by the name given here), `MailMessageCalls`
+ * (source, message-id lookup, move, attachments), `MailSenderChecks` (DKIM and
+ * trusted senders), `MailOutboxDelivery` (save and send through the outbox)
+ * and `MailEntityValues` (getters off Mail's entities and events). So a grep
+ * for `OCA\Mail` still measures the coupling, and the class no longer needs a
+ * class-level complexity suppression (method-decomposition slice 8n).
+ *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) The eleventh is sendMessage(),
  *  the outbound half of the same Mail coupling (inbound-mail-filters 8.1). Design D-1
  *  keeps every `OCA\Mail` symbol in this one class, so a second gateway class for
  *  sending would split the coupling this suppression exists to keep countable.
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — the complexity is the price of
- *  design D-1: ONE class names every `OCA\Mail` symbol, guards each one and answers
- *  a documented empty value when Mail is absent. Splitting it would spread that
- *  coupling over several files and make a grep for `OCA\Mail` stop being the
- *  measurement it is.
  */
 class NextcloudMailGateway implements MailGatewayInterface {
 
@@ -100,6 +105,11 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	private const MAIL_MANAGER = 'OCA\\Mail\\Service\\MailManager';
 
 	/**
+	 * Mail's IMAP client factory: Mail 5's getSource() reads through a client the caller opens.
+	 */
+	private const IMAP_CLIENT_FACTORY = 'OCA\\Mail\\IMAP\\IMAPClientFactory';
+
+	/**
 	 * Mail's DKIM verifier.
 	 */
 	private const DKIM_SERVICE = 'OCA\\Mail\\Service\\DkimService';
@@ -126,14 +136,39 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	private const TYPE_OUTGOING = 0;
 
 	/**
-	 * `LocalMessage::STATUS_IMAP_SENT_MAILBOX_FAIL`: the SMTP send went through, filing the copy did not.
+	 * Mail's services and accounts, resolved by the names above.
+	 *
+	 * @var MailServices
 	 */
-	private const STATUS_SENT_NOT_FILED = 11;
+	private readonly MailServices $services;
 
 	/**
-	 * `LocalMessage::STATUS_PROCESSED`: sent and filed.
+	 * Getters off Mail's entities and events.
+	 *
+	 * @var MailEntityValues
 	 */
-	private const STATUS_PROCESSED = 12;
+	private readonly MailEntityValues $values;
+
+	/**
+	 * The calls on Mail's message manager.
+	 *
+	 * @var MailMessageCalls
+	 */
+	private readonly MailMessageCalls $calls;
+
+	/**
+	 * Mail's DKIM verdict and trusted-sender answers.
+	 *
+	 * @var MailSenderChecks
+	 */
+	private readonly MailSenderChecks $senders;
+
+	/**
+	 * One message through Mail's outbox.
+	 *
+	 * @var MailOutboxDelivery
+	 */
+	private readonly MailOutboxDelivery $delivery;
 
 	/**
 	 * Constructor.
@@ -142,13 +177,32 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @param ContainerInterface $container  The DI container, to resolve Mail's services by name.
 	 * @param MailMessageSource  $mailTables Read-only access to the Mail tables.
 	 * @param LoggerInterface    $logger     Logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly IAppManager $appManager,
-		private readonly ContainerInterface $container,
+		IAppManager $appManager,
+		ContainerInterface $container,
 		private readonly MailMessageSource $mailTables,
-		private readonly LoggerInterface $logger,
+		LoggerInterface $logger,
 	) {
+		$this->services = new MailServices(
+			appManager: $appManager,
+			container: $container,
+			logger: $logger,
+			mailNames: [self::MAIL_APP_ID, self::ACCOUNT_SERVICE]
+		);
+		$this->values   = new MailEntityValues(logger: $logger);
+		$this->calls    = new MailMessageCalls(values: $this->values, logger: $logger);
+		$this->senders  = new MailSenderChecks(mailTables: $mailTables, logger: $logger);
+		$this->delivery = new MailOutboxDelivery(
+			values: $this->values,
+			localMessage: fn (int $accountId, array $message): object => $this->localMessage(
+				accountId: $accountId,
+				message: $message
+			),
+			logger: $logger
+		);
 	}//end __construct()
 
 	/**
@@ -156,18 +210,11 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when intake can read messages.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function isAvailable(): bool {
-		try {
-			return $this->appManager->isInstalled(self::MAIL_APP_ID);
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: could not ask whether the Mail app is installed',
-				['error' => $e->getMessage()]
-			);
-			return false;
-		}
+		return $this->services->isAvailable();
 	}//end isAvailable()
 
 	/**
@@ -179,7 +226,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{id: int, name: string, email: string}> The accounts.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accounts(): array {
 		if ($this->isAvailable() === false) {
@@ -196,7 +243,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, string> The folder names.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mailboxes(int $accountId): array {
 		if ($this->isAvailable() === false) {
@@ -215,7 +262,7 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array<string, mixed>> Normalised message rows.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function messages(int $accountId, string $mailbox, int $limit): array {
 		if ($this->isAvailable() === false) {
@@ -239,30 +286,20 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string The source, or '' when it cannot be read.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function source(int $accountId, string $mailbox, int $uid): string {
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, 'getSource') === false) {
+		$call = $this->services->accountWith(accountId: $accountId, name: self::MAIL_MANAGER, method: 'getSource');
+		if ($call === null) {
 			return '';
 		}
 
-		try {
-			$source = $manager->getSource($account, $mailbox, $uid);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: reading a message source failed',
-				['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()]
-			);
-			return '';
-		}
-
-		if (is_string($source) === false) {
-			return '';
-		}
-
-		return $source;
+		return $this->calls->source(
+			call: $call,
+			clientFactory: fn (): ?object => $this->services->service(name: self::IMAP_CLIENT_FACTORY),
+			message: [$accountId, $mailbox, $uid]
+		);
 	}//end source()
 
 	/**
@@ -277,7 +314,8 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True only when the account really holds it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function holdsMessageId(int $accountId, string $messageId): bool {
 		$bare = trim($messageId, " \t<>");
@@ -285,23 +323,12 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return false;
 		}
 
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, 'getByMessageId') === false) {
+		$call = $this->services->accountWith(accountId: $accountId, name: self::MAIL_MANAGER, method: 'getByMessageId');
+		if ($call === null) {
 			return false;
 		}
 
-		try {
-			$found = $manager->getByMessageId($account, $bare);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the threading lookup failed, so the claim stays unproven',
-				['account' => $accountId, 'error' => $e->getMessage()]
-			);
-			return false;
-		}
-
-		return (is_array($found) === true && $found !== []);
+		return $this->calls->holds(call: $call, accountId: $accountId, messageId: $bare);
 	}//end holdsMessageId()
 
 	/**
@@ -314,30 +341,20 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when the mail server confirmed the move.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function moveMessage(int $accountId, string $mailbox, int $uid, string $target): bool {
 		if ($mailbox === '' || $target === '' || $mailbox === $target) {
 			return false;
 		}
 
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, 'moveMessage') === false) {
+		$call = $this->services->accountWith(accountId: $accountId, name: self::MAIL_MANAGER, method: 'moveMessage');
+		if ($call === null) {
 			return false;
 		}
 
-		try {
-			$manager->moveMessage($account, $mailbox, $uid, $account, $target);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: moving a message between folders failed',
-				['account' => $accountId, 'uid' => $uid, 'target' => $target, 'error' => $e->getMessage()]
-			);
-			return false;
-		}
-
-		return true;
+		return $this->calls->move(call: $call, move: [$accountId, $mailbox, $uid, $target]);
 	}//end moveMessage()
 
 	/**
@@ -353,41 +370,14 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return string One of the {@see AuthenticationResult} values.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function dkimResult(string $source): string {
-		if ($source === '') {
-			return AuthenticationResult::UNAVAILABLE;
-		}
-
-		if (stripos($source, 'DKIM-Signature:') === false) {
-			return AuthenticationResult::NONE;
-		}
-
-		$validator = $this->service(name: self::DKIM_SERVICE);
-		if ($validator === null || method_exists($validator, 'validateRaw') === false) {
-			return AuthenticationResult::UNAVAILABLE;
-		}
-
-		try {
-			$valid = $validator->validateRaw($source);
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: the DKIM check could not run',
-				['error' => $e->getMessage()]
-			);
-			return AuthenticationResult::UNAVAILABLE;
-		}
-
-		if (is_bool($valid) === false) {
-			return AuthenticationResult::UNAVAILABLE;
-		}
-
-		if ($valid === true) {
-			return AuthenticationResult::PASS;
-		}
-
-		return AuthenticationResult::FAIL;
+		return $this->senders->dkimResult(
+			source: $source,
+			validator: fn (): ?object => $this->services->serviceWith(name: self::DKIM_SERVICE, method: 'validateRaw')
+		);
 	}//end dkimResult()
 
 	/**
@@ -400,41 +390,14 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return boolean True when the address is trusted.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function isTrustedSender(string $email): bool {
-		$address = trim(strtolower($email));
-		if ($address === '') {
-			return false;
-		}
-
-		$service = $this->service(name: self::TRUSTED_SENDER_SERVICE);
-		if ($service === null || method_exists($service, 'isTrusted') === false) {
-			return false;
-		}
-
-		foreach ($this->mailTables->allAccounts() as $account) {
-			$owner = $this->mailTables->ownerOf(accountId: (int)$account['id']);
-			if ($owner === '') {
-				continue;
-			}
-
-			try {
-				$trusted = $service->isTrusted($owner, $address);
-			} catch (Throwable $e) {
-				$this->logger->debug(
-					'Dossiq: the trusted-sender lookup failed',
-					['error' => $e->getMessage()]
-				);
-				continue;
-			}
-
-			if ($trusted === true) {
-				return true;
-			}
-		}//end foreach
-
-		return false;
+		return $this->senders->isTrustedSender(
+			email: $email,
+			service: fn (): ?object => $this->services->serviceWith(name: self::TRUSTED_SENDER_SERVICE, method: 'isTrusted')
+		);
 	}//end isTrustedSender()
 
 	/**
@@ -446,43 +409,16 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array<int, array{name: string, mimeType: string, size: int}> The attachments.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function attachments(int $accountId, string $mailbox, int $uid): array {
-		$account = $this->account(accountId: $accountId);
-		$manager = $this->service(name: self::MAIL_MANAGER);
-		if ($account === null || $manager === null || method_exists($manager, 'getMailAttachments') === false) {
+		$call = $this->services->accountWith(accountId: $accountId, name: self::MAIL_MANAGER, method: 'getMailAttachments');
+		if ($call === null) {
 			return [];
 		}
 
-		try {
-			$found = $manager->getMailAttachments($account, $mailbox, $uid);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: reading attachments failed',
-				['account' => $accountId, 'uid' => $uid, 'error' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		if (is_array($found) === false) {
-			return [];
-		}
-
-		$attachments = [];
-		foreach ($found as $attachment) {
-			if (is_array($attachment) === false) {
-				continue;
-			}
-
-			$attachments[] = [
-				'name' => (string)($attachment['fileName'] ?? ($attachment['name'] ?? '')),
-				'mimeType' => (string)($attachment['mime'] ?? ($attachment['mimeType'] ?? '')),
-				'size' => (int)($attachment['size'] ?? 0),
-			];
-		}//end foreach
-
-		return $attachments;
+		return $this->calls->attachments(call: $call, message: [$accountId, $mailbox, $uid]);
 	}//end attachments()
 
 	/**
@@ -493,46 +429,15 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 * @return array{accountId: int, mailbox: string, messages: array<int, array<string, mixed>>}|null
 	 *         The unpacked event, or null when it is not one intake reads.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function unpackSynchronisation(object $event): ?array {
 		if (is_a($event, self::NEW_MESSAGES_EVENT) === false) {
 			return null;
 		}
 
-		// The getters are reached through `call()`, by NAME, and not written
-		// as `$event->getAccount()`.
-		//
-		// `is_a()` with the constant class-string narrows `$event` to
-		// OCA\Mail\Events\NewMessagesSynchronized. That class ships in
-		// Nextcloud Mail, which is an optional runtime dependency this app
-		// deliberately carries no hard link to, so it is absent from the
-		// analysis tree and every named getter reads as a call on an unknown
-		// class. `call()` takes a plain `object` plus a method name, which is
-		// the same indirection the account, mailbox and message entities
-		// already go through further down, and it brings the `method_exists`
-		// guard and the throw handling with it.
-		$account = $this->call(entity: $event, method: 'getAccount', fallback: null);
-		$mailbox = $this->call(entity: $event, method: 'getMailbox', fallback: null);
-		$rows = $this->call(entity: $event, method: 'getMessages', fallback: []);
-
-		if (is_object($account) === false || is_object($mailbox) === false) {
-			// A Mail release that moved the event's shape arrives here, and so
-			// does a getter that threw. Both mean the run ends with no
-			// messages, which is indistinguishable from a quiet mailbox unless
-			// it is said out loud.
-			$this->logger->warning(
-				'Dossiq: a Mail synchronisation event could not be read',
-				['event' => get_class($event)]
-			);
-			return null;
-		}
-
-		return [
-			'accountId' => $this->identifierOf(entity: $account),
-			'mailbox' => $this->nameOf(entity: $mailbox),
-			'messages' => $this->normaliseEventMessages(rows: $rows),
-		];
+		return $this->values->synchronisation(event: $event);
 	}//end unpackSynchronisation()
 
 	/**
@@ -553,72 +458,34 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return array{state: string, outboxId: int|null} What became of it.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function sendMessage(int $accountId, array $message): array {
-		$unavailable = ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null];
-
-		$account = $this->account(accountId: $accountId);
+		$account = $this->services->account(accountId: $accountId);
 		$outbox  = $this->outbox();
 		if ($account === null || $outbox === null) {
-			return $unavailable;
+			return ['state' => OutboundState::UNAVAILABLE, 'outboxId' => null];
 		}
 
-		$recipients = [];
-		foreach ((array)($message['to'] ?? []) as $address) {
-			$recipients[] = ['email' => (string)$address];
-		}
-
-		$attachments = [];
-		foreach ((array)($message['attachments'] ?? []) as $path) {
-			$attachments[] = ['type' => 'cloud', 'fileName' => (string)$path];
-		}
-
-		try {
-			$saved = $outbox->saveMessage(
-				$account,
-				$this->localMessage(accountId: $accountId, message: $message),
-				$recipients,
-				[],
-				[],
-				$attachments
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: Nextcloud Mail did not take the message into its outbox',
-				['account' => $accountId, 'error' => $e->getMessage()]
-			);
-			return $unavailable;
-		}
-
-		$outboxId = (int)$this->call(entity: $saved, method: 'getId', fallback: 0);
-		if ($outboxId <= 0) {
-			$outboxId = null;
-		}
-
-		try {
-			$sent = $outbox->sendMessage($saved, $account);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: Nextcloud Mail could not send the message now; it stays in the outbox',
-				['account' => $accountId, 'outboxId' => $outboxId, 'error' => $e->getMessage()]
-			);
-			return ['state' => OutboundState::QUEUED, 'outboxId' => $outboxId];
-		}
-
-		return ['state' => $this->stateOf(sent: $sent), 'outboxId' => $outboxId];
+		return $this->delivery->deliver(
+			through: [$accountId, $account, $outbox],
+			message: $message
+		);
 	}//end sendMessage()
 
 	/**
 	 * Mail's outbox service, or null when Mail is absent or moved it.
 	 *
+	 * Its row class must exist and it must offer both verbs.
+	 *
 	 * @return object|null The outbox.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function outbox(): ?object {
-		$outbox = $this->service(name: self::OUTBOX_SERVICE);
-		if ($outbox === null || class_exists(self::LOCAL_MESSAGE) === false
-			|| method_exists($outbox, 'saveMessage') === false || method_exists($outbox, 'sendMessage') === false
-		) {
+		$outbox = $this->services->serviceWith(name: self::OUTBOX_SERVICE, method: 'saveMessage');
+		if ($outbox === null || class_exists(self::LOCAL_MESSAGE) === false || method_exists($outbox, 'sendMessage') === false) {
 			return null;
 		}
 
@@ -633,7 +500,9 @@ class NextcloudMailGateway implements MailGatewayInterface {
 	 *
 	 * @return object The unsaved LocalMessage.
 	 *
-	 * @throws RuntimeException When Mail moved its outbox row class; the caller treats it as unavailable.
+	 * @throws RuntimeException When Mail moved its outbox row class; the delivery treats it as unavailable.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	private function localMessage(int $accountId, array $message): object {
 		$class = self::LOCAL_MESSAGE;
@@ -653,188 +522,4 @@ class NextcloudMailGateway implements MailGatewayInterface {
 
 		return $local;
 	}//end localMessage()
-
-	/**
-	 * Map the status Mail's send chain left on a message to a delivery state.
-	 *
-	 * @param object $sent The message after Mail's send chain.
-	 *
-	 * @return string SENT, SENT_NOT_FILED or QUEUED.
-	 */
-	private function stateOf(object $sent): string {
-		$status = (int)$this->call(entity: $sent, method: 'getStatus', fallback: -1);
-		if ($status === self::STATUS_PROCESSED) {
-			return OutboundState::SENT;
-		}
-
-		if ($status === self::STATUS_SENT_NOT_FILED) {
-			return OutboundState::SENT_NOT_FILED;
-		}
-
-		return OutboundState::QUEUED;
-	}//end stateOf()
-
-	/**
-	 * Turn the event's message entities into the rows intake reads.
-	 *
-	 * @param mixed $rows Whatever the event handed over.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function normaliseEventMessages(mixed $rows): array {
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$messages = [];
-		foreach ($rows as $row) {
-			if (is_object($row) === false) {
-				continue;
-			}
-
-			$messages[] = [
-				'id' => $this->identifierOf(entity: $row),
-				'uid' => (int)$this->call(entity: $row, method: 'getUid', fallback: 0),
-				'messageId' => (string)$this->call(entity: $row, method: 'getMessageId', fallback: ''),
-				'subject' => (string)$this->call(entity: $row, method: 'getSubject', fallback: ''),
-				'sentAt' => (string)$this->call(entity: $row, method: 'getSentAt', fallback: ''),
-			];
-		}//end foreach
-
-		return $messages;
-	}//end normaliseEventMessages()
-
-	/**
-	 * One Mail entity's numeric id.
-	 *
-	 * @param object $entity The entity.
-	 *
-	 * @return integer The id, or 0.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function identifierOf(object $entity): int {
-		return (int)$this->call(entity: $entity, method: 'getId', fallback: 0);
-	}//end identifierOf()
-
-	/**
-	 * One Mail entity's name.
-	 *
-	 * @param object $entity The entity.
-	 *
-	 * @return string The name, or ''.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function nameOf(object $entity): string {
-		return (string)$this->call(entity: $entity, method: 'getName', fallback: '');
-	}//end nameOf()
-
-	/**
-	 * Call a getter on a Mail entity, or answer the fallback.
-	 *
-	 * `is_callable()`, not `method_exists()`: Mail's entities answer most
-	 * getters (`getStatus`, `getSubject`) through `Entity::__call()`, which
-	 * `method_exists()` cannot see, so it would answer the fallback for a
-	 * getter that is really there. An unknown property throws from
-	 * `__call()` and lands in the catch below.
-	 *
-	 * @param object $entity   The entity.
-	 * @param string $method   The getter.
-	 * @param mixed  $fallback What to answer when the getter is not there.
-	 *
-	 * @return mixed The value.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function call(object $entity, string $method, mixed $fallback): mixed {
-		if (is_callable([$entity, $method]) === false) {
-			return $fallback;
-		}
-
-		try {
-			$value = $entity->{$method}();
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: a Mail getter threw',
-				['method' => $method, 'error' => $e->getMessage()]
-			);
-			return $fallback;
-		}
-
-		if ($value === null) {
-			return $fallback;
-		}
-
-		return $value;
-	}//end call()
-
-	/**
-	 * Resolve one of Mail's services by name.
-	 *
-	 * @param string $name The fully qualified class name.
-	 *
-	 * @return object|null The service, or null when Mail is absent or moved it.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function service(string $name): ?object {
-		if ($this->isAvailable() === false) {
-			return null;
-		}
-
-		try {
-			$service = $this->container->get($name);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: a Nextcloud Mail service could not be resolved, so intake is unavailable',
-				['service' => $name, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		if (is_object($service) === false) {
-			return null;
-		}
-
-		return $service;
-	}//end service()
-
-	/**
-	 * Resolve one Mail account entity.
-	 *
-	 * @param integer $accountId The account.
-	 *
-	 * @return object|null The account, or null when it cannot be resolved.
-	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
-	 */
-	private function account(int $accountId): ?object {
-		if ($accountId <= 0) {
-			return null;
-		}
-
-		$service = $this->service(name: self::ACCOUNT_SERVICE);
-		if ($service === null || method_exists($service, 'findById') === false) {
-			return null;
-		}
-
-		try {
-			$account = $service->findById($accountId);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the configured intake account could not be read',
-				['account' => $accountId, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		if (is_object($account) === false) {
-			return null;
-		}
-
-		return $account;
-	}//end account()
 }//end class

@@ -30,6 +30,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The deadline, last activity and urgency profile of a case, asked of the class itself.
@@ -41,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/method-decomposition/tasks.md
+ * @uses \OCA\Dossiq\Service\Support\RowList
  */
 class QueueCaseFactsTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -109,7 +111,9 @@ class QueueCaseFactsTest extends TestCase {
 				return $this->rows;
 			}//end searchObjectsBySlug()
 
-			public function find(string $id, int|string|null $register = null, int|string|null $schema = null): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				$this->calls[] = ['find', $schema, $id];
 				if ($this->found instanceof \Throwable) {
 					throw $this->found;
@@ -217,6 +221,24 @@ class QueueCaseFactsTest extends TestCase {
 		$this->assertSame($instance->idleWeight, $profile->idleWeight);
 		$this->assertSame([['find', 'caseType', 'ct-1']], $store->calls);
 	}//end testTheCaseTypeSetsItsOwnThresholds()
+
+	/**
+	 * Scoring many cases of one type reads the case type once.
+	 *
+	 * @return void
+	 */
+	public function testACaseTypeIsReadOnceForTheWholeQueue(): void {
+		$instance = new UrgencyProfile(criticalDays: 3, warningDays: 7, priorityWeight: 10, idleWeight: 0.5);
+		$store    = $this->store(found: ['queueCriticalDays' => 10]);
+		$facts    = $this->facts();
+
+		$facts->profileForCaseType(objectService: $store, register: 'reg', caseTypeId: 'ct-1', profile: $instance);
+		$profile = $facts->profileForCaseType(objectService: $store, register: 'reg', caseTypeId: 'ct-1', profile: $instance);
+		$facts->profileForCaseType(objectService: $store, register: 'reg', caseTypeId: 'ct-2', profile: $instance);
+
+		$this->assertSame(expected: 10, actual: $profile->criticalDays);
+		$this->assertSame(expected: [['find', 'caseType', 'ct-1'], ['find', 'caseType', 'ct-2']], actual: $store->calls);
+	}//end testACaseTypeIsReadOnceForTheWholeQueue()
 
 	/**
 	 * No type, no schema, a type that is gone or one that cannot be read: the instance profile,

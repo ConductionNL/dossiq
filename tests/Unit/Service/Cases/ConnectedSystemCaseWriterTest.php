@@ -36,6 +36,8 @@ use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Service\Cases\ConnectedSystemCaseWriter
@@ -95,6 +97,20 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 	 * @var bool
 	 */
 	public bool $storeBroken = false;
+
+	/**
+	 * What the store's save answers: the stored row, a row without a case number, or nothing it can read back.
+	 *
+	 * @var string 'stored', 'no-number' or 'unreadable'
+	 */
+	public string $saveMode = 'stored';
+
+	/**
+	 * The app configuration the writer reads.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $config = ['register' => 'dossiq', 'case_schema' => 'case'];
 
 	/**
 	 * Start with one case opened in dossiq.
@@ -312,6 +328,89 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 	}//end testAFailingStoreThrows()
 
 	/**
+	 * A case the store saves but cannot hand back is not an outcome: it throws, and nothing is confirmed.
+	 *
+	 * @return void
+	 */
+	public function testACaseThatCannotBeReadBackThrows(): void {
+		$this->saveMode = 'unreadable';
+
+		try {
+			$this->writer()->carryOut(operation: self::createOperation(), connection: self::CONNECTION, system: 'src-9');
+			$this->fail('A case that cannot be read back must not be confirmed.');
+		} catch (RuntimeException $e) {
+			$this->assertSame('The case was written but could not be read back.', $e->getMessage());
+		}
+
+		$this->assertContains('saveObject', array_column($this->calls, 0));
+	}//end testACaseThatCannotBeReadBackThrows()
+
+	/**
+	 * A case stored without a case number of its own is confirmed by the system's own identifier.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutANumberIsConfirmedByTheSystemsIdentifier(): void {
+		$this->saveMode = 'no-number';
+
+		$outcome = $this->writer()->carryOut(operation: self::createOperation(), connection: self::CONNECTION, system: 'src-9');
+
+		$this->assertSame(['identifier' => 'ZSH-2026-0001'], $outcome);
+		$this->assertCount(2, $this->cases);
+	}//end testACaseWithoutANumberIsConfirmedByTheSystemsIdentifier()
+
+	/**
+	 * An update or a document naming no case, or naming it with a value that is not text, finds none and reads nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnOperationNamingNoCaseFindsNone(): void {
+		$writer = $this->writer();
+
+		$update   = $writer->carryOut(operation: ['action' => 'update', 'identifier' => '', 'title' => 'x'], connection: self::CONNECTION, system: 'src-9');
+		$document = $writer->carryOut(operation: (['caseIdentifier' => ['2026-0042']] + self::documentOperation()), connection: self::CONNECTION, system: 'src-9');
+
+		$this->assertSame(['refusal' => 'Deze zaak is niet bekend.', 'kind' => 'not-found'], $update);
+		$this->assertSame(['refusal' => 'De zaak van dit document is niet bekend.', 'kind' => 'not-found'], $document);
+		$this->assertSame([], $this->calls, 'No identifier means no search');
+		$this->assertSame([], $this->uploads);
+	}//end testAnOperationNamingNoCaseFindsNone()
+
+	/**
+	 * A title that is not text is no title, so the create is refused before anything is read.
+	 *
+	 * @return void
+	 */
+	public function testATitleThatIsNotTextIsRefused(): void {
+		$outcome = $this->writer()->carryOut(
+			operation: (['title' => ['Kapvergunning']] + self::createOperation()),
+			connection: self::CONNECTION,
+			system: 'src-9'
+		);
+
+		$this->assertSame(['refusal' => 'Een zaak heeft een identificatie en een omschrijving nodig.', 'kind' => 'refused'], $outcome);
+		$this->assertSame([], $this->calls);
+	}//end testATitleThatIsNotTextIsRefused()
+
+	/**
+	 * Without a configured case schema the writer throws rather than decide anything.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredRegisterThrows(): void {
+		$this->config = ['register' => 'dossiq', 'case_schema' => ''];
+
+		try {
+			$this->writer()->carryOut(operation: ['action' => 'update', 'identifier' => '2026-0042', 'title' => 'x'], connection: self::CONNECTION, system: 'src-9');
+			$this->fail('An unconfigured register must not answer an outcome.');
+		} catch (RuntimeException $e) {
+			$this->assertSame('The case register is not configured.', $e->getMessage());
+		}
+
+		$this->assertSame([], $this->calls);
+	}//end testAnUnconfiguredRegisterThrows()
+
+	/**
 	 * The generic create operation integriq maps a creeerZaak onto.
 	 *
 	 * @return array<string, mixed> The operation.
@@ -394,9 +493,21 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The stored object.
 			 */
-			public function saveObject(array $object, ?string $register=null, ?string $schema=null, ?string $uuid=null, mixed ...$scope): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true, mixed ...$scope): ?array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->test->record(method: 'saveObject', scope: $scope);
 				$uuid = 'case-uuid-' . (count($this->test->cases) + 1);
+				if ($this->test->saveMode === 'unreadable') {
+					return null;
+				}
+
+				if ($this->test->saveMode === 'no-number') {
+					$this->test->cases[$uuid] = ($object + ['id' => $uuid]);
+					return $this->test->cases[$uuid];
+				}
+
 				$this->test->cases[$uuid] = ($object + ['id' => $uuid, 'identifier' => '2026-00' . (41 + count($this->test->cases) + 1)]);
 				return $this->test->cases[$uuid];
 			}
@@ -412,7 +523,11 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 			 *
 			 * @return array The stored object.
 			 */
-			public function patchObject(string $objectId, array $data, ?string $register=null, ?string $schema=null, mixed ...$scope): array {
+			public function patchObject(ObjectPatch $patch, bool $_rbac = true, bool $_multitenancy = true, mixed ...$scope): array {
+				$objectId = $patch->objectId;
+				$data = $patch->data;
+				$register = $patch->target->register;
+				$schema = $patch->target->schema;
 				$this->test->record(method: 'patchObject', scope: $scope, changes: $data);
 				$this->test->cases[$objectId] = ($data + $this->test->cases[$objectId]);
 				return $this->test->cases[$objectId];
@@ -421,7 +536,7 @@ class ConnectedSystemCaseWriterTest extends TestCase {
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($store);
-		$settings->method('getConfigValue')->willReturnCallback(static fn (string $key): string => (['register' => 'dossiq', 'case_schema' => 'case'][$key] ?? ''));
+		$settings->method('getConfigValue')->willReturnCallback(fn (string $key): string => ($this->config[$key] ?? ''));
 
 		$caseTypes = $this->createMock(CaseTypeStore::class);
 		$caseTypes->method('versionsWithIdentifier')->willReturnCallback(

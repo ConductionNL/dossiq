@@ -213,6 +213,9 @@ export const FIXTURE_SCHEMAS = [
 	// run that leaves one behind is worse than an orphan row: it is a standing
 	// authorisation nobody granted.
 	'toestemming',
+	// A running statutory term holds its case: CaseDeleteGuardListener refuses
+	// the delete, the CLI purge included, while a term instance is open.
+	'deadlineInstance',
 	'case',
 	'roleType',
 	// The team a case names. After `case` for the same reason `caseType` is:
@@ -221,6 +224,8 @@ export const FIXTURE_SCHEMAS = [
 	'workflowTemplate',
 	'statusType',
 	'resultType',
+	// Names its case type by identifier, so it goes before it.
+	'deadlineDefinition',
 	'caseType',
 	'propertyDefinition',
 ] as const
@@ -514,12 +519,27 @@ async function httpPurge(
 	schema: string,
 	id: string,
 ): Promise<boolean> {
-	const deleted = await api
-		.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
-			headers: writeHeaders(token),
-		})
-		.catch(() => null)
+	const remove = () =>
+		api
+			.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+				headers: writeHeaders(token),
+			})
+			.catch(() => null)
+	const deleted = await remove()
 	if (deleted !== null && deleted.status() === 403) return false
+
+	// CaseTypeDeleteGuard refuses a published case type on every delete path,
+	// the CLI purge included, and seeded types are published so cases can point
+	// at them. Back to draft first, which is the only state the guard deletes.
+	if (schema === 'caseType' && deleted !== null && deleted.status() === 422) {
+		await api
+			.patch(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+				headers: writeHeaders(token),
+				data: { isDraft: true },
+			})
+			.catch(() => undefined)
+		await remove()
+	}
 
 	await api
 		.delete(`${TRASH_BASE}/${id}`, { headers: writeHeaders(token) })
@@ -698,6 +718,34 @@ export async function removeTeams(api: APIRequestContext): Promise<void> {
 let documentTypeForRun = ''
 
 /**
+ * Put a small PDF in a user's Files root and answer its file id, so a document
+ * fixture carries real bytes (a document whose file cannot be read refuses a
+ * Woo publish with `documents_unreadable`).
+ *
+ * @param api   The request context, signed in as that user.
+ * @param token The request token of that session.
+ * @param name  The file name.
+ * @param user  The user whose Files root holds it.
+ * @return The Nextcloud file id.
+ */
+export async function uploadFixtureFile(
+	api: APIRequestContext,
+	token: string,
+	name: string,
+	user = process.env.NC_USER ?? 'admin',
+): Promise<number> {
+	const put = await api.put(`/remote.php/dav/files/${encodeURIComponent(user)}/${encodeURIComponent(name)}`, {
+		headers: { requesttoken: token, 'Content-Type': 'application/pdf' },
+		data: Buffer.from(`%PDF-1.4\n% ${name} fixture\n%%EOF\n`),
+	})
+	expect(put.ok(), `upload ${name} -> ${put.status()}`).toBeTruthy()
+	// Nextcloud answers the file id of a PUT in OC-FileId: the id, zero-padded, then the instance id.
+	const id = Number(put.headers()['oc-fileid']?.replace(/^0+/, '').replace(/oc.*$/, '') ?? 0)
+	expect(id, `the fixture file ${name} has an id`).toBeGreaterThan(0)
+	return id
+}
+
+/**
  * File an informatieobject that satisfies its schema.
  *
  * `informatieobject` requires title, fileName, vertrouwelijkheidaanduiding
@@ -835,6 +883,41 @@ export async function seedCase(
 	api: APIRequestContext,
 	token: string,
 	fields: Record<string, unknown> & { title: string; caseType: string },
+): Promise<any> {
+	// A case is BORN IN ITS LIFECYCLE'S INITIAL STATUS. OpenRegister refuses a
+	// create that names any other status (422 lifecycle-invalid-initial), so a
+	// fixture that wants a case further along creates it in the initial status
+	// and then moves it with a PATCH of the status alone. A PATCH, not
+	// updateObject's whole-object PUT: the stored case carries its JSON-encoded
+	// properties decoded, and a PUT of them back is refused by validation.
+	const { status, ...atCreate } = fields
+	const created = await createCase(api, token, atCreate)
+	if (status === undefined || status === null || status === '' || created.status === status) {
+		return created
+	}
+	const id = objectId(created)
+	const moved = await api.patch(`${API_BASE}/${REGISTER}/case/${id}`, {
+		headers: writeHeaders(token),
+		data: { status },
+	})
+	expect(
+		moved.ok(),
+		`move seeded case ${id} to status ${String(status)} -> ${moved.status()} ${await moved.text()}`,
+	).toBeTruthy()
+	return unwrapObject(await moved.json())
+}
+
+/**
+ * Create a case with the fixture's defaults beside the given fields.
+ *
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param fields Case fields, without a status the lifecycle would refuse at create.
+ */
+async function createCase(
+	api: APIRequestContext,
+	token: string,
+	fields: Record<string, unknown>,
 ): Promise<any> {
 	return createObject(api, token, 'case', {
 		identifier: `${RUN_PREFIX}-${randomInt(1e4)}`,
@@ -1261,6 +1344,25 @@ export async function cleanupFlowTasks(
  * @param token   CSRF request-token.
  * @param schemas Schema slugs to sweep (order matters: children before parents).
  */
+/**
+ * The sweep order with `deadlineInstance` just before `case`.
+ *
+ * Seeding a case starts its statutory term on the server, and
+ * CaseDeleteGuardListener refuses to delete or purge a case while that term
+ * runs. A caller naming only `case` would leave every case behind.
+ *
+ * @param schemas The schemas a caller asked to sweep, child-first.
+ * @return The same order, with the term rows swept before the cases.
+ */
+export function withTermsBeforeCases(schemas: string[]): string[] {
+	const at = schemas.indexOf('case')
+	if (at === -1 || schemas.includes('deadlineInstance') === true) {
+		return schemas
+	}
+
+	return [...schemas.slice(0, at), 'deadlineInstance', ...schemas.slice(at)]
+}
+
 export async function cleanupRunObjects(
 	api: APIRequestContext,
 	token: string,
@@ -1296,12 +1398,13 @@ export async function cleanupRunObjects(
 	// whose `case` or `parentCase` points at one of our cases still go, because
 	// that is a foreign key and not a content match: the transition engine writes
 	// `statusRecord` rows itself, carrying the case uuid and none of our text.
+	const swept = withTermsBeforeCases(schemas)
 	const ledger = (schema: string): Set<string> => new Set(trackedObjects(schema))
-	const ourIds = new Set(schemas.flatMap((schema) => trackedObjects(schema)))
+	const ourIds = new Set(swept.flatMap((schema) => trackedObjects(schema)))
 
 	const noticed: string[] = []
 	const survivors = [
-		...(await sweepPrefix(api, token, RUN_PREFIX, schemas, 0, ledger, noticed)),
+		...(await sweepPrefix(api, token, RUN_PREFIX, swept, 0, ledger, noticed)),
 		...(await sweepTrashIds(api, token, ourIds)),
 	]
 

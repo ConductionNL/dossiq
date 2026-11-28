@@ -29,7 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Consultation;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Consultation\ConsultationTerms;
 use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
@@ -52,16 +54,17 @@ final class EclFakeNoteService {
 	/**
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function getNotesForObject(string $objectUuid, int $limit = 50, int $offset = 0, ?string $visibility = null): array {
-		unset($objectUuid, $limit, $offset, $visibility);
+	public function listNotes(object $query): array {
+		unset($query);
 		return $this->notes;
-	}//end getNotesForObject()
+	}//end listNotes()
 }//end class
 
 /**
  * @covers \OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService
  *
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationTerms
  */
 class ExternalConsultationLinkServiceTest extends TestCase {
 	/**
@@ -71,6 +74,8 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 	 * @param ConsultationService $consultations The consultation service.
 	 * @param CaseSharingService $shares The case sharing service.
 	 * @param CaseLinkShares|null $linkShares The share record store.
+	 * @param object|null $noteService The note service OpenRegister answers, the fake over `$notes` when null.
+	 * @param bool $openRegister Whether OpenRegister is installed.
 	 *
 	 * @return ExternalConsultationLinkService
 	 */
@@ -79,12 +84,14 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		ConsultationService $consultations,
 		CaseSharingService $shares,
 		?CaseLinkShares $linkShares = null,
+		?object $noteService = null,
+		bool $openRegister = true,
 	): ExternalConsultationLinkService {
 		$appManager = $this->createMock(IAppManager::class);
-		$appManager->method('isInstalled')->willReturn(true);
+		$appManager->method('isInstalled')->willReturn($openRegister);
 
 		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')->willReturn(new EclFakeNoteService($notes));
+		$container->method('get')->willReturn($noteService ?? new EclFakeNoteService($notes));
 
 		$logger = $this->createMock(LoggerInterface::class);
 
@@ -156,6 +163,36 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 
 		self::assertSame('https://example.test/l/abc', $invited['url']);
 	}//end testInviteMintsACommentLinkOnTheDeadline()
+
+	/**
+	 * With a response address set in Adviseringsbeheer, the invitation sends
+	 * that address with the link's token, in a message naming the subject
+	 * and the deadline.
+	 *
+	 * @spec openspec/specs/consultation-management/spec.md#requirement-the-external-invitation-uses-the-configured-response-address
+	 *
+	 * @return void
+	 */
+	public function testInviteSendsTheConfiguredResponseAddress(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => ($key === 'consultation_external_response_url' ? 'https://loket.zuiddrecht.nl/advies' : $default)
+		);
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('terms')->willReturn(new ConsultationTerms(settingsService: $settings));
+		$consultations->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'parentCase' => 'case-1', 'adviceAuthority' => 'Welstandscommissie', 'subject' => 'Gevelwijziging', 'latestResponseDate' => '2030-03-01']
+		);
+		$shares = $this->createMock(CaseSharingService::class);
+		$shares->method('createTokenShare')->willReturn(['share' => $this->share(), 'url' => 'https://example.test/l/abc']);
+
+		$invited = $this->makeService([], $consultations, $shares)->invite(consultationId: 'cn-1', userId: 'anja');
+
+		self::assertSame('https://example.test/l/abc', $invited['url']);
+		self::assertSame('https://loket.zuiddrecht.nl/advies/abc', $invited['responseUrl']);
+		self::assertStringContainsString('https://loket.zuiddrecht.nl/advies/abc', $invited['message']);
+		self::assertStringContainsString('2030-03-01', $invited['message']);
+	}//end testInviteSendsTheConfiguredResponseAddress()
 
 	/**
 	 * A consultation that names no advisory body has nobody to invite, and
@@ -362,4 +399,153 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$service->collect(consultationId: 'cn-1', advice: 'positive');
 	}//end testCollectRefusesAConsultationWithNoLink()
+
+	/**
+	 * A consultation that is not there is refused before anything is minted.
+	 *
+	 * @return void
+	 */
+	public function testInviteRefusesAMissingConsultation(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(null);
+
+		$shares = $this->createMock(CaseSharingService::class);
+		$shares->expects($this->never())->method('createTokenShare');
+
+		$service = $this->makeService([], $consultations, $shares);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('That consultation is not there');
+		$service->invite(consultationId: 'cn-gone', userId: 'anja');
+	}//end testInviteRefusesAMissingConsultation()
+
+	/**
+	 * A consultation without a case has nothing a link could publish.
+	 *
+	 * @return void
+	 */
+	public function testInviteRefusesAConsultationWithoutACase(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'parentCase' => '  ', 'adviceAuthority' => 'Brandweer Midden-Nederland']
+		);
+
+		$shares = $this->createMock(CaseSharingService::class);
+		$shares->expects($this->never())->method('createTokenShare');
+
+		$service = $this->makeService([], $consultations, $shares);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('A consultation without a case has nothing to publish');
+		$service->invite(consultationId: 'cn-1', userId: 'anja');
+	}//end testInviteRefusesAConsultationWithoutACase()
+
+	/**
+	 * A share the sharing service refuses is reported with its own reason.
+	 *
+	 * @return void
+	 */
+	public function testInviteRaisesTheRefusalOfTheShare(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(
+			['id' => 'cn-1', 'parentCase' => 'case-1', 'adviceAuthority' => 'Brandweer Midden-Nederland']
+		);
+
+		$shares = $this->createMock(CaseSharingService::class);
+		$shares->expects($this->once())->method('createTokenShare')->willReturn(['error' => 'The case is archived']);
+
+		$service = $this->makeService([], $consultations, $shares);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The case is archived');
+		$service->invite(consultationId: 'cn-1', userId: 'anja');
+	}//end testInviteRaisesTheRefusalOfTheShare()
+
+	/**
+	 * Collecting from a consultation that is not there is refused.
+	 *
+	 * @return void
+	 */
+	public function testCollectRefusesAMissingConsultation(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(null);
+		$consultations->expects($this->never())->method('submitResponse');
+
+		$service = $this->makeService([], $consultations, $this->createMock(CaseSharingService::class));
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('That consultation is not there');
+		$service->collect(consultationId: 'cn-gone', advice: 'positive');
+	}//end testCollectRefusesAMissingConsultation()
+
+	/**
+	 * A consultation without a case has no link to read, and the share store
+	 * is not asked for the shares of an empty case id.
+	 *
+	 * @return void
+	 */
+	public function testCollectOnAConsultationWithoutACaseFindsNoLink(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(['id' => 'cn-1', 'parentCase' => '']);
+
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->expects($this->never())->method('listForCase');
+
+		$service = $this->makeService([], $consultations, $this->createMock(CaseSharingService::class), $linkShares);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('That consultation carries no link, so nobody outside can have answered it');
+		$service->collect(consultationId: 'cn-1', advice: 'positive');
+	}//end testCollectOnAConsultationWithoutACaseFindsNoLink()
+
+	/**
+	 * Without OpenRegister the comments cannot be read, and that is said
+	 * rather than answered as "nothing new".
+	 *
+	 * @return void
+	 */
+	public function testCollectRefusesWhenTheCommentsCannotBeReached(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(['id' => 'cn-1', 'parentCase' => 'case-1']);
+		$consultations->expects($this->never())->method('submitResponse');
+
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([$this->share()]);
+
+		$service = $this->makeService([], $consultations, $this->createMock(CaseSharingService::class), $linkShares, null, false);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('This instance cannot read the comments on a case, so advice cannot be collected');
+		$service->collect(consultationId: 'cn-1', advice: 'positive');
+	}//end testCollectRefusesWhenTheCommentsCannotBeReached()
+
+	/**
+	 * A comment read that fails is a refusal, not "the body has not replied".
+	 *
+	 * @return void
+	 */
+	public function testCollectRefusesWhenTheCommentReadFails(): void {
+		$consultations = $this->createMock(ConsultationService::class);
+		$consultations->method('getConsultation')->willReturn(['id' => 'cn-1', 'parentCase' => 'case-1']);
+		$consultations->expects($this->never())->method('submitResponse');
+
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([$this->share()]);
+		$linkShares->expects($this->never())->method('markCollected');
+
+		$failing = new class {
+			/**
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function listNotes(object $query): array {
+				throw new \RuntimeException('database gone');
+			}
+		};
+
+		$service = $this->makeService([], $consultations, $this->createMock(CaseSharingService::class), $linkShares, $failing);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('The comments on this case could not be read, so advice cannot be collected');
+		$service->collect(consultationId: 'cn-1', advice: 'positive');
+	}//end testCollectRefusesWhenTheCommentReadFails()
 }//end class

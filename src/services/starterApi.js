@@ -33,7 +33,7 @@ export async function listShipped(schema) {
  *
  * @param {string} schema The schema slug, for example caseType.
  * @return {Promise<number|null>} The count, or null when it cannot be read.
- * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+ * @spec openspec/specs/admin-settings/spec.md
  */
 export async function countObjects(schema) {
 	try {

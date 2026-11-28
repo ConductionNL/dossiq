@@ -49,6 +49,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Minimal ObjectService surface for the ComplaintCategoryController tests.
@@ -70,7 +71,7 @@ interface ComplaintCategoryControllerObjectServiceStub {
 	 *
 	 * @return mixed The saved object.
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): mixed;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): mixed;
 }//end interface
 
 /**
@@ -252,7 +253,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = [
 						'object' => $object,
 						'register' => $register,
@@ -274,6 +278,42 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$this->assertSame('klachtcategorie', $captured['schema']);
 		$this->assertNull($captured['uuid'], 'a create must not address an existing uuid');
 	}//end testCreateCategoryReturns201AndWritesWithoutAUuid()
+
+	/**
+	 * An id, uuid or @self the caller sends is dropped, so the create cannot
+	 * be pointed at a category that exists.
+	 *
+	 * @return void
+	 */
+	public function testCreateCategoryDropsTheCallersIdentityFields(): void {
+		$this->signIn();
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->withConfiguredSchemas();
+		$this->request->method('getParams')->willReturn(
+			['id' => 'cat-victim', 'uuid' => 'cat-victim', '@self' => ['id' => 'cat-victim'], 'name' => 'Bejegening']
+		);
+
+		$captured = [];
+		$objectService = $this->createMock(ComplaintCategoryControllerObjectServiceStub::class);
+		$objectService->expects($this->once())
+			->method('saveObject')
+			->willReturnCallback(
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
+					$captured = $object;
+
+					return ['id' => 'cat-new', 'name' => $object['name']];
+				}
+			);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+
+		$response = $this->controller->createCategory();
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame(['name' => 'Bejegening'], $captured);
+	}//end testCreateCategoryDropsTheCallersIdentityFields()
 
 	/**
 	 * A validation failure raised by the store surfaces as 400 with the store's
@@ -364,7 +404,10 @@ class ComplaintCategoryControllerContractTest extends TestCase {
 		$objectService->expects($this->once())
 			->method('saveObject')
 			->willReturnCallback(
-				static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+				static function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+					$register = $options->target->register;
+					$schema = $options->target->schema;
+					$uuid = $options->uuid;
 					$captured = [
 						'object' => $object,
 						'register' => $register,

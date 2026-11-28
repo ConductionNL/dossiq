@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+ * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ namespace OCA\Dossiq\Service\Publication;
 /**
  * Builds the `{position, grounds}` entries of a publication's withheld list.
  *
- * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+ * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  */
 class WithheldEntries {
 
@@ -51,22 +51,11 @@ class WithheldEntries {
 	 *
 	 * @return list<array{position: int, grounds: list<string>}>
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+	 * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
 	 */
 	public function fromAssessments(array $assessments, string $withheldValue, string $groundsField): array {
-		$inventory = array_values(
-			array_filter(
-				$assessments,
-				static fn (mixed $row): bool => is_array($row) === true && (string)($row['documentRef'] ?? '') !== ''
-			)
-		);
-		usort(
-			$inventory,
-			static fn (array $left, array $right): int => strcmp((string)$left['documentRef'], (string)$right['documentRef'])
-		);
-
 		$entries = [];
-		foreach ($inventory as $index => $assessment) {
+		foreach ($this->inventory(assessments: $assessments) as $index => $assessment) {
 			if ((string)($assessment['classification'] ?? '') !== $withheldValue) {
 				continue;
 			}
@@ -79,6 +68,28 @@ class WithheldEntries {
 
 		return $entries;
 	}//end fromAssessments()
+
+	/**
+	 * The assessments that name a document, ordered by document reference: the order the inventory numbers them in.
+	 *
+	 * @param array<int, mixed> $assessments The case's document assessments.
+	 *
+	 * @return array<int, array<string, mixed>> The inventory, from position 1 on.
+	 */
+	private function inventory(array $assessments): array {
+		$inventory = array_values(
+			array_filter(
+				$assessments,
+				static fn (mixed $row): bool => is_array($row) === true && (string)($row['documentRef'] ?? '') !== ''
+			)
+		);
+		usort(
+			$inventory,
+			static fn (array $left, array $right): int => strcmp((string)$left['documentRef'], (string)$right['documentRef'])
+		);
+
+		return $inventory;
+	}//end inventory()
 
 	/**
 	 * The non-empty string codes of a ground list.

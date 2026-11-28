@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "dossiq package: subsidie",
-    "description": "Reads every kind of row the subsidie package writes back through the OpenRegister objects API, after the packages workflow installed it on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/subsidie/. Written by scripts/packages/package-to-newman.py.",
+    "description": "Reads every kind of row the subsidie package writes back through the OpenRegister objects API, after the packages workflow installed it on a clean instance (hydra ADR-118). Ids are the fixed ids in lib/Settings/packages/subsidie/. Written by scripts/packages/package-to-newman.py. The grant chain requests after the read-backs are hand-written (openspec change grant-cases-from-application-to-settlement task 3.2): they seed a subsidie case with its application, decision and execution, record and assess an interim report, settle lower than granted and read back the proposed recovery, through dossiq's grant routes (REQ-SUB-CASE-01).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -254,6 +254,472 @@
       ]
     },
     {
+      "name": "grant chain: a subsidie case",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/case",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Newman grant chain\", \"caseType\": \"b3c1a000-0000-4000-a000-0000000005ab\", \"identifier\": \"NEWMAN-GRANT-{{$timestamp}}\", \"impact\": \"medium\", \"urgency\": \"medium\", \"intakeChannel\": \"manual\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('case is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('case has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('grantCaseId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: the application",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/subsidieAanvraag",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"case\": \"{{grantCaseId}}\", \"aanvraagnummer\": \"NEWMAN-GRANT-{{$timestamp}}\", \"subsidyScheme\": \"b3c1a000-0000-4000-a000-0000000005ab\", \"requestedAmount\": 50000, \"status\": \"granted\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('subsidieAanvraag is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('subsidieAanvraag has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('grantApplicationId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: the grant decision",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/subsidieBeschikking",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"subsidieaanvraag\": \"{{grantApplicationId}}\", \"beschikkingnummer\": \"NEWMAN-GRANT-{{$timestamp}}-B\", \"beschikkingtype\": \"verleningsbeschikking\", \"grantedAmount\": 50000, \"status\": \"granted\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('subsidieBeschikking is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('subsidieBeschikking has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('grantDecisionId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: the execution",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/subsidieUitvoering",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"subsidieaanvraag\": \"{{grantApplicationId}}\", \"subsidyDecision\": \"{{grantDecisionId}}\", \"status\": \"in_execution\", \"betaaldeVoorschotten\": \"40000\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('subsidieUitvoering is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('subsidieUitvoering has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('grantExecutionId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: record an interim report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/subsidies/uitvoeringen/{{grantExecutionId}}/tussenrapportages",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"rapportagenummer\": \"NEWMAN-TR-{{$timestamp}}\", \"rapportagePeriodStart\": \"2026-01-01\", \"rapportagePeriodEnd\": \"2026-06-30\", \"substantiveProgress\": \"Activiteiten volgens plan uitgevoerd.\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the interim report is recorded (201)', () => pm.response.to.have.status(201));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(pm.response.json());",
+              "pm.test('the recorded report has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('grantReportId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: assess the interim report as sufficient",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/subsidies/tussenrapportages/{{grantReportId}}/beoordelen",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"beoordelingsoordeel\": \"voldoende\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the report is assessed (200)', () => pm.response.to.have.status(200));",
+              "const report = pm.response.json();",
+              "pm.test('the report is approved', () => pm.expect(report.status).to.eql('approved'));",
+              "pm.test('the opinion is sufficient', () => pm.expect(report.beoordelingsoordeel).to.eql('voldoende'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: the assessment reached the store",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/interimReport/{{grantReportId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('interimReport is stored (200)', () => pm.response.to.have.status(200));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const row = unwrap(pm.response.json());",
+              "pm.test('the assessment is stored', () => pm.expect(row.beoordelingsoordeel).to.eql('voldoende'));",
+              "pm.test('the assessor comes from the session', () => pm.expect(String(row.assessor || '')).to.not.eql(''));",
+              "pm.test('the report hangs off the execution', () => pm.expect(row.subsidieuitvoering).to.eql(pm.collectionVariables.get('grantExecutionId')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: a draft settlement",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/subsidieVaststelling",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"subsidieuitvoering\": \"{{grantExecutionId}}\", \"actualCostTotal\": 35000, \"status\": \"draft\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('subsidieVaststelling is written (200/201)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "const id = idOf(unwrap(pm.response.json()));",
+              "pm.test('subsidieVaststelling has an id', () => pm.expect(id).to.not.eql(''));",
+              "pm.collectionVariables.set('grantDeterminationId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: settle lower than granted",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/subsidies/vaststellingen/{{grantDeterminationId}}/vast",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"grantedAmount\": 50000, \"werkelijkeKosten\": 35000, \"totaalVoorschotten\": 40000}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the settlement is final (200)', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const idOf = (o) => String((o && o['@self'] && o['@self'].id) || (o && o.uuid) || (o && o.id) || '');",
+              "pm.test('the settled amount is the actual cost', () => pm.expect(Number(body.determination.determinedAmount)).to.eql(35000));",
+              "pm.test('the settlement triggers a recovery', () => pm.expect(body.determination.recoveryTrigger).to.eql(true));",
+              "pm.test('a recovery is proposed', () => pm.expect(body.terugvordering).to.be.an('object'));",
+              "pm.collectionVariables.set('grantRecoveryId', idOf(body.terugvordering));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: the proposed recovery",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/openregister/api/objects/dossiq/terugvordering/{{grantRecoveryId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('terugvordering is stored (200)', () => pm.response.to.have.status(200));",
+              "const unwrap = (b) => (b && (b.id || b['@self'] || b.uuid)) ? b : ((b && b.results && !Array.isArray(b.results)) ? b.results : ((b && b.object) || b));",
+              "const row = unwrap(pm.response.json());",
+              "pm.test('the recovery is the advances above the settled amount', () => pm.expect(Number(row.amount)).to.eql(5000));",
+              "pm.test('the recovery is proposed, not imposed', () => pm.expect(row.status).to.eql('draft'));",
+              "pm.test('the recovery is on this grant', () => pm.expect(row.subsidieuitvoering).to.eql(pm.collectionVariables.get('grantExecutionId')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "grant chain: the case reads its settlement",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "OCS-APIRequest",
+            "value": "true"
+          }
+        ],
+        "url": "{{baseUrl}}/index.php/apps/dossiq/api/cases/{{grantCaseId}}/settlements"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('the settlements of the case (200)', () => pm.response.to.have.status(200));",
+              "const rows = pm.response.json().settlements || [];",
+              "const row = rows.find(r => r.id === pm.collectionVariables.get('grantDeterminationId'));",
+              "pm.test('the settlement shows on the case', () => pm.expect(row).to.be.an('object'));",
+              "pm.test('the case reads the settled amount', () => pm.expect(row.determinedAmount).to.eql(35000));",
+              "pm.test('the case reads that a recovery follows', () => pm.expect(row.recovery).to.eql(true));",
+              "pm.test('the settlement is determined', () => pm.expect(row.status).to.eql('determined'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "ledger records the package",
       "request": {
         "method": "GET",
@@ -278,7 +744,7 @@
               "pm.test('a ledger row names the package and its version', () => {",
               "    pm.expect(row, 'ledger row for the case type').to.be.an('object');",
               "    pm.expect(row.set).to.eql('subsidie');",
-              "    pm.expect(row.setVersion).to.eql('1.0.0');",
+              "    pm.expect(row.setVersion).to.eql(pm.variables.get('packageVersion'));",
               "});"
             ]
           }

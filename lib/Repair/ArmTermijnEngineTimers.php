@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -35,11 +35,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use DateTimeImmutable;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\TermijnTimerServiceInterface;
+use OCA\Dossiq\Repair\Support\RepairSchemas;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\TermijnService;
-use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -47,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Arms engine timers for existing in-flight TermijnInstances.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmTermijnEngineTimers implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -63,15 +64,15 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Settings + ObjectService access.
-	 * @param TermijnService $termService Instance updates.
-	 * @param TermijnTimerService $timerService Engine timer mapping.
+	 * @param SettingsServiceInterface $settingsService Settings + ObjectService access.
+	 * @param TermijnServiceInterface $termService Instance updates.
+	 * @param TermijnTimerServiceInterface $timerService Engine timer mapping.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly TermijnService $termService,
-		private readonly TermijnTimerService $timerService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly TermijnServiceInterface $termService,
+		private readonly TermijnTimerServiceInterface $timerService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -81,7 +82,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function getName(): string {
 		return 'Arm OpenRegister engine timers for in-flight Dossiq termijnen';
@@ -94,7 +95,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -110,28 +111,73 @@ class ArmTermijnEngineTimers implements IRepairStep {
 		// halves therefore run under the same system identity every other
 		// writing step uses.
 		$objectService = $this->settingsService->getObjectService();
-		$rows = null;
 		$counts = ['armed' => 0, 'suspended' => 0, 'skipped' => 0, 'failed' => 0];
 
-		$this->withSystemIdentity(
-			objectService: $objectService,
-			work: function () use (&$rows, &$counts): void {
-				$rows = $this->openInstances();
-				if ($rows === null) {
-					return;
-				}
-
-				foreach ($rows as $row) {
-					$this->migrateInstance(row: $row, counts: $counts);
-				}
-			}
-		);
+		$rows = $this->migrateAsSystem(objectService: $objectService, counts: $counts);
 
 		if ($rows === null) {
 			$output->warning('Termijn instances not readable (schemas unconfigured, or the read was refused). Skipping timer migration.');
 			return;
 		}
 
+		$this->report(output: $output, counts: $counts);
+	}//end run()
+
+	/**
+	 * Migrate every open instance under the system identity.
+	 *
+	 * @param object|null        $objectService OpenRegister's ObjectService.
+	 * @param array<string, int> $counts        Running counts (by reference).
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows read, or null when unreadable.
+	 *
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function migrateAsSystem(?object $objectService, array &$counts): ?array {
+		$rows = null;
+		$this->withSystemIdentity(
+			objectService: $objectService,
+			work: function () use (&$rows, &$counts): void {
+				$rows = $this->migrateOpenInstances(counts: $counts);
+			}
+		);
+
+		return $rows;
+	}//end migrateAsSystem()
+
+	/**
+	 * Read the open instances and migrate each one.
+	 *
+	 * @param array<string, int> $counts Running counts (by reference).
+	 *
+	 * @return array<int, array<string, mixed>>|null The rows read, or null when unreadable.
+	 *
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function migrateOpenInstances(array &$counts): ?array {
+		$rows = $this->openInstances();
+		if ($rows === null) {
+			return null;
+		}
+
+		foreach ($rows as $row) {
+			$this->migrateInstance(row: $row, counts: $counts);
+		}
+
+		return $rows;
+	}//end migrateOpenInstances()
+
+	/**
+	 * Log and print the migration's counts.
+	 *
+	 * @param IOutput            $output Output sink.
+	 * @param array<string, int> $counts The counts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
+	 */
+	private function report(IOutput $output, array $counts): void {
 		$this->logger->info('Dossiq termijn timer migration complete', $counts);
 		$output->info(
 			sprintf(
@@ -142,7 +188,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 				$counts['failed']
 			)
 		);
-	}//end run()
+	}//end report()
 
 	/**
 	 * Migrate one instance onto an engine timer.
@@ -157,11 +203,7 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	 */
 	private function migrateInstance(array $row, array &$counts): void {
 		$rowId = (string)($row['id'] ?? '');
-		$status = (string)($row['status'] ?? '');
-		if ($rowId === ''
-			|| in_array($status, self::OPEN_STATUSES, true) === false
-			|| (string)($row['engineTimerId'] ?? '') !== ''
-		) {
+		if ($this->isMigratable(row: $row) === false) {
 			$counts['skipped']++;
 			return;
 		}
@@ -177,18 +219,53 @@ class ArmTermijnEngineTimers implements IRepairStep {
 		$this->termService->updateTermijnInstance($rowId, ['engineTimerId' => $timerId, 'timerBreachesAfterLastDay' => true]);
 		$counts['armed']++;
 
-		if ($status === 'paused') {
-			$row['engineTimerId'] = $timerId;
-			$suspended = $this->timerService->suspendBeslistermijn(
-				instance: $row,
-				reason: 'Opschorting overgenomen bij migratie naar engine timers',
-				until: $this->dateOrNull(value: (string)($row['pauseDeadline'] ?? ''))
-			);
-			if ($suspended === true) {
-				$counts['suspended']++;
-			}
+		if ($this->carryPause(row: $row, timerId: $timerId) === true) {
+			$counts['suspended']++;
 		}
 	}//end migrateInstance()
+
+	/**
+	 * Whether an instance is open, has an id and has no engine timer yet.
+	 *
+	 * @param array<string, mixed> $row The TermijnInstance row.
+	 *
+	 * @return bool True when the instance should be armed.
+	 */
+	private function isMigratable(array $row): bool {
+		$rowId = (string)($row['id'] ?? '');
+		$status = (string)($row['status'] ?? '');
+		if ($rowId === ''
+			|| in_array($status, self::OPEN_STATUSES, true) === false
+			|| (string)($row['engineTimerId'] ?? '') !== ''
+		) {
+			return false;
+		}
+
+		return true;
+	}//end isMigratable()
+
+	/**
+	 * Carry a paused instance's pause onto its armed timer.
+	 *
+	 * @param array<string, mixed> $row     The TermijnInstance row.
+	 * @param string               $timerId The armed timer's id.
+	 *
+	 * @return bool True when a pause was carried over.
+	 */
+	private function carryPause(array $row, string $timerId): bool {
+		if ((string)($row['status'] ?? '') !== 'paused') {
+			return false;
+		}
+
+		$row['engineTimerId'] = $timerId;
+		$suspended = $this->timerService->suspendBeslistermijn(
+			instance: $row,
+			reason: 'Opschorting overgenomen bij migratie naar engine timers',
+			until: $this->dateOrNull(value: (string)($row['pauseDeadline'] ?? ''))
+		);
+
+		return $suspended === true;
+	}//end carryPause()
 
 	/**
 	 * All TermijnInstance rows, or null when the store is unreachable.
@@ -196,15 +273,13 @@ class ArmTermijnEngineTimers implements IRepairStep {
 	 * @return array<int, array<string, mixed>>|null The rows.
 	 */
 	private function openInstances(): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'termijn_instance_schema');
+		if ($target === null) {
 			return null;
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: []);
+			return $this->searchObjectsAsArrays(objectService: $target->objectService, register: $target->register, schema: $target->schema, filters: []);
 		} catch (\Throwable $e) {
 			$this->logger->error('Dossiq termijn timer migration: listing failed', ['error' => $e->getMessage()]);
 			return null;
@@ -225,20 +300,13 @@ class ArmTermijnEngineTimers implements IRepairStep {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
+		$target = (new RepairSchemas(settingsService: $this->settingsService))->configured(schemaKey: 'termijn_definitie_schema');
+		if ($target === null) {
 			return [];
 		}
 
 		try {
-			$def = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $defId
-			);
+			$def = $this->findObjectAsArray(objectService: $target->objectService, register: $target->register, schema: $target->schema, id: $defId);
 			if ($def !== null) {
 				return $def;
 			}

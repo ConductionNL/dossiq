@@ -1,13 +1,13 @@
 # woo-delivered-set Specification
 
 ## Purpose
-TBD - created by archiving change woo-delivered-set-is-a-record. Update Purpose after archive.
+Keep every Woo delivery as a set with its own identity and manifest. A frozen set refuses change and can be verified again later.
 
 ## Requirements
 
 ### Requirement: Every delivery writes a set with its own identity and manifest (REQ-WDS-001)
 
-`WooPublicationService::publish()` SHALL write a `wooDeliveredSet` object in dossiq's register
+`OutcomePublisher::publish()` SHALL write a `wooDeliveredSet` object in dossiq's register
 before it creates the publication, with: `case`, `decision`, `status` (`pending`, then `frozen`),
 `deliveredAt`, `deliveredBy`, `supersedes` (the previous set of the case, or empty), `publication`
 (set when frozen), `items` and `setHash`. Each item SHALL carry `assessment` (the

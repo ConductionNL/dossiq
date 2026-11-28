@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\SavedMailController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Controller\SavedMailFiles;
 use OCA\Dossiq\Service\Email\SavedMailImport;
 use OCP\AppFramework\Http;
 use OCP\Files\File;
@@ -59,6 +60,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Controller\SavedMailController
  * @uses \OCA\Dossiq\Service\Email\SavedMailImport
+ * @uses \OCA\Dossiq\Controller\SavedMailFiles
  *
  * @spec openspec/specs/case-email-integration/spec.md
  */
@@ -166,9 +168,8 @@ final class SavedMailControllerTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$this->import,
 			$this->caseAccessGuard,
-			$rootFolder,
+			new SavedMailFiles(rootFolder: $rootFolder, logger: $this->createMock(originalClassName: LoggerInterface::class)),
 			$session,
-			$this->createMock(LoggerInterface::class),
 		);
 	}//end controller()
 

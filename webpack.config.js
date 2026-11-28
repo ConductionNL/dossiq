@@ -1,4 +1,10 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+const { withLeanBundles } = require('@conduction/nextcloud-vue/webpack')
 const webpackConfig = require('@nextcloud/webpack-vue-config')
+const fs = require('fs')
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const webpack = require('webpack')
@@ -27,33 +33,15 @@ webpackConfig.entry = {
 		import: path.join(__dirname, 'src', 'settings.js'),
 		filename: appId + '-settings.js',
 	},
-	casesOverviewWidget: {
-		import: path.join(__dirname, 'src', 'casesOverviewWidget.js'),
-		filename: appId + '-casesOverviewWidget.js',
+	dashboardWidgets: {
+		import: path.join(__dirname, 'src', 'dashboardWidgets.js'),
+		filename: appId + '-dashboardWidgets.js',
 	},
-	overdueCasesWidget: {
-		import: path.join(__dirname, 'src', 'overdueCasesWidget.js'),
-		filename: appId + '-overdueCasesWidget.js',
-	},
-	myTasksWidget: {
-		import: path.join(__dirname, 'src', 'myTasksWidget.js'),
-		filename: appId + '-myTasksWidget.js',
-	},
-	deadlineAlertsWidget: {
-		import: path.join(__dirname, 'src', 'deadlineAlertsWidget.js'),
-		filename: appId + '-deadlineAlertsWidget.js',
-	},
-	taskRemindersWidget: {
-		import: path.join(__dirname, 'src', 'taskRemindersWidget.js'),
-		filename: appId + '-taskRemindersWidget.js',
-	},
-	stalledCasesWidget: {
-		import: path.join(__dirname, 'src', 'stalledCasesWidget.js'),
-		filename: appId + '-stalledCasesWidget.js',
-	},
-	startCaseWidget: {
-		import: path.join(__dirname, 'src', 'startCaseWidget.js'),
-		filename: appId + '-startCaseWidget.js',
+	// On Mail's page: offers dossiq's New case dialog to OpenRegister's Mail
+	// panel. Tiny on purpose; the dialog itself is an on-demand chunk.
+	mailCreateDialog: {
+		import: path.join(__dirname, 'src', 'mail-create-dialog.js'),
+		filename: appId + '-mail-create-dialog.js',
 	},
 }
 
@@ -191,6 +179,35 @@ webpackConfig.resolve.alias['@nextcloud/dialogs$'] = path.resolve(
 // the exports field. No alias needed; the pin alone is sufficient. Mirrors
 // decidesk's working webpack config.
 
+// The manifest JSON goes into the bundle without its rationale keys
+// (build/strip-notes-loader.js): about half of its bytes are `_note` prose.
+webpackConfig.module.rules.push({
+	test: /[\\/]src[\\/](manifest|menu-layout(\.simple)?|manifest\.d[\\/][^\\/]+)\.json$/,
+	type: 'json',
+	use: [path.join(__dirname, 'build', 'strip-notes-loader.js')],
+})
+
+// @nextcloud/vue declares no `sideEffects`, so webpack keeps every module its
+// barrel re-exports (the emoji picker and its data, the rich-text and
+// date-picker stacks) even where nothing imports them. Its modules have no
+// import-time side effects other than their stylesheets, which stay included
+// through the CSS rule's own default.
+webpackConfig.module.rules.push({
+	test: /[\\/]node_modules[\\/]@nextcloud[\\/]vue[\\/]dist[\\/].*\.m?js$/,
+	sideEffects: false,
+})
+
+// A dynamic `import('@mdi/js')` (the library's icon browser) uses every export,
+// and webpack keeps one copy of a module, so that copy landed in the entry
+// bundle with all 7,000 icons, beside the few that @nextcloud/dialogs imports
+// by name. Dynamic imports get a module of their own instead, so the static
+// imports stay tree-shaken and the full set loads only with the icon browser.
+webpackConfig.plugins.push(new webpack.NormalModuleReplacementPlugin(/^@mdi\/js$/, (resource) => {
+	if ((resource.dependencies || []).some((dependency) => dependency.type === 'import()')) {
+		resource.request = '@mdi/js/mdi.js?on-demand'
+	}
+}))
+
 // Share Vue + @nextcloud/vue + pinia + icons + @conduction/nextcloud-vue
 // across every entry-point so each widget bundle no longer inlines its own
 // ~5 MB framework copy. Stable filenames (no contenthash in the JS name)
@@ -207,6 +224,10 @@ webpackConfig.optimization = {
 			defaultVendors: false,
 			ncVue: {
 				name: appId + '-shared-nc-vue',
+				// Initial chunks only: the library's own on-demand pieces (its
+				// widget renderers, dialogs, charts, editors) stay async chunks
+				// instead of being pulled into the one chunk every page loads.
+				chunks: 'initial',
 				// A symlinked local nextcloud-vue checkout resolves outside
 				// node_modules (webpack follows the symlink to its real path),
 				// so match on the `nextcloud-vue` path segment, not node_modules.
@@ -218,6 +239,7 @@ webpackConfig.optimization = {
 			},
 			vendor: {
 				name: appId + '-shared-vendor',
+				chunks: 'initial',
 				test: /[\\/]node_modules[\\/](vue|pinia|vue-material-design-icons|@vueuse|core-js)[\\/]/,
 				priority: 20,
 				reuseExistingChunk: true,
@@ -228,4 +250,27 @@ webpackConfig.optimization = {
 	},
 }
 
-module.exports = webpackConfig
+// css-loader writes no source maps into the JS (they put 483 KB of CSS
+// mappings in dossiq-shared-nc-vue.js), and any cache group taking all chunks
+// is narrowed to initial ones. See nextcloud-vue docs/tooling/lean-bundles.md.
+// nextcloud-vue's stylesheet goes to css/nextcloud-vue.css, which every page
+// loading the -shared-nc-vue chunk links (templates/index.php,
+// templates/settings/admin.php, DashboardPageWidget::load()) instead of the
+// bundles inserting ~1.1 MB of CSS text: a linked sheet stays parsed between
+// page loads. The file is what '@conduction/nextcloud-vue/css/index.css' @imports.
+class LibraryStylesheetCopy {
+
+	apply(compiler) {
+		compiler.hooks.afterEmit.tap('LibraryStylesheetCopy', () => {
+			const entry = require.resolve('@conduction/nextcloud-vue/css/index.css')
+			const imported = /@import\s+['"]([^'"]+)['"]/.exec(fs.readFileSync(entry, 'utf8'))
+			const source = imported ? path.resolve(path.dirname(entry), imported[1]) : entry
+			fs.mkdirSync(path.join(__dirname, 'css'), { recursive: true })
+			fs.copyFileSync(source, path.join(__dirname, 'css', 'nextcloud-vue.css'))
+		})
+	}
+
+}
+webpackConfig.plugins.push(new LibraryStylesheetCopy())
+
+module.exports = withLeanBundles(webpackConfig)

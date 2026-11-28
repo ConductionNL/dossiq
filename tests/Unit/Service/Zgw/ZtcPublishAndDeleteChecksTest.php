@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Zgw\ZtcPublishAndDeleteChecks;
 use OCP\AppFramework\Db\DoesNotExistException;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * What a case type needs before it is published or deleted, asked of the class itself.
@@ -38,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
+ * @uses \OCA\Dossiq\Service\Zgw\SchemaFilter
  *
  * @spec openspec/changes/method-decomposition/tasks.md
  */
@@ -103,7 +105,11 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 				return $answer;
 			}//end searchObjectsBySlug()
 
-			public function find(int|string $id, ?array $_extend = [], bool $files = false, string|int|null $register = null, string|int|null $schema = null): array {
+			public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$_extend = $options?->extend ?? [];
+				$files = $options?->files ?? false;
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->caseType === null) {
 					throw new DoesNotExistException('gone');
 				}
@@ -135,6 +141,45 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 	}//end testACompleteCaseTypeMayBePublished()
 
 	/**
+	 * ZGW: without a flag the status type with the highest volgnummer is final, so a
+	 * zaaktype whose status types carry volgnummers may be published.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 *
+	 * @return void
+	 */
+	public function testAVolgnummerMakesTheHighestStatusTypeFinal(): void {
+		$this->assertSame(
+			expected: [],
+			actual: $this->checks(
+				rows: ['status_type_schema' => [['order' => 1], ['sequenceNumber' => 2, 'isFinal' => false]]],
+				caseType: ['validFrom' => '2026-01-01']
+			)->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+		);
+		$this->assertSame(
+			expected: ['At least one status type must be marked as final'],
+			actual: $this->checks(
+				rows: ['status_type_schema' => [['order' => 0, 'isFinal' => 'no']]],
+				caseType: ['validFrom' => '2026-01-01']
+			)->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+		);
+	}//end testAVolgnummerMakesTheHighestStatusTypeFinal()
+
+	/**
+	 * A zaaktype without status types may be published over ZGW; only its valid-from date is asked.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-zgw-publish-endpoint-guard/specs/zgw-business-rules-compliance/spec.md
+	 *
+	 * @return void
+	 */
+	public function testAZaaktypeWithoutStatusTypesMayBePublished(): void {
+		$this->assertSame(
+			expected: [],
+			actual: $this->checks(rows: [], caseType: ['validFrom' => '2026-01-01'])->validatePublish(register: 'reg', caseTypeId: 'ct-1')
+		);
+	}//end testAZaaktypeWithoutStatusTypesMayBePublished()
+
+	/**
 	 * Every missing precondition is named; a case type that cannot be read has no valid-from date.
 	 *
 	 * @return void
@@ -143,7 +188,7 @@ class ZtcPublishAndDeleteChecksTest extends TestCase {
 		$validFrom = "'Valid from' date must be set before publishing";
 
 		$this->assertSame(
-			['At least one status type must be defined before publishing', $validFrom],
+			[$validFrom],
 			$this->checks(rows: [])->validatePublish(register: 'reg', caseTypeId: 'ct-1')
 		);
 		$this->assertSame(

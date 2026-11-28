@@ -31,12 +31,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\CaseRecycleController;
+use OCA\Dossiq\Controller\RetentionClocksController;
+use OCA\Dossiq\Controller\Support\CaseAccessRefusal;
+use OCA\Dossiq\Controller\Support\LiveCaseRetentionClocks;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Recycle\CaseDestructionService;
 use OCA\Dossiq\Service\Recycle\CaseRecycleService;
 use OCA\Dossiq\Service\Recycle\RetentionClocks;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -49,6 +53,8 @@ use RuntimeException;
  * The lens, the restore, the preview, the destroy and the clocks.
  *
  * @covers \OCA\Dossiq\Controller\CaseRecycleController
+ * @covers \OCA\Dossiq\Controller\RetentionClocksController
+ * @covers \OCA\Dossiq\Controller\Support\LiveCaseRetentionClocks
  */
 class CaseRecycleControllerTest extends TestCase {
 
@@ -135,13 +141,41 @@ class CaseRecycleControllerTest extends TestCase {
 			$this->request,
 			$this->recycle,
 			$this->destruction,
-			$this->clocks,
-			$this->guard,
 			$this->groupManager,
 			$this->userSession,
-			$this->createMock(originalClassName: LoggerInterface::class)
+			$this->createMock(originalClassName: LoggerInterface::class),
+			$this->l10n()
 		);
 	}//end controller()
+
+	/**
+	 * Build the retention clocks controller under test (the clocks route left CaseRecycleController).
+	 *
+	 * @return RetentionClocksController
+	 */
+	private function clocksController(): RetentionClocksController {
+		return new RetentionClocksController(
+			request: $this->request,
+			access: new CaseAccessRefusal(userSession: $this->userSession, guard: $this->guard),
+			clocks: new LiveCaseRetentionClocks(recycle: $this->recycle, clocks: $this->clocks),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end clocksController()
+
+	/**
+	 * A translator that answers the text it was given.
+	 *
+	 * @return IL10N
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		$l10n->method('n')->willReturnCallback(
+			fn (string $one, string $many, int $count): string => str_replace('%n', (string)$count, ($count === 1 ? $one : $many))
+		);
+
+		return $l10n;
+	}//end l10n()
 
 	/**
 	 * REQ-CRW-01: the lens answers the deleted cases with the date each window
@@ -164,6 +198,33 @@ class CaseRecycleControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('2034-01-31', $response->getData()['results'][0]['windowEndsOn']);
 	}//end testTheLensAnswersTheDeletedCases()
+
+	/**
+	 * Each row says what is left of its window, in words the list shows under
+	 * the date: the days left, or that the window has passed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testEachRowSaysWhatIsLeftOfItsWindow(): void {
+		$this->recycle->method('deletedCases')->willReturn(
+			[
+				'results' => [
+					['id' => 'case-1', 'daysRemaining' => 12, 'lapsed' => false],
+					['id' => 'case-2', 'daysRemaining' => 0, 'lapsed' => true],
+					['id' => 'case-3', 'daysRemaining' => null, 'lapsed' => null],
+				],
+				'total' => 3,
+			]
+		);
+
+		$rows = $this->controller()->deleted()->getData()['results'];
+
+		$this->assertSame('12 days left', $rows[0]['windowNote']);
+		$this->assertSame('the window has passed', $rows[1]['windowNote']);
+		$this->assertSame('', $rows[2]['windowNote']);
+	}//end testEachRowSaysWhatIsLeftOfItsWindow()
 
 	/**
 	 * The lens is scoped to the caller. An unscoped one would hand any
@@ -223,6 +284,7 @@ class CaseRecycleControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 		$this->assertSame('destroy_role_missing', $response->getData()['code']);
+		$this->assertSame('You do not hold the role this case type requires to destroy a case.', $response->getData()['message']);
 	}//end testARefusedDestructionAnswersItsRule()
 
 	/**
@@ -282,7 +344,7 @@ class CaseRecycleControllerTest extends TestCase {
 		$this->recycle->expects($this->never())->method('liveCase');
 		$this->clocks->expects($this->never())->method('clocksFor');
 
-		$response = $this->controller()->clocks(caseId: 'case-9');
+		$response = $this->clocksController()->clocks(caseId: 'case-9');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testTheClocksReadIsGuarded()
@@ -305,7 +367,7 @@ class CaseRecycleControllerTest extends TestCase {
 			]
 		);
 
-		$data = $this->controller()->clocks(caseId: 'case-9')->getData();
+		$data = $this->clocksController()->clocks(caseId: 'case-9')->getData();
 
 		$this->assertSame('2024-01-31', $data['lawfulPurpose']['date']);
 		$this->assertSame('2034-01-31', $data['archive']['date']);
@@ -334,7 +396,7 @@ class CaseRecycleControllerTest extends TestCase {
 			$controller->restore(caseId: 'case-9')->getStatus(),
 			$controller->destructionPreview(caseId: 'case-9')->getStatus(),
 			$controller->destroy(caseId: 'case-9')->getStatus(),
-			$controller->clocks(caseId: 'case-9')->getStatus(),
+			$this->clocksController()->clocks(caseId: 'case-9')->getStatus(),
 		];
 
 		$this->assertSame(array_fill(0, 5, Http::STATUS_UNAUTHORIZED), $statuses);

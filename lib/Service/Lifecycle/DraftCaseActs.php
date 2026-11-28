@@ -55,9 +55,11 @@ use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 /**
  * Begins a draft case and promotes it into a real one.
  *
- * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class DraftCaseActs {
+	use LoadsCaseOrRefuses;
+
 
 	/**
 	 * Whether the case is still a draft.
@@ -100,7 +102,7 @@ class DraftCaseActs {
 	 *
 	 * @throws RefusedException When the case cannot be read or is already ended.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function begin(string $caseId): array {
 		$case = $this->load(caseId: $caseId);
@@ -108,7 +110,12 @@ class DraftCaseActs {
 		$case[self::DRAFT_FIELD] = true;
 		$case[self::BEGUN_FIELD] = (new DateTimeImmutable())->format('c');
 		$case['startDate'] = null;
-		$case['deadline'] = null;
+		// `deadline` is a read-only calculation over startDate (the register
+		// refuses a save that writes it: "Cannot modify readOnly property"),
+		// so it is left out and the register empties it with the start date.
+		// The startDate calculation leaves a draft's date empty instead of
+		// falling back to today.
+		unset($case['deadline']);
 		$case['plannedEndDate'] = null;
 		if (trim((string)($case['assignee'] ?? '')) === '') {
 			// A draft with no assignee is a draft nobody owns, which is a
@@ -135,7 +142,7 @@ class DraftCaseActs {
 	 *
 	 * @throws RefusedException When the case is not a draft.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function promote(string $caseId): array {
 		$case = $this->load(caseId: $caseId);
@@ -178,33 +185,9 @@ class DraftCaseActs {
 	 *
 	 * @return bool True when it is.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function isDraft(array $case): bool {
 		return in_array(($case[self::DRAFT_FIELD] ?? false), [true, 1, '1', 'true'], true);
 	}//end isDraft()
-
-	/**
-	 * Load the case, or refuse.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec exclude one read behind both acts in this class
-	 */
-	private function load(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end load()
 }//end class

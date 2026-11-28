@@ -25,17 +25,19 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseDefinition\PackageInstaller;
-use OCA\Dossiq\Service\DemoDataService;
-use OCA\Dossiq\Service\Setup\FirstRunReadiness;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Controller\Support\DatasetLoad;
+use OCA\Dossiq\Controller\Support\RegisterInstall;
+use OCA\Dossiq\Kernel\Contracts\ActiveOrganisationProfileInterface;
+use OCA\Dossiq\Kernel\Contracts\CaseTypePackageChoiceInterface;
+use OCA\Dossiq\Kernel\Contracts\DemoDataServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\FirstRunReadinessInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -47,19 +49,10 @@ use OCP\IRequest;
 /**
  * First-time setup status + actions for the abstract setup wizard.
  *
- * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+ * @spec openspec/specs/first-time-setup/spec.md
  */
 class SetupController extends Controller {
 
-	/**
-	 * The case definition package the `seed` action installs.
-	 *
-	 * It ships with `install: on-request`, so no upgrade writes it; this
-	 * action and `occ dossiq:package:install bezwaar-beroep` are the two ways in.
-	 *
-	 * @var string
-	 */
-	private const SEED_PACKAGE = 'bezwaar-beroep';
 	/**
 	 * Setup contract version; matches manifest.setup.version.
 	 *
@@ -75,7 +68,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DEMO_DATA_DECIDED_KEY = 'demo_data_decided';
+	private const DEMO_DATA_DECIDED_KEY = DatasetLoad::DECIDED_KEY;
 
 	/**
 	 * App-config key holding the dataset the operator picked.
@@ -88,7 +81,7 @@ class SetupController extends Controller {
 	 *
 	 * @var string
 	 */
-	private const DATASET_KEY = 'demo_dataset';
+	private const DATASET_KEY = DatasetLoad::DATASET_KEY;
 
 	/**
 	 * App-config key holding the setup version the wizard was closed at.
@@ -102,26 +95,37 @@ class SetupController extends Controller {
 	private const DISMISSED_VERSION_KEY = 'setup_dismissed_version';
 
 	/**
+	 * Loads the picked example dataset, or records that none is wanted.
+	 *
+	 * @var DatasetLoad
+	 */
+	private readonly DatasetLoad $datasets;
+
+	/**
 	 * Construct the setup controller.
 	 *
 	 * @param string $appName The app id.
 	 * @param IRequest $request The request.
 	 * @param IAppConfig $appConfig App-config reader/writer.
-	 * @param DemoDataService $demoDataService Demo dataset import (ADR-111 rule 4).
-	 * @param SettingsService $settingsService OpenRegister availability + config import.
-	 * @param PackageInstaller $packages Installs the case definition package the `seed` action asks for.
-	 * @param FirstRunReadiness $readiness The minimum an instance needs, read live.
+	 * @param DemoDataServiceInterface $demoDataService Demo dataset import (ADR-111 rule 4).
+	 * @param RegisterInstall $register Register readiness, the register import and the `seed` package install.
+	 * @param FirstRunReadinessInterface $readiness The minimum an instance needs, read live.
+	 * @param ActiveOrganisationProfileInterface $organisationProfile The active organisation's name and logo (Organisation step).
+	 * @param CaseTypePackageChoiceInterface $caseTypes The on-request case type packages (Case types step).
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly IAppConfig $appConfig,
-		private readonly DemoDataService $demoDataService,
-		private readonly SettingsService $settingsService,
-		private readonly PackageInstaller $packages,
-		private readonly FirstRunReadiness $readiness,
+		private readonly DemoDataServiceInterface $demoDataService,
+		private readonly RegisterInstall $register,
+		private readonly FirstRunReadinessInterface $readiness,
+		private readonly ActiveOrganisationProfileInterface $organisationProfile,
+		private readonly CaseTypePackageChoiceInterface $caseTypes,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->datasets = new DatasetLoad(appConfig: $appConfig, demoDataService: $demoDataService, caseTypes: $caseTypes);
 	}//end __construct()
 
 	/**
@@ -135,105 +139,116 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse `{ version, completed, registerReady, steps: { <id>: { done } } }`.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
-		$registerDone = $this->settingsService->isOpenRegisterAvailable() === true
-			&& $this->config(key: 'register') !== ''
-			&& $this->config(key: 'case_type_schema') !== '';
-		// NO `seed` KEY. The wizard no longer declares that step, and the
-		// payload is its step contract: reporting a step no manifest renders
-		// gives CnSetupWizard something it can never prompt for, and
-		// `testEveryActionableManifestStepIsReported` compares the two sets
-		// in both directions for exactly that reason. `setup_seed_done` is
-		// still written by the `seed` action below, so an operator who runs it
-		// over the API keeps a record that it ran.
-		//
-		// DEALT WITH, not "demo objects exist". An operator who declines demo
-		// data has finished the step; re-offering it every visit would make
-		// "no thanks" impossible to express.
-		$demoDecided = $this->config(key: self::DEMO_DATA_DECIDED_KEY) !== '';
-		$pickedDataset = $this->config(key: self::DATASET_KEY);
-		// No step is required, so setup is complete by definition. A missing
-		// OpenRegister is the manifest's dependency gate, not a wizard step.
-		$completed = true;
-
-		// Dwangsom callback signing secret. Only meaningful once the payout
-		// integration is configured at all: with no dwangsom schema there is
-		// no callback to sign, so the step is settled rather than outstanding.
-		//
-		// SETTLED, not "secret present". The step is optional, and the secret
-		// lives permanently under admin settings > Financial integration. While
-		// the step reported "not done" for as long as the secret was empty,
-		// CnAppRoot reopened the wizard at this step on every fresh browser
-		// profile (each Playwright context, every new device), because its
-		// dismissal is only a localStorage key. So the step is done once the
-		// wizard has been completed, which is what skipping it in the wizard
-		// means; a secret configured later settles it just the same. Read
-		// BEFORE the completion marker is written below, so the visit that
-		// finishes the wizard still offers the step once.
-		$dwangsomActive = $this->config(key: 'dwangsom_uitbetaling_schema') !== '';
-		$secretConfigured = $this->config(key: 'dwangsom_callback_secret') !== '';
+		$registerDone = $this->register->isReady();
+		// Read BEFORE the completion marker is written below, so the visit that
+		// finishes the wizard still offers the case types step once.
 		$wizardDoneBefore = $this->config(key: 'setup_completed_version') === (string)self::SETUP_VERSION;
-		$dwangsomSecretDone = $dwangsomActive === false
-			|| $secretConfigured === true
-			|| $wizardDoneBefore === true;
 
 		$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
 
 		$response = [
 			'version' => self::SETUP_VERSION,
-			'completed' => $completed,
+			// No step is required, so setup is complete by definition. A missing
+			// OpenRegister is the manifest's dependency gate, not a wizard step.
+			'completed' => true,
 			'registerReady' => $registerDone,
 			// The choice step reads its options from here: it declares
 			// `optionsSource: datasets` and no options of its own, so a dataset
 			// missing from this list is a dataset nobody can pick.
 			'datasets' => $this->demoDataService->listChoices(),
-			// Exactly the ids of `manifest.setup.steps`: a step the server
-			// never reports stays open and reopens the wizard.
-			'steps' => [
-				'welcome' => ['done' => true],
-				// A pick without a load still counts: a wizard that predates
-				// `loadAction` can only record the pick.
-				'demo-data' => ['done' => ($demoDecided === true || $pickedDataset !== '')],
-				// Reported unconditionally so the wizard can tell "configured"
-				// from "never mentioned" — an unreported step is UNKNOWN to
-				// CnAppRoot and never prompts.
-				'dwangsom-secret' => ['done' => $dwangsomSecretDone],
-				'done' => ['done' => true],
-			],
+			'caseTypePackages' => $this->caseTypes->options(),
+			'steps' => $this->stepsDone(wizardDoneBefore: $wizardDoneBefore),
 		];
 
-		$response = array_merge($response, $this->firstRun());
+		return new DataResponse(array_merge($response, $this->firstRun(), $this->statusFlags()));
+	}//end status()
 
-		// The close is recorded on the server, so a new browser does not
-		// reopen the wizard. Left out until someone closed it: CnAppRoot then
-		// falls back to the per-browser record, as before.
+	/**
+	 * Exactly the ids of `manifest.setup.steps`, each with whether it is done:
+	 * a step the server never reports stays open and reopens the wizard.
+	 *
+	 * NO `seed` KEY. The wizard no longer declares that step, and the
+	 * payload is its step contract: reporting a step no manifest renders
+	 * gives CnSetupWizard something it can never prompt for, and
+	 * `testEveryActionableManifestStepIsReported` compares the two sets
+	 * in both directions for exactly that reason. `setup_seed_done` is
+	 * still written by the `seed` action below, so an operator who runs it
+	 * over the API keeps a record that it ran.
+	 *
+	 * DEALT WITH, not "demo objects exist". An operator who declines demo
+	 * data has finished the step; re-offering it every visit would make
+	 * "no thanks" impossible to express.
+	 *
+	 * @param bool $wizardDoneBefore Whether this setup version was finished before this visit.
+	 *
+	 * @return array<string, array{done: bool}>
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 */
+	private function stepsDone(bool $wizardDoneBefore): array {
+		$demoDecided = $this->config(key: self::DEMO_DATA_DECIDED_KEY) !== '';
+		$pickedDataset = $this->config(key: self::DATASET_KEY);
+
+		return [
+			'welcome' => ['done' => true],
+			'organisation-details' => ['done' => $this->organisationProfile->isSettled()],
+			'house-style' => ['done' => true],
+			'case-types' => ['done' => ($this->caseTypes->isDecided() === true || $wizardDoneBefore === true)],
+			// A pick without a load still counts: a wizard that predates
+			// `loadAction` can only record the pick.
+			'demo-data' => ['done' => ($demoDecided === true || $pickedDataset !== '')],
+			'done' => ['done' => true],
+		];
+	}//end stepsDone()
+
+	/**
+	 * The flags the status carries only when they apply: the closed version and the payout secret.
+	 *
+	 * The close is recorded on the server, so a new browser does not
+	 * reopen the wizard. Left out until someone closed it: CnAppRoot then
+	 * falls back to the per-browser record, as before.
+	 *
+	 * The payout callback secret is no wizard step: it is set under admin
+	 * settings > Financial integration.
+	 * Financial-integration (payout) capability: surface a
+	 * missing callback secret before go-live rather than after an
+	 * incident (enforce-dwangsom-callback-signature spec).
+	 *
+	 * This flag is the ORIGINAL surface for that warning and had no reader
+	 * anywhere in the frontend — it was computed, serialised and dropped on
+	 * the floor on every request, so the incident it exists to prevent was
+	 * never actually being prevented. It is kept for any API consumer that
+	 * reads it, under its original name. It answers a different question from the step: the step
+	 * says whether the wizard still has to ASK, this says whether a secret
+	 * IS configured, and only the second one is the go-live warning.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 */
+	private function statusFlags(): array {
+		$flags = [];
 		$dismissedAt = $this->config(key: self::DISMISSED_VERSION_KEY);
 		if ($dismissedAt !== '') {
-			$response['dismissed'] = (int)$dismissedAt;
+			$flags['dismissed'] = (int)$dismissedAt;
 		}
 
-		// Financial-integration (dwangsom uitbetaling) capability: surface a
-		// missing callback secret before go-live rather than after an
-		// incident (enforce-dwangsom-callback-signature spec).
-		//
-		// This flag is the ORIGINAL surface for that warning and had no reader
-		// anywhere in the frontend — it was computed, serialised and dropped on
-		// the floor on every request, so the incident it exists to prevent was
-		// never actually being prevented. It is kept for any API consumer that
-		// reads it. It answers a different question from the step: the step
-		// says whether the wizard still has to ASK, this says whether a secret
-		// IS configured, and only the second one is the go-live warning.
-		if ($dwangsomActive === true) {
-			$response['dwangsom_callback_secret_configured'] = $secretConfigured;
+		$payoutActive = $this->config(key: 'payout_schema') !== '';
+		$secretConfigured = $this->config(key: 'payout_callback_secret') !== '';
+		if ($payoutActive === true) {
+			$flags['dwangsom_callback_secret_configured'] = $secretConfigured;
 		}
 
-		return new DataResponse($response);
-	}//end status()
+		return $flags;
+	}//end statusFlags()
 
 	/**
 	 * The first-run report: the minimum this instance needs, and the tour it lost.
@@ -261,7 +276,7 @@ class SetupController extends Controller {
 	 * @return array{readiness: array<int, array<string, mixed>>, tourSteps: array<int, array<string, mixed>>}
 	 *         The readiness items and the broken tour steps.
 	 *
-	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function firstRun(): array {
 		return [
@@ -275,7 +290,8 @@ class SetupController extends Controller {
 	 *
 	 * @return DataResponse `{ success }`.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function saveConfig(): DataResponse {
@@ -285,28 +301,39 @@ class SetupController extends Controller {
 		// different: the load step reads it back and hands it to the importer,
 		// so an unknown value would surface one step later as a failed import
 		// with no clue why.
-		$dataset = $this->request->getParam(self::DATASET_KEY);
-		if ($dataset !== null) {
-			$submitted = $dataset;
-			if (is_array($dataset) === true) {
-				$submitted = ($dataset[0] ?? null);
-			}
-
-			$named = 'that';
-			if (is_scalar($submitted) === true) {
-				$named = (string)$submitted;
-			}
-
-			$known = array_column($this->demoDataService->listChoices(), 'id');
-			if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
-				return new DataResponse(
-					['success' => false, 'message' => 'No dataset is called "' . $named . '".']
-				);
-			}
+		$refusal = $this->refuseUnknownDataset();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
-		foreach ($this->request->getParams() as $key => $value) {
-			if (in_array($key, ['_route'], true) === true) {
+		// The organisation's name and logo live on the OpenRegister
+		// Organisation, not in app config.
+		$params = $this->request->getParams();
+		$organisationFields = [ActiveOrganisationProfileInterface::NAME_FIELD, ActiveOrganisationProfileInterface::LOGO_FIELD];
+		if ($this->organisationProfile->write(fields: array_intersect_key($params, array_flip($organisationFields))) === false) {
+			return new DataResponse(
+				['success' => false, 'message' => 'The organisation name and logo could not be saved. A logo address starts with http:// or https://.']
+			);
+		}
+
+		$this->storeConfigFields(params: $params, skipped: array_merge(['_route'], $organisationFields));
+
+		return $this->loadPostedDataset() ?? new DataResponse(['success' => true]);
+	}//end saveConfig()
+
+	/**
+	 * Store every posted field as app config, as posted; a non-scalar as JSON.
+	 *
+	 * @param array<string, mixed> $params  The posted fields.
+	 * @param array<int, string>   $skipped The fields that are not app config.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 */
+	private function storeConfigFields(array $params, array $skipped): void {
+		foreach ($params as $key => $value) {
+			if (in_array($key, $skipped, true) === true) {
 				continue;
 			}
 
@@ -321,216 +348,144 @@ class SetupController extends Controller {
 				(string)$stored,
 			);
 		}
+	}//end storeConfigFields()
 
-		return new DataResponse(['success' => true]);
-	}//end saveConfig()
+	/**
+	 * Act on the Example data pick the wizard posted with Next.
+	 *
+	 * The step loads on Next (DqInstellen), not from a button on each
+	 * choice, so the pick posted here is imported at once, or recorded as
+	 * declined. The import is idempotent, so a second Next reports the
+	 * objects as already present. A failure
+	 * answers 422 so the wizard stays on the step and shows the message.
+	 *
+	 * @return DataResponse|null The failure, or null when there was nothing to do or the load succeeded.
+	 *
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
+	 */
+	private function loadPostedDataset(): ?DataResponse {
+		if ($this->request->getParam(self::DATASET_KEY) === null) {
+			return null;
+		}
+
+		$outcome = $this->datasets->load(actionId: 'load-demo-data', posted: $this->request->getParam('dataset'));
+		if (($outcome->getData()['success'] ?? false) === true) {
+			return null;
+		}
+
+		return new DataResponse($outcome->getData(), Http::STATUS_UNPROCESSABLE_ENTITY);
+	}//end loadPostedDataset()
 
 	/**
 	 * Run a privileged server-side setup action.
 	 *
-	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` | `init-register` | `seed`.
+	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` |
+	 *                         `init-register` | `seed` | `install-case-types`.
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
-	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {
 		// `install-demo-data` is the id the step used before it asked WHICH
 		// dataset, and it still means "import the one this app ships". Kept so
 		// an older manifest, a runbook or a script that posts it keeps working.
-		if ($actionId === 'load-demo-data' || $actionId === 'install-demo-data') {
-			return $this->loadDataset(actionId: $actionId);
-		}
-
-		if ($actionId === 'skip-demo-data') {
-			return $this->skipDemoData();
-		}
-
-		// The wizard was closed or finished (`manifest.setup.dismissAction`).
-		// Only the setup version is stored: the close answers no step, so a
-		// demo-data choice or a secret the administrator set stays as it was.
-		if ($actionId === 'dismiss-setup') {
-			$this->appConfig->setValueString('dossiq', self::DISMISSED_VERSION_KEY, (string)self::SETUP_VERSION);
-			return new DataResponse(['success' => true, 'message' => 'The setup wizard stays closed.']);
-		}
-
-		// No longer a wizard step: the admin settings page repairs the register
-		// (wizard-dataset-card-load). Kept for runbooks and scripts.
-		if ($actionId === 'init-register') {
-			$this->settingsService->loadConfiguration(force: true);
-			return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
-		}
-
-		if ($actionId === 'seed') {
-			return $this->installSeedPackage();
-		}
-
-		return new DataResponse(
-			['success' => false, 'message' => 'Unknown setup action: ' . $actionId],
-			Http::STATUS_NOT_FOUND,
-		);
+		return match ($actionId) {
+			'load-demo-data', 'install-demo-data' => $this->datasets->load(
+				actionId: $actionId,
+				posted: $this->request->getParam('dataset'),
+			),
+			'skip-demo-data' => $this->datasets->decline(),
+			'dismiss-setup' => $this->dismissSetup(),
+			// `init-register` is no longer a wizard step: the admin settings
+			// page repairs the register. Kept for runbooks and scripts.
+			'init-register' => $this->register->initialise(),
+			'seed' => $this->register->installSeedPackage(),
+			'install-case-types' => $this->installCaseTypes(),
+			default => new DataResponse(
+				['success' => false, 'message' => 'Unknown setup action: ' . $actionId],
+				Http::STATUS_NOT_FOUND,
+			),
+		};
 	}//end runAction()
 
 	/**
-	 * Install the package the `seed` action stands for, through the installer.
+	 * The wizard was closed or finished (`manifest.setup.dismissAction`).
 	 *
-	 * Installed and already-current both complete the step: either way the
-	 * case types are on this instance. A refusal or a failed write answers 422
-	 * with the installer's own message and leaves the step open.
+	 * Only the setup version is stored: the close answers no step, so a
+	 * demo-data choice or a secret the administrator set stays as it was.
 	 *
-	 * @return DataResponse `{ success, message, detail }`, where detail is the installer's outcome.
+	 * @return DataResponse
 	 *
-	 * @spec openspec/changes/case-definition-packages/specs/case-types/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
-	private function installSeedPackage(): DataResponse {
-		$outcome = $this->packages->install(id: self::SEED_PACKAGE);
-		$done = in_array($outcome['status'], [PackageInstaller::INSTALLED, PackageInstaller::CURRENT], true);
-		if ($done === false) {
-			return new DataResponse(
-				['success' => false, 'message' => $outcome['message'], 'detail' => $outcome],
-				Http::STATUS_UNPROCESSABLE_ENTITY,
-			);
-		}
-
-		$this->appConfig->setValueString('dossiq', 'setup_seed_done', '1');
-		return new DataResponse(['success' => true, 'message' => $outcome['message'], 'detail' => $outcome]);
-	}//end installSeedPackage()
+	private function dismissSetup(): DataResponse {
+		$this->appConfig->setValueString('dossiq', self::DISMISSED_VERSION_KEY, (string)self::SETUP_VERSION);
+		return new DataResponse(['success' => true, 'message' => 'The setup wizard stays closed.']);
+	}//end dismissSetup()
 
 	/**
-	 * Import the dataset a card's Load button posted as `dataset`, or the
-	 * stored pick when nothing is posted (ADR-111 rule 4).
+	 * The Case types step: a card's Load button posts its package as `dataset`.
 	 *
-	 * @param string $actionId The action that asked, which decides whether an
-	 *                         unanswered choice is refused or means the shipped set.
+	 * @return DataResponse The installer's outcome; 422 when it did not install.
 	 *
-	 * @return DataResponse The outcome, carrying the counts.
-	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
-	private function loadDataset(string $actionId): DataResponse {
-		$picked = $this->config(key: self::DATASET_KEY);
-
-		// The card's Load button names its dataset in the body. An older wizard
-		// posts nothing and relies on the pick stored a step earlier. Nothing is
-		// stored before the load succeeds: a failed load must leave the step
-		// open for an operator who asked for data and got none.
-		$posted = $this->request->getParam('dataset');
-		if ($posted !== null) {
-			$refusal = $this->refuseDataset(value: $posted);
-			if ($refusal !== null) {
-				return $refusal;
-			}
-
-			$picked = (string)$posted;
+	private function installCaseTypes(): DataResponse {
+		$outcome = $this->caseTypes->install(id: (string)$this->request->getParam('dataset', ''));
+		if ($outcome['success'] === false) {
+			return new DataResponse($outcome, Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
-		// The legacy id carries no answer, so it means the shipped dataset. A
-		// caller that posts it has said which one by posting it.
-		if ($actionId === 'install-demo-data' && $picked === '') {
-			$picked = DemoDataService::DEMO_DATASET;
-		}
-
-		// 🔴 NO SILENT DEFAULT. Importing here because the operator clicked Run
-		// one step early would plant example objects nobody asked for, which is
-		// the failure this whole step exists to avoid.
-		if ($picked === '') {
-			return new DataResponse(['success' => false, 'message' => 'Pick a dataset first.']);
-		}
-
-		if ($picked === DemoDataService::NONE_DATASET) {
-			$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
-			$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
-
-			return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
-		}
-
-		try {
-			$imported = $this->demoDataService->install();
-		} catch (\Throwable $e) {
-			return new DataResponse(['success' => false, 'message' => $e->getMessage()]);
-		}
-
-		// Recorded only after the import actually returned. Marking it first
-		// would let a failed install present as a finished step, and an import
-		// that stored nothing now throws above rather than returning zeroes.
-		// Loading IS choosing the set, so the pick is recorded too.
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'installed');
-
-		// 🔴 THE COUNTS, ALWAYS, AND BOTH OF THEM. "Demo data installed" with no
-		// numbers cannot be told apart from an import that wrote nothing — and
-		// one number cannot be told apart from a number read out of the file it
-		// was asked to import. The landing is stated against the ask.
-		//
-		// 🔴 THE SCHEMA COUNT IS GONE, BECAUSE IT WAS COUNTING THE DAMAGE.
-		// `schemas` is how many schemas the import DEFINED, and this message
-		// read it as "how many schemas the objects landed in". Those were the
-		// same number only while the demo import was forking a schema set of
-		// its own: "across 139 schemas" was the fork, reported as a feature.
-		// A demo set defines no schemas now, so the honest sentence is about
-		// objects. The full counts stay in `detail`.
-		return new DataResponse(
-			[
-				'success' => true,
-				'message' => sprintf(
-					'Demo data installed: %d of %d objects stored, %d refused, %d already present.',
-					$imported['objects'],
-					$imported['requested'],
-					$imported['refused'],
-					$imported['unchanged']
-				),
-				'detail'  => $imported,
-			]
-		);
-	}//end loadDataset()
+		return new DataResponse($outcome);
+	}//end installCaseTypes()
 
 	/**
-	 * Refuse a posted dataset id no dataset answers to.
+	 * Refuse a posted dataset the demo data service does not offer.
 	 *
-	 * @param mixed $value The posted value.
-	 *
-	 * @return DataResponse|null The refusal, or null when the dataset is known.
-	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @return DataResponse|null The refusal, or null when no dataset was posted or it is known.
 	 */
-	private function refuseDataset(mixed $value): ?DataResponse {
-		$named = 'that';
-		if (is_scalar($value) === true) {
-			$named = (string)$value;
-		}
-
-		$known = array_column($this->demoDataService->listChoices(), 'id');
-		if (is_scalar($value) === true && in_array($named, $known, true) === true) {
+	private function refuseUnknownDataset(): ?DataResponse {
+		$dataset = $this->request->getParam(self::DATASET_KEY);
+		if ($dataset === null) {
 			return null;
 		}
 
-		return new DataResponse(
-			['success' => false, 'message' => 'No dataset is called "' . $named . '".'],
-			Http::STATUS_BAD_REQUEST,
-		);
-	}//end refuseDataset()
+		$submitted = $this->submittedDataset(dataset: $dataset);
+		$named = 'that';
+		if (is_scalar($submitted) === true) {
+			$named = (string)$submitted;
+		}
+
+		$known = array_column($this->demoDataService->listChoices(), 'id');
+		if (is_scalar($submitted) === false || in_array($named, $known, true) === false) {
+			return new DataResponse(
+				['success' => false, 'message' => 'No dataset is called "' . $named . '".']
+			);
+		}
+
+		return null;
+	}//end refuseUnknownDataset()
 
 	/**
-	 * Record that the operator declined the demo dataset.
+	 * The dataset a config step submitted: the first of a list, else the value.
 	 *
-	 * Its own action so "no thanks" is a decision the wizard can record. Without
-	 * it the only way past the step would be to install demo data, which is
-	 * wrong on a production instance.
+	 * @param mixed $dataset The posted value.
 	 *
-	 * @return DataResponse The outcome.
-	 *
-	 * @spec exclude Demo-data skip action (ADR-111 rule 4); no per-app openspec change yet.
+	 * @return mixed
 	 */
-	private function skipDemoData(): DataResponse {
-		// Skipping IS choosing "None", so both keys are written: an older
-		// runbook may read either one.
-		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
-		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
+	private function submittedDataset(mixed $dataset): mixed {
+		if (is_array($dataset) === true) {
+			return ($dataset[0] ?? null);
+		}
 
-		return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
-	}//end skipDemoData()
+		return $dataset;
+	}//end submittedDataset()
 
 	/**
 	 * Read a dossiq app-config string value.

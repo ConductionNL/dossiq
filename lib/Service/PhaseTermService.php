@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -47,20 +47,21 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\PhaseTermServiceInterface;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
 
 /**
  * Starting, stopping and splitting phase terms (REQ-TERM-061, REQ-TERM-065).
  *
- * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
  * nothing to inject. Making it an instance would add a constructor dependency
  * to every class that names a kind, to hide a `::` behind a `->`.
  */
-class PhaseTermService {
+class PhaseTermService implements PhaseTermServiceInterface {
 	/**
 	 * The status a stopped phase term carries.
 	 *
@@ -103,41 +104,63 @@ class PhaseTermService {
 	 * @return array<string, mixed>|null The started phase term, or null when the
 	 *         phase declares no clock and the chain declares no term either.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
-	public function enterPhase(
-		string $caseId,
-		string $caseTypeId,
-		string $statusTypeId,
-		?DateTimeImmutable $when = null,
-	): ?array {
+	public function enterPhase(string $caseId, string $caseTypeId, string $statusTypeId, ?DateTimeImmutable $when = null): ?array {
 		if ($caseId === '' || $statusTypeId === '') {
 			return null;
 		}
 
-		$moment = ($when ?? new DateTimeImmutable());
+		return $this->clockPhase(
+			phase: ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'statusTypeId' => $statusTypeId],
+			moment: ($when ?? new DateTimeImmutable())
+		);
+	}//end enterPhase()
+
+	/**
+	 * Stop the other running phases and start this phase's clock, when it has days of its own.
+	 *
+	 * @param array<string, string> $phase  The `caseId`, the `caseTypeId` and the phase's `statusTypeId`.
+	 * @param DateTimeImmutable     $moment The moment the case enters it.
+	 *
+	 * @return array<string, mixed>|null The started clock, or null when the phase has no term.
+	 */
+	private function clockPhase(array $phase, DateTimeImmutable $moment): ?array {
+		$caseId = $phase['caseId'];
+		$statusTypeId = $phase['statusTypeId'];
 		$this->stopRunningPhases(caseId: $caseId, when: $moment, except: $statusTypeId);
 
-		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $caseTypeId, statusTypeId: $statusTypeId);
+		$days = $this->daysForPhase(caseId: $caseId, caseTypeId: $phase['caseTypeId'], statusTypeId: $statusTypeId);
 		if ($days <= 0) {
 			return null;
 		}
 
+		return $this->startPhaseClock(clock: ['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days], moment: $moment);
+	}//end clockPhase()
+
+	/**
+	 * Start a phase's clock on a case.
+	 *
+	 * @param array{case: string, phase: string, days: int} $clock  The case UUID, the phase being entered and its term in days.
+	 * @param DateTimeImmutable                            $moment When the move happened.
+	 *
+	 * @return array<string, mixed>|null The started phase term.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function startPhaseClock(array $clock, DateTimeImmutable $moment): ?array {
 		$instance = $this->terms->bindLeadTime(
-			caseId: $caseId,
+			caseId: $clock['case'],
 			kind: TermKind::PHASE,
-			days: $days,
+			days: $clock['days'],
 			start: $moment,
-			extra: ['statusType' => $statusTypeId],
+			extra: ['statusType' => $clock['phase']],
 		);
 
-		$this->logger->info(
-			'Dossiq phase term: a phase clock started',
-			['case' => $caseId, 'phase' => $statusTypeId, 'days' => $days]
-		);
+		$this->logger->info('Dossiq phase term: a phase clock started', $clock);
 
 		return $instance;
-	}//end enterPhase()
+	}//end startPhaseClock()
 
 	/**
 	 * Stop every running phase clock on a case.
@@ -148,37 +171,77 @@ class PhaseTermService {
 	 *
 	 * @return int How many clocks were stopped.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function stopRunningPhases(string $caseId, ?DateTimeImmutable $when = null, string $except = ''): int {
 		$moment = ($when ?? new DateTimeImmutable());
 
+		return $this->stopRunning(rows: $this->termService->instancesForCase(caseId: $caseId), stop: ['moment' => $moment, 'except' => $except]);
+	}//end stopRunningPhases()
+
+	/**
+	 * Complete every running phase clock among the term rows, except the named phase's own.
+	 *
+	 * @param iterable<array<string, mixed>>                   $rows The case's term instances.
+	 * @param array{moment: DateTimeImmutable, except: string} $stop The moment they stop, and the status type left running.
+	 *
+	 * @return int How many were stopped.
+	 */
+	private function stopRunning(iterable $rows, array $stop): int {
 		$stopped = 0;
-		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
-			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
+		foreach ($rows as $row) {
+			if ($this->isRunningPhase(row: $row, except: $stop['except']) === false) {
 				continue;
 			}
 
-			if ((string)($row['statusType'] ?? '') === $except) {
-				continue;
-			}
-
-			if (in_array((string)($row['status'] ?? ''), ['lopend', 'verlengd', 'paused'], true) === false) {
-				continue;
-			}
-
-			$this->termService->updateTermijnInstance(
-				termInstanceId: (string)($row['id'] ?? ''),
-				patch: [
-					'status' => self::STATUS_COMPLETED,
-					'voltooiDatum' => $moment->format('Y-m-d'),
-				]
-			);
+			$this->completePhase(row: $row, moment: $stop['moment']);
 			$stopped++;
-		}//end foreach
+		}
 
 		return $stopped;
-	}//end stopRunningPhases()
+	}//end stopRunning()
+
+	/**
+	 * Whether a term instance is a running phase clock other than the one to leave running.
+	 *
+	 * @param array<string, mixed> $row    The term instance.
+	 * @param string               $except A phase to leave running.
+	 *
+	 * @return bool
+	 */
+	private function isRunningPhase(array $row, string $except): bool {
+		if (TermKind::ofInstance($row) !== TermKind::PHASE) {
+			return false;
+		}
+
+		if ((string)($row['statusType'] ?? '') === $except) {
+			return false;
+		}
+
+		if (in_array((string)($row['status'] ?? ''), ['lopend', 'verlengd', 'paused'], true) === false) {
+			return false;
+		}
+
+		return true;
+	}//end isRunningPhase()
+
+	/**
+	 * Mark one phase clock completed on the given day.
+	 *
+	 * @param array<string, mixed> $row    The term instance.
+	 * @param DateTimeImmutable    $moment When it stopped.
+	 *
+	 * @return void
+	 */
+	private function completePhase(array $row, DateTimeImmutable $moment): void {
+		$this->termService->updateTermijnInstance(
+			termInstanceId: (string)($row['id'] ?? ''),
+			patch: [
+				'status' => self::STATUS_COMPLETED,
+				'voltooiDatum' => $moment->format('Y-m-d'),
+			]
+		);
+	}//end completePhase()
 
 	/**
 	 * How many days this phase gets.
@@ -195,7 +258,7 @@ class PhaseTermService {
 	 *
 	 * @return int The phase's days, 0 when nothing declares any.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function daysForPhase(string $caseId, string $caseTypeId, string $statusTypeId): int {
 		$own = $this->declarations->forStatusType(statusTypeId: $statusTypeId);
@@ -203,20 +266,31 @@ class PhaseTermService {
 			return $own['termDays'];
 		}
 
-		$declared = $this->declarations->forCaseType(caseTypeId: $caseTypeId);
+		return $this->chainDays(phase: ['caseId' => $caseId, 'caseTypeId' => $caseTypeId, 'statusTypeId' => $statusTypeId]);
+	}//end daysForPhase()
+
+	/**
+	 * The phase's share of its case type's chain term, or 0 when the case type declares none.
+	 *
+	 * @param array<string, string> $phase The `caseId`, the `caseTypeId` and the phase's `statusTypeId`.
+	 *
+	 * @return int The days.
+	 */
+	private function chainDays(array $phase): int {
+		$declared = $this->declarations->forCaseType(caseTypeId: $phase['caseTypeId']);
 		if ($declared['chainTermDays'] <= 0) {
 			return 0;
 		}
 
 		$plan = $this->chainPlan(
-			caseId: $caseId,
-			caseTypeId: $caseTypeId,
+			caseId: $phase['caseId'],
+			caseTypeId: $phase['caseTypeId'],
 			chainTermDays: $declared['chainTermDays'],
-			statusTypeId: $statusTypeId
+			statusTypeId: $phase['statusTypeId']
 		);
 
 		return (int)($plan['days'] ?? 0);
-	}//end daysForPhase()
+	}//end chainDays()
 
 	/**
 	 * What is left of the chain term, and how it splits over the phases ahead.
@@ -228,7 +302,7 @@ class PhaseTermService {
 	 *
 	 * @return array{days: int, remainingDays: int, exhausted: bool, steps: array<int, int>}
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function chainPlan(
 		string $caseId,
@@ -240,16 +314,27 @@ class PhaseTermService {
 		$shares = array_map(static fn (array $phase): float => (float)$phase['share'], $phases);
 		$position = $this->positionOf(phases: $phases, statusTypeId: $statusTypeId);
 
-		$spent = $this->spentPerPhase(caseId: $caseId, phases: $phases, upTo: $position);
+		$spent = $this->spentPerPhase(caseId: $caseId, finished: array_slice($phases, 0, $position));
 		$plan = $this->splitter->recompute(termDays: $chainTermDays, shares: $shares, consumed: $spent);
 
+		return self::phasePlan(plan: $plan);
+	}//end chainPlan()
+
+	/**
+	 * The splitter's recomputed plan as the phase reads it: its own days first.
+	 *
+	 * @param array<string, mixed> $plan The recomputed plan.
+	 *
+	 * @return array{days: int, remainingDays: int, exhausted: bool, steps: mixed}
+	 */
+	private static function phasePlan(array $plan): array {
 		return [
 			'days' => (int)($plan['steps'][0] ?? 0),
 			'remainingDays' => (int)$plan['remainingDays'],
 			'exhausted' => (bool)$plan['exhausted'],
 			'steps' => $plan['steps'],
 		];
-	}//end chainPlan()
+	}//end phasePlan()
 
 	/**
 	 * Where a phase sits in the declared order.
@@ -278,12 +363,11 @@ class PhaseTermService {
 	 * reading that leaves its days to the phases ahead.
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param array<int, array<string, mixed>> $phases The phases, in order.
-	 * @param int $upTo How many phases are behind the case.
+	 * @param array<int, array<string, mixed>> $finished The phases behind the case, in order.
 	 *
 	 * @return array<int, int> Days spent, one per finished phase.
 	 */
-	private function spentPerPhase(string $caseId, array $phases, int $upTo): array {
+	private function spentPerPhase(string $caseId, array $finished): array {
 		$byPhase = [];
 		foreach ($this->termService->instancesForCase(caseId: $caseId) as $row) {
 			if (TermKind::ofInstance($row) !== TermKind::PHASE) {
@@ -301,10 +385,10 @@ class PhaseTermService {
 		}//end foreach
 
 		$spent = [];
-		for ($index = 0; $index < $upTo; $index++) {
-			$phaseId = (string)($phases[$index]['id'] ?? '');
+		foreach ($finished as $phase) {
+			$phaseId = (string)($phase['id'] ?? '');
 			$spent[] = (int)($byPhase[$phaseId] ?? 0);
-		}//end for
+		}//end foreach
 
 		return $spent;
 	}//end spentPerPhase()

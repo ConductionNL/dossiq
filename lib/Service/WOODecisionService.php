@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -28,24 +28,29 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\DecisionDocument\DecisionRecordComposer;
-use OCA\Dossiq\Service\DecisionDocument\PublicationReadiness;
+use OCA\Dossiq\Kernel\Contracts\PagesSeenInterface;
+use OCA\Dossiq\Kernel\Contracts\WOODecisionServiceInterface;
+use OCA\Dossiq\Service\DecisionDocument\DecisionRaiser;
+use OCA\Dossiq\Service\DecisionDocument\LocalDecisionRecord;
 use OCA\Dossiq\Service\Drafts\CaseDocumentDrafts;
-use OCA\Dossiq\Review\PagesSeen;
-use OCA\Dossiq\Woo\WooRefusalGrounds;
+use OCA\Dossiq\Service\Support\NamesTheSessionUser;
+use OCA\Dossiq\Woo\WooPublicationSummary;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Service for assembling the formal WOO besluit.
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
-class WOODecisionService {
+class WOODecisionService implements WOODecisionServiceInterface {
+
+	use NamesTheSessionUser {
+		sessionActor as private resolveDecidedBy;
+	}
 
 	/**
 	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
@@ -58,7 +63,7 @@ class WOODecisionService {
 	 *
 	 * @var string
 	 */
-	public const DECISION_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000d001';
+	public const DECISION_TYPE_ID = LocalDecisionRecord::DECISION_TYPE_ID;
 
 	/**
 	 * The `documentDrafts` purpose the decision document is drafted under.
@@ -72,18 +77,18 @@ class WOODecisionService {
 
 
 	/**
-	 * Composes the case's title and the assessment tally for the decision record.
+	 * Composes and saves the decision record on the case.
 	 *
-	 * @var DecisionRecordComposer
+	 * @var LocalDecisionRecord
 	 */
-	private readonly DecisionRecordComposer $composer;
+	private readonly LocalDecisionRecord $localRecord;
 
 	/**
-	 * Marks the case ready to publish once the decision is assembled.
+	 * Raises the decision in decidiq.
 	 *
-	 * @var PublicationReadiness
+	 * @var DecisionRaiser
 	 */
-	private readonly PublicationReadiness $readiness;
+	private readonly DecisionRaiser $raiser;
 
 	/**
 	 * Constructor.
@@ -94,18 +99,23 @@ class WOODecisionService {
 	 * @param LoggerInterface $logger Logger
 	 * @param CaseDocumentDrafts|null $drafts Drafts the decision document from the case type's
 	 *        `documentDrafts.decision` template through filinq (case-document-drafts).
-	 * @param PagesSeen|null $pagesSeen The pages seen per document; the decision waits for the required ones.
+	 * @param PagesSeenInterface|null $pagesSeen The pages seen per document; the decision waits for the required ones.
+	 * @param ContractDecisionDelegationService|null $decisionDelegation Raises the decision in decidiq;
+	 *        without it no decision is assembled (fail closed, REQ-DDTD-001).
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		SettingsService $settingsService,
 		private readonly WOODocumentAssessmentService $assessmentService,
 		private readonly IUserSession $userSession,
-		private readonly LoggerInterface $logger,
+		LoggerInterface $logger,
 		private readonly ?CaseDocumentDrafts $drafts = null,
-		private readonly ?PagesSeen $pagesSeen = null,
+		private readonly ?PagesSeenInterface $pagesSeen = null,
+		?ContractDecisionDelegationService $decisionDelegation = null,
 	) {
-		$this->composer  = new DecisionRecordComposer(settingsService: $settingsService, logger: $logger);
-		$this->readiness = new PublicationReadiness(settingsService: $settingsService, logger: $logger);
+		$this->localRecord = new LocalDecisionRecord(settingsService: $settingsService, logger: $logger);
+		$this->raiser      = new DecisionRaiser(settingsService: $settingsService, logger: $logger, decisionDelegation: $decisionDelegation);
 	}//end __construct()
 
 	/**
@@ -118,83 +128,85 @@ class WOODecisionService {
 	 *
 	 * @param string $caseId The case UUID
 	 * @param array<string, mixed> $decisionData Optional override data (besluitdatum, samenvatting)
+	 * @param string $letter The letter the caller chose for the decision; empty drafts one
+	 *                       from the case type's `documentDrafts.decision`.
 	 *
 	 * @return array<string, mixed> Created decision with ID and assessment summary
 	 *
 	 * @throws \RuntimeException If OpenRegister unavailable or case not found
 	 * @throws \InvalidArgumentException If any document has not been assessed
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
 	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
 	 * @spec openspec/changes/woo-review-triage/specs/document-review/spec.md#requirement-nothing-is-decided-or-published-before-the-required-pages-are-seen-req-wrt-005
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	public function assembleDecision(string $caseId, array $decisionData = []): array {
+	public function assembleDecision(string $caseId, array $decisionData = [], string $letter = ''): array {
 		// Guard: all documents must be assessed before a besluit can be created.
 		$this->assertAllDocumentsAssessed(caseId: $caseId);
 
 		// Guard: every required page of every in-scope document has been seen (REQ-WRT-005).
 		$this->pagesSeen?->assertAllSeen(caseId: $caseId);
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$decisionSchema = $this->settingsService->getConfigValue('decision_schema');
-
-		if (empty($register) === true || empty($decisionSchema) === true) {
-			throw new RuntimeException('Decision schema not configured');
-		}
-
 		// The case's title and its assessments, tallied by classification.
-		$record = $this->composer->compose(objectService: $objectService, register: $register, caseId: $caseId);
-		$summary = $record['summary'];
-		$weigeringsgronden = $record['weigeringsgronden'];
+		$composed = $this->localRecord->compose(caseId: $caseId);
+		$subject  = new WooDecisionSubject(
+			caseId: $caseId,
+			register: $composed['register'],
+			record: $composed['record'],
+			label: self::publicationSummary(caseTitle: (string)$composed['record']['caseTitle'])
+		);
 
 		$userId = $this->resolveDecidedBy();
 
-		$besluitData = array_merge(
-			[
-				'case' => $caseId,
-				'decisionType' => self::DECISION_TYPE_ID,
-				'decisionDate' => date('Y-m-d'),
-				'description' => self::publicationSummary(caseTitle: $record['caseTitle']),
-				'wooSummary' => $summary,
-				'weigeringsgronden' => $weigeringsgronden,
-				'groundsListVersion' => WooRefusalGrounds::LIST_VERSION,
-				'assessmentCount' => $record['assessmentCount'],
-				'decidedBy' => $userId,
-			],
-			$decisionData,
-		);
+		// The decision itself is raised in decidiq; nothing is recorded locally when that fails.
+		$decisionRef = $this->raiser->raise(subject: $subject, actorId: $userId);
 
-		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
+		$decisionId = $this->localRecord->record(subject: $subject, userId: $userId, decisionData: $decisionData, decisionRef: $decisionRef);
 
-		$this->readiness->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
+		return $this->assembledResult(subject: $subject, decisionRef: $decisionRef, decisionId: $decisionId, letter: $letter);
+	}//end assembleDecision()
 
-		$this->logger->info(
-			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
-			['app' => Application::APP_ID],
-		);
+	/**
+	 * The assembled decision as answered to the caller, with the drafts it asked for.
+	 *
+	 * @param WooDecisionSubject $subject     The case and the composed decision record
+	 * @param string             $decisionRef The decidiq decision reference
+	 * @param string             $decisionId  The saved decision's uuid
+	 * @param string             $letter      The letter the caller chose; empty drafts one
+	 *
+	 * @return array<string, mixed> Created decision with ID and assessment summary
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-7
+	 * @spec openspec/changes/woo-request-takes-over-from-opencatalogi/specs/case-document-drafts/spec.md#requirement-the-draft-is-asked-of-filinq-and-filed-on-the-case-req-cdd-003
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function assembledResult(WooDecisionSubject $subject, string $decisionRef, string $decisionId, string $letter): array {
+		$caseId = $subject->caseId;
+		$record = $subject->record;
+		$draft = null;
+		if ($letter === '') {
+			$draft = $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE);
+		}
 
 		return [
-			'decisionId' => $decision->getUuid(),
+			'decisionId' => $decisionId,
+			'decisionRef' => $decisionRef,
 			'caseId' => $caseId,
-			'summary' => $summary,
-			'weigeringsgronden' => $weigeringsgronden,
+			'summary' => $record['summary'],
+			'weigeringsgronden' => $record['weigeringsgronden'],
 			'assessmentCount' => $record['assessmentCount'],
-			'draft' => $this->drafts?->draft(caseId: $caseId, purpose: self::DRAFT_PURPOSE),
+			'draft' => $draft,
 			'inventoryDraft' => $this->drafts?->draft(caseId: $caseId, purpose: self::INVENTORY_PURPOSE),
 		];
-	}//end assembleDecision()
+	}//end assembledResult()
 
 	/**
 	 * The line a resident reads under the title of the published decision.
 	 *
 	 * OpenCatalogi shows a publication's `summary` under its title on the
 	 * public site and in search results, and the publication takes it from the
-	 * decision's `description` (WooPublicationService::buildPayload()). It
+	 * decision's `description` (OutcomePublisher::buildPayload()). It
 	 * used to read "WOO besluit voor zaak <uuid>", so a resident read a code.
 	 * It names the request by the case's title instead, and never prints an id.
 	 *
@@ -202,15 +214,12 @@ class WOODecisionService {
 	 *
 	 * @return string The summary.
 	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) WooPublicationSummary::forTitle() is where the wording lives.
+	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public static function publicationSummary(string $caseTitle): string {
-		$title = trim($caseTitle);
-		if ($title === '') {
-			return 'Besluit op een Woo-verzoek';
-		}
-
-		return 'Besluit op het Woo-verzoek "' . $title . '"';
+		return WooPublicationSummary::forTitle(caseTitle: $caseTitle);
 	}//end publicationSummary()
 
 	/**
@@ -244,18 +253,4 @@ class WOODecisionService {
 			);
 		}
 	}//end assertAllDocumentsAssessed()
-
-	/**
-	 * Resolve the user id credited with the besluit.
-	 *
-	 * @return string The current user id, or `system` when there is no session user
-	 */
-	private function resolveDecidedBy(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return 'system';
-		}
-
-		return $user->getUID();
-	}//end resolveDecidedBy()
 }//end class

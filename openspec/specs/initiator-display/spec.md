@@ -120,20 +120,23 @@ SHALL render the BSN in full.
 
 ### Requirement: The Contacts index lists the people dossiq knows (REQ-ID-4)
 
-You find a person by name or number. The manifest page `Contacts`
+You find a person by name, number or place. The manifest page `Contacts`
 (route `/contacts`, type `index`, register `dossiq`, schema `brpPerson`)
-SHALL list `displayName`, `citizenServiceNumber`, the residence city and
-`description`, with the index search box covering name and number. The view
-action of a row SHALL open `ContactDetail`.
+SHALL follow board DqContacten: a count line naming the BRP as the source, an
+Add person button, the quick filters All and With data protection
+(`indicatieGeheim`), and the columns Name (initials, with street, number and
+city under it), BSN, Place of residence and Description. The BSN SHALL show
+masked to its last four characters; the full number is shown only on the
+contact page, where showing it is logged. The view action of a row SHALL open
+`ContactDetail`. The page SHALL offer saved views and the object sidebar, and
+SHALL NOT carry a `folderSidebar`.
 
-The page SHALL NOT carry a `folderSidebar`. `contacts-domain` asked for one
-with a People folder and a hidden Organisations folder; measured against
-`@conduction/nextcloud-vue` 2.41.0, `CnIndexPage.folderSidebarFolders()`
-returns `folders[]` verbatim so there is no hidden state, and
-`filterField: "@self.schema"` is not a filter OpenRegister answers, so the
-only folder that could ship would have emptied the list on its first click.
-Organisations are reached through REQ-ID-6 instead, and the manifest SHALL
-carry the measurement as a note on the page.
+#### Scenario: The BSN is masked in the list
+@e2e exclude measured against board DqContacten by the round 12 pixel check, not an e2e flow
+
+- **GIVEN** a seeded `brpPerson` row with BSN 123457609
+- **WHEN** you open Contacts
+- **THEN** the BSN column SHALL read *****7609
 
 #### Scenario: Find a person by name
 @e2e tests/e2e/contacts-domain.spec.ts
@@ -161,9 +164,12 @@ covering name and number. The view action of a row SHALL open
 `sortable: false`, because such a key resolves client-side for rendering but
 is not a column OpenRegister can order by.
 
-The page SHALL be reached by a menu entry `OrganisationsMenu` that
-`src/menu-layout.json` relocates under `Contacts`, so the top-level count does
-not move: ADR-097 Decision 1 counts top-level entries only. `Contacts` SHALL
+The page SHALL be reached by a menu entry `OrganisationsMenu`. In the
+default simple structure it stands beside Contacts under the Relations
+caption ("Relaties" with "Contacten" and "Organisaties"), as board DqZijbalk
+draws it. In the full structure `src/menu-layout.json` relocates it under
+`Contacts`, so the top-level count does not move: ADR-097 Decision 1 counts
+top-level entries only. `Contacts` SHALL
 carry `open: true`, because `CnAppNav` auto-expands a group only when one of
 its children is the active route, so on `/contacts` the child would otherwise
 be hidden behind a chevron.
@@ -173,8 +179,8 @@ be hidden behind a chevron.
 
 - **GIVEN** the Contacts index
 - **WHEN** you read the navigation
-- **THEN** an Organisations entry SHALL be visible under Contacts
-- **AND** the top-level entries SHALL still be Dashboard, My work, Contacts and Objects
+- **THEN** an Organisations entry SHALL be visible beside or under Contacts
+- **AND** in the simple structure the menu SHALL read Dashboard, Mijn werk and Wachtrij, then the groups Zaken and Relaties, as board DqZijbalk draws it
 
 #### Scenario: An organisation opens on its own page
 @e2e tests/e2e/contacts-domain.spec.ts

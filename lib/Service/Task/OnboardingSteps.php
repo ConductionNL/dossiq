@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Task\TaskAnswer;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -138,7 +139,8 @@ class OnboardingSteps {
 
 		$steps = [];
 		foreach ($rows as $row) {
-			$step = self::field(row: $row, key: 'taskKey');
+			// An inbox row is the task as JSON, where the stored taskKey reads `key`.
+			$step = self::field(row: $row, key: 'key');
 			if ($step === '') {
 				continue;
 			}
@@ -174,23 +176,68 @@ class OnboardingSteps {
 			return '';
 		}
 
+		$task = ['key' => $step, 'title' => $title, 'organisation' => $tenantId];
+
+		return $this->imported(payload: $this->payloadFor(task: $task, optional: ['status' => $status, 'metadata' => $metadata]), actor: $actor);
+	}//end open()
+
+	/**
+	 * The engine task payload of one onboarding step.
+	 *
+	 * @param array{key: string, title: string, organisation: string} $task         The step, what the task says and the Organisation's uuid.
+	 * @param array{status: string, metadata: array<string, mixed>} $optional The onboarding status it starts in, and anything the step carries along.
+	 *
+	 * @return array<string, mixed> The task payload.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 */
+	private function payloadFor(array $task, array $optional): array {
 		$payload = [
-			'key' => $step,
-			'title' => $title,
+			'key' => $task['key'],
+			'title' => $task['title'],
 			'kind' => self::KIND,
 			'appId' => 'dossiq',
-			'organisation' => $tenantId,
-			'objectUuid' => $tenantId,
-			'state' => self::STATE_FOR_STATUS[$status],
+			'organisation' => $task['organisation'],
+			'objectUuid' => $task['organisation'],
+			'state' => self::STATE_FOR_STATUS[$optional['status']],
 		];
-		if ($status === 'skipped') {
+
+		return $this->withOptionalFields(payload: $payload, optional: $optional);
+	}//end payloadFor()
+
+	/**
+	 * Add the skipped outcome and the step's metadata to an onboarding task payload.
+	 *
+	 * @param array<string, mixed>                              $payload  The task payload.
+	 * @param array{status: string, metadata: array<string, mixed>} $optional The onboarding status it starts in, and anything the step carries along.
+	 *
+	 * @return array<string, mixed> The payload with its optional fields.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 */
+	private function withOptionalFields(array $payload, array $optional): array {
+		if ($optional['status'] === 'skipped') {
 			$payload['outcome'] = self::OUTCOME_SKIPPED;
 		}
 
-		if ($metadata !== []) {
-			$payload['metadata'] = ['dossiq' => $metadata];
+		if ($optional['metadata'] !== []) {
+			$payload['metadata'] = ['dossiq' => $optional['metadata']];
 		}
 
+		return $payload;
+	}//end withOptionalFields()
+
+	/**
+	 * Import one onboarding task payload on the engine.
+	 *
+	 * @param array<string, mixed> $payload The task payload.
+	 * @param string|null          $actor   Who creates it.
+	 *
+	 * @return string The engine task's uuid, or '' when it was not written.
+	 *
+	 * @spec openspec/specs/tenant-onboarding/spec.md
+	 */
+	private function imported(array $payload, ?string $actor): string {
 		try {
 			// Positional: resolved by name from an app that need not be
 			// installed, so dossiq binds to its parameter order, not names.
@@ -198,12 +245,15 @@ class OnboardingSteps {
 			$task = $service->import($payload, $actor);
 		} catch (Throwable $e) {
 			$this->lastError = $e->getMessage();
-			$this->logger->error('Dossiq: the engine refused an onboarding step', ['tenantId' => $tenantId, 'step' => $step, 'exception' => $e->getMessage()]);
+			$this->logger->error(
+				'Dossiq: the engine refused an onboarding step',
+				['tenantId' => $payload['organisation'], 'step' => $payload['key'], 'exception' => $e->getMessage()]
+			);
 			return '';
 		}
 
 		return self::field(row: $task, key: 'uuid');
-	}//end open()
+	}//end imported()
 
 	/**
 	 * Complete one step through the engine's completion verb.
@@ -222,7 +272,7 @@ class OnboardingSteps {
 
 		try {
 			$completion = $this->container->get(self::COMPLETION_SERVICE);
-			$completion->complete($taskId, 'done', null, null, [], $actor);
+			$completion->complete(uuid: $taskId, answer: new TaskAnswer(outcome: 'done'), data: [], actor: $actor);
 		} catch (Throwable $e) {
 			$this->lastError = $e->getMessage();
 			$this->logger->warning('Dossiq: the engine refused to complete an onboarding step', ['task' => $taskId, 'exception' => $e->getMessage()]);

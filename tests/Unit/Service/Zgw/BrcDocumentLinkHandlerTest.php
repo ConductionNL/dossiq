@@ -216,6 +216,27 @@ final class BrcDocumentLinkHandlerTest extends TestCase {
 	}//end testACreateStoresMirrorsAndAnnounces()
 
 	/**
+	 * A create stores and mirrors the body the business rules enriched, not the
+	 * raw request, and announces the record under its `@self` id when the stored
+	 * row has no top-level id.
+	 *
+	 * @return void
+	 */
+	public function testACreateUsesTheEnrichedBodyAndTheSelfId(): void {
+		$this->body = ['besluit' => 'raw'];
+		$enriched = ['decision' => 'b-enriched', 'informatieobject' => 'io-enriched'];
+		$this->ruleResult = ['valid' => true, 'status' => 200, 'detail' => '', 'enrichedBody' => $enriched];
+		$this->store->saved = ['@self' => ['id' => self::BIO]];
+
+		$response = $this->handler()->create(request: $this->request);
+
+		$this->assertSame(201, $response->getStatus());
+		$this->assertSame([['7', '71', ['in' => $enriched]]], $this->store->callsOf('saveObject'));
+		$this->assertSame([['createOioInDrc', 'b-enriched', 'io-enriched']], $this->synced);
+		$this->assertSame([['besluitinformatieobjecten', self::BASE . 'besluitinformatieobjecten/' . self::BIO, 'create']], $this->notifications);
+	}//end testACreateUsesTheEnrichedBodyAndTheSelfId()
+
+	/**
 	 * A create asks for no mirror without both URLs, stores nothing when the rules refuse, and
 	 * answers 400 with the cause when the store fails.
 	 *

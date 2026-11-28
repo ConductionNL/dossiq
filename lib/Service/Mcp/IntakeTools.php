@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Mcp;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\IntakeToolsInterface;
 use OCA\Dossiq\Service\Intake\CaseIntakeFiling;
 use OCA\Dossiq\Service\Intake\RequestCatalogue;
 use OCA\OpenRegister\Mcp\Attribute\McpTool;
@@ -49,7 +50,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-conversational-intake-files-through-dossiqs-own-create-only-path-req-aic-05
  */
-class IntakeTools {
+class IntakeTools implements IntakeToolsInterface {
 
 	/**
 	 * The mark hermiq's intake grant reads (`IntakeToolGrant::INTAKE_ANNOTATION`).
@@ -107,12 +108,23 @@ class IntakeTools {
 			throw new RuntimeException(message: $e->getSentence(), previous: $e);
 		}
 
+		return self::filedAnswer(case: $case);
+	}//end fileCase()
+
+	/**
+	 * The filed case as the tool answers it: its id, identifier and title.
+	 *
+	 * @param array<string, mixed> $case The filed case.
+	 *
+	 * @return array{id: string, identifier: string, title: string}
+	 */
+	private static function filedAnswer(array $case): array {
 		return [
 			'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
 			'identifier' => (string)($case['identifier'] ?? ''),
 			'title' => (string)($case['title'] ?? ''),
 		];
-	}//end fileCase()
+	}//end filedAnswer()
 
 	/**
 	 * The request types a resident's conversation may be filed under.

@@ -140,7 +140,7 @@
 									variant="tertiary"
 									:data-testid="`intake-log-file-on-case-${entryId(entry)}`"
 									@click="openFileOnCase(entry)">
-									{{ t('dossiq', 'File on a case') }}
+									{{ t('dossiq', 'Link to case') }}
 								</NcButton>
 							</td>
 						</tr>
@@ -172,6 +172,48 @@ import {
 import MailIntakeFileOnCaseDialog from '../../dialogs/MailIntakeFileOnCaseDialog.vue'
 
 /**
+ * Read the intake log, filtered by sender and outcome when they are set.
+ *
+ * @param {string} sender The sender to find, or ''.
+ * @param {string} outcome The outcome to find, or ''.
+ * @return {Promise<Response>} The response.
+ */
+function fetchLog(sender, outcome) {
+	const params = new URLSearchParams()
+	if (sender) {
+		params.set('sender', sender)
+	}
+	if (outcome) {
+		params.set('outcome', outcome)
+	}
+	return fetch(generateUrl('/apps/dossiq/api/mail-intake/log?' + params.toString()), { headers: { 'OCS-APIRequest': 'true' } })
+}
+
+/**
+ * Keep what the log answered on the view.
+ *
+ * @param {object} view The log view.
+ * @param {object|null} data The answer.
+ * @return {void}
+ */
+function showLog(view, data) {
+	view.entries = data?.results || []
+	view.filterOrder = data?.filterOrder || []
+	view.junkRules = data?.junkRules || []
+}
+
+/**
+ * Show a reader without the intake role that they may not read the log, and nothing of it.
+ *
+ * @param {object} view The log view.
+ * @return {void}
+ */
+function refuseLog(view) {
+	view.forbidden = true
+	view.entries = []
+}
+
+/**
  * The intake log as a surface rather than a log file.
  *
  * 🔴 IT READS THROUGH THE DOSSIQ ENDPOINT, NOT THE GENERIC OBJECT API. The
@@ -186,7 +228,7 @@ import MailIntakeFileOnCaseDialog from '../../dialogs/MailIntakeFileOnCaseDialog
  * different colours. Showing an absent SPF header as a blank cell would let a
  * reader take it for a pass.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 export default {
 	name: 'MailIntakeLogView',
@@ -221,7 +263,7 @@ export default {
 		 * The outcomes a reader can narrow the log to.
 		 *
 		 * @return {Array<object>} The options.
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		outcomeOptions() {
 			return [
@@ -238,12 +280,12 @@ export default {
 		/**
 		 * The outcome currently filtered on.
 		 *
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		outcomeOption: {
 			/**
 			 * @return {object|null} The chosen option.
-			 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+			 * @spec openspec/specs/inbound-mail-filters/spec.md
 			 */
 			get() {
 				return this.outcomeOptions.find((o) => o.id === this.outcome) || null
@@ -252,7 +294,7 @@ export default {
 			/**
 			 * @param {object|null} option The chosen option.
 			 * @return {void}
-			 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+			 * @spec openspec/specs/inbound-mail-filters/spec.md
 			 */
 			set(option) {
 				this.outcome = option ? option.id : ''
@@ -270,34 +312,17 @@ export default {
 		 * Read the log, narrowed by whatever the reader typed.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		async reload() {
 			this.loading = true
 			try {
-				const params = new URLSearchParams()
-				if (this.sender) {
-					params.set('sender', this.sender)
-				}
-				if (this.outcome) {
-					params.set('outcome', this.outcome)
-				}
-				const response = await fetch(
-					generateUrl(
-						'/apps/dossiq/api/mail-intake/log?' + params.toString(),
-					),
-					{ headers: { 'OCS-APIRequest': 'true' } },
-				)
+				const response = await fetchLog(this.sender, this.outcome)
 				if (response.status === 403) {
-					this.forbidden = true
-					this.entries = []
-					return
+					return refuseLog(this)
 				}
 				this.forbidden = false
-				const data = await response.json()
-				this.entries = data?.results || []
-				this.filterOrder = data?.filterOrder || []
-				this.junkRules = data?.junkRules || []
+				showLog(this, await response.json())
 			} catch {
 				// A read that failed shows nothing rather than a stale list. The
 				// empty state says a message that was never received leaves no
@@ -313,7 +338,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {string} The id.
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		entryId(entry) {
 			return String(entry?.['@self']?.id || entry?.id || '')
@@ -324,7 +349,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		/**
 		 * Open the picker on one entry.
@@ -359,7 +384,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		async markNotJunk(entry) {
 			await this.post(`${this.entryId(entry)}/junk`, { junk: false })
@@ -372,7 +397,7 @@ export default {
 		 * @param {string} path The path after the log entry base.
 		 * @param {object} body The request body.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		async post(path, body) {
 			await fetch(generateUrl(`/apps/dossiq/api/mail-intake/log/${path}`), {
@@ -390,7 +415,7 @@ export default {
 		 *
 		 * @param {string} result The stored result.
 		 * @return {string} The label.
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		resultLabel(result) {
 			const labels = {
@@ -407,7 +432,7 @@ export default {
 		 *
 		 * @param {string} result The stored result.
 		 * @return {string} The class.
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		resultClass(result) {
 			if (result === 'pass') {
@@ -424,7 +449,7 @@ export default {
 		 *
 		 * @param {string} outcome The stored outcome.
 		 * @return {string} The label.
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		outcomeLabel(outcome) {
 			const option = this.outcomeOptions.find((o) => o.id === outcome)
@@ -436,7 +461,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {string} The rule, described.
-		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 * @spec openspec/specs/inbound-mail-filters/spec.md
 		 */
 		junkReason(entry) {
 			const rule = this.junkRules.find((r) => r.name === entry.junkRule)

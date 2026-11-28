@@ -92,8 +92,6 @@ class ReportingEndpointIsGuardedTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWLIST = [
-		'iv3Taakveld#taakvelden' => 'The controller says it, and it is right: the IV3 taakveld list is a '
-			. 'published CBS classification, not report data. It is the same list on the CBS website.',
 		'dso#dashboard' => 'Answers a LIST OF CASES, not an aggregate. Every row is an object OpenRegister '
 			. 'refuses to a caller who may not read it, so a group gate here would take a handler their own '
 			. 'work away and change nothing about what leaks.',

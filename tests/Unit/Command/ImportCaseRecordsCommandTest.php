@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Command;
 
+use OCA\Dossiq\Service\Import\RecordImportSteps;
 use OCA\Dossiq\Command\ImportCaseRecordsCommand;
 use OCA\Dossiq\Service\Import\CaseRecordImport;
 use OCA\Dossiq\Service\Import\RecordCaseMapping;
@@ -40,11 +41,20 @@ use Symfony\Component\Console\Tester\CommandTester;
  * Built on the real import class over an in-memory register.
  *
  * @covers \OCA\Dossiq\Command\ImportCaseRecordsCommand
+ * @covers \OCA\Dossiq\Service\Import\RecordImportSteps
  * @uses   \OCA\Dossiq\Service\Import\CaseRecordImport
+ * @uses   \OCA\Dossiq\Service\Import\RecordImportAnswer
+ * @uses   \OCA\Dossiq\Service\Term\PeriodDays
  * @uses   \OCA\Dossiq\Service\Import\RecordCaseMapping
+ * @uses \OCA\Dossiq\Service\Import\RecordFieldShape
  * @uses   \OCA\Dossiq\Service\Import\RecordImportStore
  * @uses   \OCA\Dossiq\Service\Term\TermCarryOver
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Import\RecordImportReferences
+ * @uses \OCA\Dossiq\Service\Import\RecordMappingRun
+ * @uses \OCA\Dossiq\Service\Import\RecordImportRequest
+ * @uses \OCA\Dossiq\Service\Support\ObjectSearch
+ * @uses \OCA\Dossiq\Service\Term\CarriedTerm
  */
 class ImportCaseRecordsCommandTest extends TestCase {
 
@@ -53,13 +63,14 @@ class ImportCaseRecordsCommandTest extends TestCase {
 	/**
 	 * The command over a register holding two source records and a case type declaring their import.
 	 *
-	 * @param bool $installed Whether the source app is installed.
+	 * @param bool                             $installed Whether the source app is installed.
+	 * @param array<int, array<string, mixed>> $instances The term instances a written case has.
 	 *
 	 * @return CommandTester
 	 */
-	private function tester(bool $installed = true): CommandTester {
+	private function tester(bool $installed = true, array $instances = []): CommandTester {
 		$store = new InMemoryRegister();
-		$store->seed(schema: 'record', uuid: 'r1', row: ['status' => 'open', 'title' => 'One', 'number' => 'A-1']);
+		$store->seed(schema: 'record', uuid: 'r1', row: ['status' => 'open', 'title' => 'One', 'number' => 'A-1', 'timer' => 't-9']);
 		$store->seed(schema: 'record', uuid: 'r2', row: ['status' => 'open', 'title' => 'Two', 'number' => 'A-2', 'movedTo' => 'case-x']);
 		$store->seed(
 			schema: 'caseType',
@@ -73,6 +84,7 @@ class ImportCaseRecordsCommandTest extends TestCase {
 						'sourceRegister' => 'src',
 						'sourceSchema' => 'record',
 						'statuses' => ['open' => ['status' => 's1', 'term' => 'running']],
+						'sourceTimerField' => 'timer',
 						'fields' => [['to' => 'title', 'from' => 'title'], ['to' => 'origin.id', 'from' => '@id']],
 						'matchField' => 'origin.id',
 						'formerReference' => ['application' => 'sourceapp', 'from' => 'number'],
@@ -90,13 +102,28 @@ class ImportCaseRecordsCommandTest extends TestCase {
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('isInstalled')->willReturn($installed);
 		$dates = $this->caseDates();
+		$terms = $this->createMock(originalClassName: TermijnService::class);
+		$terms->method('instancesForCase')->willReturn(value: $instances);
+		$timers = $this->createMock(originalClassName: TermijnTimerService::class);
+		$timers->method('armBeslistermijn')->willReturn(value: 'timer-1');
 
 		$import = new CaseRecordImport(
 			settingsService: $settings,
 			appManager: $apps,
-			mapping: new RecordCaseMapping(dates: $dates),
-			term: new TermCarryOver(terms: $this->createMock(TermijnService::class), timers: $this->createMock(TermijnTimerService::class), dates: $dates),
-			store: new RecordImportStore(settingsService: $settings, mapping: new RecordCaseMapping(dates: $dates), time: $this->createMock(ITimeFactory::class), logger: $this->createMock(LoggerInterface::class)),
+			steps: new RecordImportSteps(
+				mapping: new RecordCaseMapping(dates: $dates),
+				term: new TermCarryOver(
+					terms: $terms,
+					timers: $timers,
+					dates: $dates
+				),
+				store: new RecordImportStore(
+					settingsService: $settings,
+					mapping: new RecordCaseMapping(dates: $dates),
+					time: $this->createMock(originalClassName: ITimeFactory::class),
+					logger: $this->createMock(originalClassName: LoggerInterface::class)
+				),
+			),
 		);
 
 		return new CommandTester(new ImportCaseRecordsCommand(import: $import));
@@ -139,6 +166,23 @@ class ImportCaseRecordsCommandTest extends TestCase {
 		self::assertSame(1, $tester->execute(['caseType' => 'type-a', '--import' => 'from-source']));
 		self::assertStringContainsString('failed A-1 (r1): The case generated-1 was written, but its term could not be armed (missing).', $tester->getDisplay());
 	}//end testAFailedRecordIsPrintedAndExitsOne()
+
+	/**
+	 * A record whose case has a running statutory term moves onto that case, and the line names the case and the source timer.
+	 *
+	 * @return void
+	 */
+	public function testAMovedRecordIsPrintedWithItsCaseAndSourceTimer(): void {
+		$tester = $this->tester(instances: [['id' => 'term-1', 'status' => 'running']]);
+
+		$exit = $tester->execute(input: ['caseType' => 'type-a', '--import' => 'from-source']);
+
+		$display = $tester->getDisplay();
+		self::assertSame(expected: 0, actual: $exit);
+		self::assertStringContainsString(needle: 'from-source: 1 imported, 1 already imported, 0 failed, 0 not moved.', haystack: $display);
+		self::assertStringContainsString(needle: '  moved A-1 to case generated-1 (source timer t-9 still runs)', haystack: $display);
+		self::assertStringNotContainsString(needle: '<error>', haystack: $display);
+	}//end testAMovedRecordIsPrintedWithItsCaseAndSourceTimer()
 
 	/**
 	 * An unknown case type exits 1; a key nothing declares runs nothing.

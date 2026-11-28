@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Advice\AdviceRequestFiling;
 use OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard;
 use OCA\Dossiq\Service\Advice\AdviceNotifier;
 use OCA\Dossiq\Service\Advice\AdviceRepository;
@@ -43,6 +44,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Typed stub for the OpenRegister ObjectService.
@@ -68,7 +71,7 @@ interface AdviceObjectServiceStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Save or update an object.
@@ -80,7 +83,7 @@ interface AdviceObjectServiceStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -168,7 +171,11 @@ class AdviceServiceAuthorizationTest extends TestCase {
 			settingsService: $this->settingsService,
 			userSession: $this->userSession,
 			logger: $logger,
-			adviceDelegation: $this->createMock(AdviceDelegationService::class),
+			filing: new AdviceRequestFiling(
+				delegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+				settingsService: $this->settingsService,
+				logger: $logger,
+			),
 			repository: new AdviceRepository(
 				settingsService: $this->settingsService,
 				logger: $logger,

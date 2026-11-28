@@ -10,6 +10,8 @@
 
 # Build artifacts
 /js/
+# nextcloud-vue's stylesheet, copied by webpack.config.js (LibraryStylesheetCopy)
+/css/nextcloud-vue.css
 
 # Documentation
 /docs/node_modules/
@@ -46,8 +48,9 @@ phpmetrics/
 .DS_Store
 Thumbs.db
 
-# Claude Code
-.claude/worktrees/
+# Claude Code (local state stays out; committed agent commands are shared)
+/.claude/*
+!/.claude/commands/
 
 # Repo-specific
 tests/e2e/.auth/
@@ -63,8 +66,7 @@ composer.phar
 # Build and test transcripts written at the repo ROOT by local tooling. These
 # were tracked, so every local build produced a commit-shaped diff, and every
 # such commit triggered the full Code Quality suite — 34 jobs deciding a
-# changed log file. Root-anchored on purpose: .claude/skills/*/examples/*.log
-# are gate FIXTURES, not artefacts, and must stay tracked.
+# changed log file.
 /*.log
 /changed.tsv
 pr-body.md

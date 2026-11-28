@@ -36,7 +36,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use DateTime;
+use OCA\Dossiq\Kernel\Contracts\EngineInboxQueryInterface;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Service\Task\TaskInboxPage;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
  */
-class EngineInboxQuery {
+class EngineInboxQuery implements EngineInboxQueryInterface {
 
     /**
      * OpenRegister's inbox criteria, reached by name.
@@ -74,6 +76,13 @@ class EngineInboxQuery {
     private string $lastError = '';
 
     /**
+     * Turns a flat set of named filters into the engine's criteria.
+     *
+     * @var InboxCriteria
+     */
+    private readonly InboxCriteria $criteria;
+
+    /**
      * Constructor.
      *
      * @param SettingsService    $settings  Bridge to OpenRegister plus app config.
@@ -81,12 +90,14 @@ class EngineInboxQuery {
      * @param LoggerInterface    $logger    Records a read that could not be made.
      *
      * @return void
+     * @spec openspec/changes/method-decomposition/tasks.md
      */
     public function __construct(
         private readonly SettingsService $settings,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
     ) {
+        $this->criteria = new InboxCriteria();
     }//end __construct()
 
     /**
@@ -112,7 +123,7 @@ class EngineInboxQuery {
      * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
      */
     public function rows(array $criteria, int $limit, array $failure): array {
-        return $this->rowsOf(value: $this->envelope(criteria: $criteria, limit: $limit, failure: $failure));
+        return $this->rowsOf(value: $this->envelope(read: ['criteria' => $criteria, 'limit' => $limit], failure: $failure));
     }//end rows()
 
     /**
@@ -133,7 +144,7 @@ class EngineInboxQuery {
      * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
      */
     public function total(array $criteria, array $failure): int {
-        $page = $this->envelope(criteria: $criteria, limit: 1, failure: $failure);
+        $page = $this->envelope(read: ['criteria' => $criteria, 'limit' => 1], failure: $failure);
         if (is_array($page) === false) {
             return 0;
         }
@@ -206,8 +217,8 @@ class EngineInboxQuery {
      * nothing; `lastError()` is how a caller that must fail closed tells
      * that apart from a genuinely empty answer.
      *
-     * @param array<string, mixed> $criteria Named arguments for the criteria.
-     * @param integer              $limit    How many rows at most.
+     * @param array{criteria: array<string, mixed>, limit: int} $read Named arguments for the criteria, and how many
+     *                                                           rows at most.
      * @param array{0: string, 1: array<string, mixed>} $failure Log message and context.
      *
      * @return mixed The engine's response, or null.
@@ -225,8 +236,10 @@ class EngineInboxQuery {
      *   The catch below is what actually handles the class being absent.
      *
      * @spec openspec/specs/add-work-queue/spec.md#requirement-three-surfaces-one-rule
+     * @spec openspec/changes/method-decomposition/tasks.md
      */
-    private function envelope(array $criteria, int $limit, array $failure): mixed {
+    private function envelope(array $read, array $failure): mixed {
+        ['criteria' => $criteria, 'limit' => $limit] = $read;
         // NOTE: no `class_exists` guard on the criteria, deliberately. The
         // catch below already handles an absent class -- a missing class
         // throws `Error`, which is a `Throwable` -- and it LOGS, where a
@@ -240,10 +253,8 @@ class EngineInboxQuery {
             return null;
         }
 
-        $criteriaClass = self::CRITERIA;
-
         try {
-            return $inbox->inbox(new $criteriaClass(...$criteria), $limit, 0);
+            return $inbox->inbox($this->criteria->forFilters(criteria: $criteria), new TaskInboxPage(limit: $limit, offset: 0));
         } catch (Throwable $e) {
             $this->lastError = $e->getMessage();
 

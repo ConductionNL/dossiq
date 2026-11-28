@@ -74,6 +74,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses   \OCA\Dossiq\Middleware\MandateDeniedException
  * @uses \OCA\Dossiq\Controller\Support\JsonRequestBody
+ * @uses \OCA\Dossiq\Controller\Support\ComposeRequestBody
  */
 class RefusalCarriesAStatusTest extends TestCase {
 	/**
@@ -231,7 +232,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	public function testARefusalAnswersInTheReadersLanguage(): void {
 		$engine = $this->createMock(originalClassName: StatusTransitionService::class);
@@ -262,7 +263,7 @@ class RefusalCarriesAStatusTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/refusals-answer-in-the-readers-language/specs/frontend-locale-completeness/spec.md
+	 * @spec openspec/specs/frontend-locale-completeness/spec.md
 	 */
 	public function testARefusalWithoutATranslatorKeepsItsSentence(): void {
 		$engine = $this->createMock(originalClassName: StatusTransitionService::class);

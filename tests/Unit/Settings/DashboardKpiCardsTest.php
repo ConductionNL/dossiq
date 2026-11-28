@@ -60,7 +60,7 @@ final class DashboardKpiCardsTest extends TestCase {
 	 */
 	private const CARDS = [
 		'kpi-open-cases' => ['Open Cases', 'openCount', 'newToday'],
-		'kpi-overdue' => ['Overdue', 'overdueCount', null],
+		'kpi-overdue' => ['Late', 'overdueCount', null],
 		'kpi-completed' => ['Completed This Month', 'completedCount', 'avgProcessingDays'],
 		'kpi-my-tasks' => ['My Tasks', 'taskCount', 'tasksDueToday'],
 		'kpi-sla-compliance' => ['SLA Compliance', 'slaCompliance', null],

@@ -327,27 +327,30 @@ test.describe('Colour, versions, folders and the AVG fields', () => {
 	test('a coloured status draws its board column in that colour', async ({
 		page,
 	}) => {
-		await page.goto(`/apps/${REGISTER}/workflow-board`)
+		await page.goto(`/apps/${REGISTER}/cases?_view=board`)
 		await dismissSupportDialog(page)
 
 		// The board merges every non-final status sharing a NAME into one
 		// column. RUN_PREFIX keeps another RUN out of this column, but not
-		// another SPEC: it is per process, and a Playwright worker runs several
-		// spec files in one process, so `seedStateMachine` in fixtures.ts seeds
-		// its own `<prefix> In behandeling` under the same prefix. That status
-		// names no colour and the schema stores the default grey for it, which
-		// is why `mergeColumnColour` has to take a chosen hue over grey rather
-		// than the first row the API answers with: before it did, this column
-		// came out grey whenever the fixture machine happened to be created
-		// first, and green on the retry that reseeded from an empty worker.
-		const column = page
-			.locator('.board-column')
-			.filter({ hasText: `${RUN_PREFIX} In behandeling` })
+		// another SPEC: a Playwright worker runs several spec files in one
+		// process, so `seedStateMachine` in fixtures.ts seeds its own
+		// `<prefix> In behandeling` under the same prefix. That status names
+		// no colour and the schema stores the default grey for it, which is
+		// why the column source declares grey as its `neutralColor`: a chosen
+		// hue wins the merge over a stored grey, whichever row the API
+		// answers with first. The dot is drawn in the status palette token
+		// (`colorMap`), the same one the status badge uses.
+		const column = page.locator('[data-testid="cn-board-column"]').filter({
+			has: page.locator('.cn-board-view__column-title', {
+				hasText: `${RUN_PREFIX} In behandeling`,
+			}),
+		})
 		await expect(column).toBeVisible({ timeout: 30_000 })
 
-		await expect(
-			column.locator('[data-testid="board-column-colour"]'),
-		).toHaveAttribute('data-colour', 'orange')
+		await expect(column.locator('[data-testid="cn-board-dot"]')).toHaveAttribute(
+			'style',
+			/var\(--nl-color-orange, #e17000\)/,
+		)
 	})
 
 	// @e2e case-types::a-hidden-status-keeps-its-cases-out-of-the-list

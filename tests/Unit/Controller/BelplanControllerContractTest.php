@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\BelplanController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
@@ -42,11 +43,14 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Wire-contract tests for BelplanController::route().
  *
  * @covers \OCA\Dossiq\Controller\BelplanController
+ * @uses   \OCA\Dossiq\Controller\Support\AdminCaller
+ * @uses   \OCA\Dossiq\Controller\Support\SchemaObjectCalls
  */
 class BelplanControllerContractTest extends TestCase {
 
@@ -111,8 +115,7 @@ class BelplanControllerContractTest extends TestCase {
 			request: $this->request,
 			routingService: $this->routingService,
 			settingsService: $this->settingsService,
-			userSession: $this->userSession,
-			groupManager: $this->groupManager,
+			caller: new AdminCaller(userSession: $this->userSession, groupManager: $this->groupManager),
 		);
 	}//end setUp()
 
@@ -256,7 +259,9 @@ class BelplanControllerContractTest extends TestCase {
 			 *
 			 * @return array Never returns.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new OpenRegisterValidationException(
 					message: "Property 'priority' should be of type integer but string given"
 				);
@@ -290,7 +295,9 @@ class BelplanControllerContractTest extends TestCase {
 			 *
 			 * @return array Never returns.
 			 */
-			public function saveObject(array $object, string $register, string $schema): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
 				throw new \TypeError('Argument #1 must be of type array, null given');
 			}
 		};

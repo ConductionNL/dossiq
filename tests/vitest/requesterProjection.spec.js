@@ -17,8 +17,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
+const { initializeStores } = vi.hoisted(() => ({ initializeStores: vi.fn(async () => ({})) }))
+
 vi.mock('../../src/store/store.js', () => ({
-	initializeStores: async () => ({}),
+	initializeStores,
+	storesReady: Promise.resolve(),
 }))
 
 /** The object store the component sees. Replaced per test. */
@@ -69,6 +72,12 @@ async function mountProjection({
 }
 
 describe('RequesterProjection', () => {
+	it('waits for the store start-up of the app instead of starting a second one', async () => {
+		initializeStores.mockClear()
+		await mountProjection({ fetchObject: vi.fn(async () => ({ id: 'case-1' })), saveObject: vi.fn() })
+		expect(initializeStores).not.toHaveBeenCalled()
+	})
+
 	it('renders nothing a reader can see', async () => {
 		const wrapper = await mountProjection({
 			fetchObject: vi.fn().mockResolvedValue({ id: 'case-1' }),
@@ -119,6 +128,37 @@ describe('RequesterProjection', () => {
 		expect(saveObject).not.toHaveBeenCalled()
 	})
 
+	it('rewrites the projection when a form replaced a person by a company', async () => {
+		const saveObject = vi.fn().mockResolvedValue({})
+		const company = { id: 'uuid-company-1', tradeName: 'Visser Bouw B.V.', kvkNumber: '24157431' }
+		const fetchObject = vi.fn().mockImplementation(async (type, uuid) => {
+			if (type === 'case') {
+				// The form wrote the company's uuid; the projection still names the person.
+				return {
+					id: 'case-1',
+					requester: 'uuid-company-1',
+					initiatorType: 'person',
+					initiatorSourceId: '999990627',
+					initiatorDisplayName: 'Stephan Janssen',
+				}
+			}
+			if (type === 'kvkCompany' && uuid === 'uuid-company-1') {
+				return company
+			}
+			return null
+		})
+
+		await mountProjection({ fetchObject, saveObject })
+
+		expect(saveObject).toHaveBeenCalledTimes(1)
+		expect(saveObject.mock.calls[0][1]).toMatchObject({
+			requester: 'uuid-company-1',
+			initiatorType: 'company',
+			initiatorSourceId: '24157431',
+			initiatorDisplayName: 'Visser Bouw B.V.',
+		})
+	})
+
 	it('writes nothing for a case without a requester', async () => {
 		const saveObject = vi.fn().mockResolvedValue({})
 		await mountProjection({
@@ -126,5 +166,31 @@ describe('RequesterProjection', () => {
 			saveObject,
 		})
 		expect(saveObject).not.toHaveBeenCalled()
+	})
+
+	it('keeps the stored number when the reader was shown the BSN masked', async () => {
+		const saveObject = vi.fn().mockResolvedValue({})
+		const fetchObject = vi.fn().mockImplementation(async (type) => {
+			if (type === 'case') {
+				return { id: 'case-1', requester: 'uuid-person-1', initiatorType: 'person', initiatorSourceId: '999990627', initiatorDisplayName: 'Stephan Janssen' }
+			}
+			return type === 'brpPerson' ? { ...PERSON_ROW, citizenServiceNumber: '*****0627' } : null
+		})
+		await mountProjection({ fetchObject, saveObject })
+		expect(saveObject).not.toHaveBeenCalled()
+	})
+
+	it('never stores a mask for a new requester', async () => {
+		const saveObject = vi.fn().mockResolvedValue({})
+		const fetchObject = vi.fn().mockImplementation(async (type) => {
+			if (type === 'case') {
+				return { id: 'case-1', requester: 'uuid-person-1' }
+			}
+			return type === 'brpPerson' ? { ...PERSON_ROW, citizenServiceNumber: '*****0627' } : null
+		})
+		await mountProjection({ fetchObject, saveObject })
+		expect(saveObject).toHaveBeenCalledTimes(1)
+		expect(saveObject.mock.calls[0][1].initiatorSourceId).toBe('')
+		expect(saveObject.mock.calls[0][1].initiatorDisplayName).toBe('Stephan Janssen')
 	})
 })

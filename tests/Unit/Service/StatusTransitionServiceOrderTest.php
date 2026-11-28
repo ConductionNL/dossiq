@@ -31,6 +31,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 use OCA\Dossiq\Service\Status\StatusDeclarations;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Transitions\CaseDeclarations;
 use OCA\Dossiq\Service\Transitions\CaseMoveLedger;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -42,8 +43,10 @@ use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionDeclarations;
+use OCA\Dossiq\Service\Transitions\TransitionLabel;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCA\Dossiq\Service\WorkflowTemplateLoader;
+use OCP\IL10N;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -53,6 +56,8 @@ use RuntimeException;
  * The order of the engine's checks and writes.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionAsk
+ * @uses \OCA\Dossiq\Service\Transitions\TransitionStep
  * @uses \OCA\Dossiq\Service\Transitions\CaseDeclarations
  * @uses \OCA\Dossiq\Service\Transitions\CaseMoveLedger
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -114,9 +119,11 @@ class StatusTransitionServiceOrderTest extends TestCase {
 	 *
 	 * The one place the constructor is spelled out, so the split touches this helper and no test.
 	 *
+	 * @param TransitionLabel|null $labels How the engine reads a transition's label, the default when null.
+	 *
 	 * @return StatusTransitionService
 	 */
-	private function engine(): StatusTransitionService {
+	private function engine(?TransitionLabel $labels = null): StatusTransitionService {
 		$world = &$this->world;
 
 		$loader = $this->createMock(WorkflowTemplateLoader::class);
@@ -251,6 +258,7 @@ class StatusTransitionServiceOrderTest extends TestCase {
 				dispatcher: $dispatcher,
 				logger: $logger,
 			),
+			labels: ($labels ?? new TransitionLabel()),
 		);
 	}//end engine()
 
@@ -459,6 +467,25 @@ class StatusTransitionServiceOrderTest extends TestCase {
 	}//end testAClosingMoveIsOneSaveThenTheRest()
 
 	/**
+	 * A transition whose label is a language map is recorded with its source text, whatever
+	 * language the person who moved it reads: a recorded label names an act.
+	 *
+	 * @return void
+	 */
+	public function testATranslatableLabelIsRecordedInItsSourceLanguage(): void {
+		$labelled = ['label' => ['nl' => 'Besluiten', 'en' => 'Decide']] + self::TRANSITION;
+		$this->world['transition'] = $labelled;
+		$this->world['template'] = ['transitions' => [$labelled]];
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+
+		$this->engine(labels: new TransitionLabel(reader: new TranslatedText(l10n: $l10n)))->execute('case-1', 't1', 'Klaar.', 'jan', 'rt-1');
+
+		$moves = array_values(array_filter($this->calls, static fn (array $call): bool => $call[0] === 'writeStatusRecord'));
+		$this->assertSame(expected: 'Besluiten', actual: $moves[0][1]['label']);
+	}//end testATranslatableLabelIsRecordedInItsSourceLanguage()
+
+	/**
 	 * The version the engine read travels with the save, also for a case that carries it at the top
 	 * level and has no `@self` block.
 	 *
@@ -536,6 +563,30 @@ class StatusTransitionServiceOrderTest extends TestCase {
 		$this->assertTrue($this->calls[2][1]['noWorkflowTemplate']);
 		$this->assertSame(['status', 'statusRecord', 'dispatchedActions', 'failedActions'], array_keys($answer));
 	}//end testTheFreeFormRefusalsAndTheFreeFormMove()
+
+	/**
+	 * An administrator's free-form move on a case that does not exist writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testAFreeFormMoveOnAMissingCaseIsRefused(): void {
+		$this->world['cases'] = [null];
+
+		$this->assertSame('case_not_found', $this->refusalOf(fn () => $this->engine()->executeFreeForm('case-404', 'st-elsewhere', null, 'jan')));
+		$this->assertSame([], $this->calls);
+	}//end testAFreeFormMoveOnAMissingCaseIsRefused()
+
+	/**
+	 * isAdmin answers what the group gate answers.
+	 *
+	 * @return void
+	 */
+	public function testIsAdminAsksTheGroupGate(): void {
+		$this->assertTrue($this->engine()->isAdmin('jan'));
+
+		$this->world['admin'] = false;
+		$this->assertFalse($this->engine()->isAdmin('jan'));
+	}//end testIsAdminAsksTheGroupGate()
 
 	/**
 	 * The available transitions: empty without a case; the status facts and an empty `withheld`

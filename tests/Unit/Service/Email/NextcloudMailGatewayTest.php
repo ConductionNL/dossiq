@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
@@ -46,6 +46,11 @@ use Psr\Log\NullLogger;
  * Unit tests for the Nextcloud Mail gateway.
  *
  * @covers \OCA\Dossiq\Service\Email\NextcloudMailGateway
+ * @uses \OCA\Dossiq\Service\Email\MailServices
+ * @uses \OCA\Dossiq\Service\Email\MailEntityValues
+ * @uses \OCA\Dossiq\Service\Email\MailMessageCalls
+ * @uses \OCA\Dossiq\Service\Email\MailSenderChecks
+ * @uses \OCA\Dossiq\Service\Email\MailOutboxDelivery
  */
 class NextcloudMailGatewayTest extends TestCase {
 

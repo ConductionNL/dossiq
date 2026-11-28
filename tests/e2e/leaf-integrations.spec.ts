@@ -96,7 +96,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 	}) => {
 		const schemas = await storedSchemas(request)
 
-		for (const slug of ['case', 'complaint']) {
+		for (const slug of ['case', 'mailIntakeEntry']) {
 			const template = schemas[slug]?.configuration?.mailObjectTemplate
 			expect(
 				template,
@@ -117,7 +117,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 	})
 
 	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-case-button-appears-in-the-mail-sidebar
-	test('only case and complaint are offered as create targets', async ({
+	test('only the case and the work queue are offered as create targets', async ({
 		request,
 	}) => {
 		const schemas = await storedSchemas(request)
@@ -136,7 +136,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 			.map(([slug]) => slug)
 			.sort()
 
-		expect(offered).toEqual(['case', 'complaint'])
+		expect(offered).toEqual(['case', 'mailIntakeEntry'])
 	})
 
 	// @e2e openspec/specs/leaf-integrations/spec.md#scenario-a-conversation-can-be-linked-to-a-case

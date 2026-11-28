@@ -21,10 +21,10 @@
  *
  * NOT RUN YET (decision 139): written with the build, run in the live pass.
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+ * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
  */
 
 import type { APIRequestContext } from '@playwright/test'
@@ -48,7 +48,7 @@ import {
 } from './helpers/nav.ts'
 
 const SETTINGS = '/index.php/apps/dossiq/api/settings'
-const THROUGHPUT = '/index.php/apps/dossiq/api/woo/reports/throughput'
+const THROUGHPUT = '/index.php/apps/dossiq/api/document-review/reports/throughput'
 const GROUPS = '/ocs/v2.php/cloud/groups'
 const ADMIN_USER = 'admin'
 
@@ -57,9 +57,9 @@ const READERS = `${RUN_PREFIX}-lezers`.toLowerCase()
 
 /** The three settings this spec writes, as they were before it ran. */
 const KEYS = [
-	'wooReviewerThroughputReport',
-	'wooCollectionPartiesReport',
-	'wooReviewerThroughputReaders',
+	'reviewerThroughputReport',
+	'collectionPartiesReport',
+	'reviewerThroughputReaders',
 ] as const
 
 let api: APIRequestContext
@@ -183,8 +183,8 @@ test.describe('Review reports', () => {
 		// Start from a fresh install's state: both reports off.
 		expect(
 			await saveSettings({
-				wooReviewerThroughputReport: 'false',
-				wooCollectionPartiesReport: 'false',
+				reviewerThroughputReport: 'false',
+				collectionPartiesReport: 'false',
 			}),
 		).toBe(200)
 	})
@@ -192,13 +192,13 @@ test.describe('Review reports', () => {
 	test.afterAll(async () => {
 		// The switches first: the reader group cannot go while the report that names it is on.
 		await saveSettings({
-			wooReviewerThroughputReport: 'false',
-			wooCollectionPartiesReport:
-				previous.wooCollectionPartiesReport || 'false',
-			wooReviewerThroughputReaders: previous.wooReviewerThroughputReaders,
+			reviewerThroughputReport: 'false',
+			collectionPartiesReport:
+				previous.collectionPartiesReport || 'false',
+			reviewerThroughputReaders: previous.reviewerThroughputReaders,
 		})
-		if (previous.wooReviewerThroughputReport === 'true') {
-			await saveSettings({ wooReviewerThroughputReport: 'true' })
+		if (previous.reviewerThroughputReport === 'true') {
+			await saveSettings({ reviewerThroughputReport: 'true' })
 		}
 		await api.delete(`${GROUPS}/${READERS}`, { headers: writeHeaders() })
 		await cleanupRunObjects(api, token)
@@ -223,20 +223,20 @@ test.describe('Review reports', () => {
 		await navToRoute(page, '/cases')
 		await expect(sidebarNav(page)).toBeVisible(PAGE_LOAD)
 		await expect(
-			sidebarNav(page).locator('a[href$="/woo-reports"]'),
+			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toHaveCount(0)
 
 		// The address still resolves; it draws neither half.
-		await navToRoute(page, '/woo-reports')
-		await expect(page.getByTestId('woo-throughput')).toHaveCount(0)
+		await navToRoute(page, '/document-review-reports')
+		await expect(page.getByText('Assessments per reviewer per day')).toHaveCount(0)
 		await expect(page.getByTestId('case-mail-parties')).toHaveCount(0)
 		expect(errors).toEqual([])
 	})
 
 	test('the throughput report cannot be switched on without a reader group (REQ-WRR-001)', async () => {
 		const status = await saveSettings({
-			wooReviewerThroughputReport: 'true',
-			wooReviewerThroughputReaders: '',
+			reviewerThroughputReport: 'true',
+			reviewerThroughputReaders: '',
 		})
 
 		expect(status, 'a switch with no reader group is refused').toBe(422)
@@ -249,8 +249,8 @@ test.describe('Review reports', () => {
 	}) => {
 		expect(
 			await saveSettings({
-				wooReviewerThroughputReport: 'true',
-				wooReviewerThroughputReaders: READERS,
+				reviewerThroughputReport: 'true',
+				reviewerThroughputReaders: READERS,
 			}),
 		).toBe(200)
 
@@ -261,10 +261,10 @@ test.describe('Review reports', () => {
 		await navToRoute(page, '/cases')
 		await expect(sidebarNav(page)).toBeVisible(PAGE_LOAD)
 		await expect(
-			sidebarNav(page).locator('a[href$="/woo-reports"]'),
+			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toHaveCount(0)
-		await navToRoute(page, '/woo-reports')
-		await expect(page.getByTestId('woo-throughput')).toHaveCount(0)
+		await navToRoute(page, '/document-review-reports')
+		await expect(page.getByText('Assessments per reviewer per day')).toHaveCount(0)
 	})
 
 	test('a member of the reader group sees the throughput table (REQ-WRR-002)', async ({
@@ -286,31 +286,24 @@ test.describe('Review reports', () => {
 		expect(Array.isArray(rows)).toBe(true)
 
 		await navToRoute(page, '/cases')
+		// The entry sits in the footer section, which the menu folds under
+		// "Advanced": it is in the DOM but hidden until a user opens it.
+		await sidebarNav(page)
+			.getByRole('button', { name: 'Advanced', exact: true })
+			.first()
+			.click()
 		await expect(
-			sidebarNav(page).locator('a[href$="/woo-reports"]'),
+			sidebarNav(page).locator('a[href$="/document-review-reports"]'),
 		).toBeVisible(PAGE_LOAD)
-		await navToRoute(page, '/woo-reports')
-		await expect(page.getByTestId('woo-throughput')).toBeVisible(PAGE_LOAD)
-		await page
-			.getByTestId('woo-throughput-from')
-			.locator('input')
-			.fill('2026-11-01')
-		await page
-			.getByTestId('woo-throughput-to')
-			.locator('input')
-			.fill('2026-11-30')
-		await page.getByTestId('woo-throughput-show').click()
+		await navToRoute(page, '/document-review-reports')
 
-		// The screen draws what the route answered: one row per reviewer per
-		// day, and no refusal. The counts themselves are WooThroughputReportTest's.
-		await expect(page.getByTestId('woo-throughput-refusal')).toHaveCount(0)
-		if (rows.length > 0) {
-			await expect(
-				page.getByTestId('woo-throughput-table').locator('tbody tr'),
-			).toHaveCount(rows.length)
-		} else {
-			await expect(page.getByTestId('woo-throughput-table')).toHaveCount(0)
-		}
+		// The report is a widget over the route, for the page's own period, and
+		// it reads only when asked. The counts themselves are WooThroughputReportTest's.
+		await expect(page.getByText('Assessments per reviewer per day')).toBeVisible(PAGE_LOAD)
+		const shown = page.waitForResponse((res) => res.url().includes('/document-review/reports/throughput'))
+		// The parties report is off here, so its Show button is not on the page.
+		await page.getByRole('button', { name: 'Show', exact: true }).click()
+		expect((await shown).status(), 'the widget read the route').toBe(200)
 		// Only the half on offer: the parties report is still off.
 		await expect(page.getByTestId('case-mail-parties')).toHaveCount(0)
 		expect(errors).toEqual([])
@@ -320,7 +313,7 @@ test.describe('Review reports', () => {
 		page,
 	}) => {
 		const errors = trackDossiqErrors(page)
-		expect(await saveSettings({ wooCollectionPartiesReport: 'true' })).toBe(200)
+		expect(await saveSettings({ collectionPartiesReport: 'true' })).toBe(200)
 
 		const read = await api.get(partiesUrl(caseId))
 		expect(read.status()).toBe(200)
@@ -344,16 +337,17 @@ test.describe('Review reports', () => {
 		expect(await csv.text()).toContain('a.jansen@gemeente.nl')
 
 		// The address names the case, so a link from a case opens its report.
-		await navToRoute(page, '/woo-reports')
+		await navToRoute(page, '/document-review-reports')
 		await page.goto(`${page.url().split('?')[0]}?case=${caseId}`, PAGE_LOAD)
 		await expect(page.getByTestId('case-mail-parties')).toBeVisible(PAGE_LOAD)
+		// The widget is the library's count-tables report; its test ids carry the library's prefix.
 		await expect(
-			page.getByTestId('case-mail-parties-case').locator('input'),
+			page.locator('input[data-testid="cn-count-tables-report-object"], [data-testid="cn-count-tables-report-object"] input').first(),
 		).toHaveValue(caseId)
-		await page.getByTestId('case-mail-parties-show').click()
+		await page.getByTestId('cn-count-tables-report-show').click()
 
 		const senders = page
-			.getByTestId('case-mail-parties-senders')
+			.getByTestId('cn-count-tables-report-senders')
 			.locator('tbody tr')
 		await expect(senders).toHaveCount(2)
 		await expect(senders.nth(0).locator('td')).toHaveText([
@@ -362,17 +356,17 @@ test.describe('Review reports', () => {
 		])
 		await expect(senders.nth(1).locator('td')).toHaveText(['b@aannemer.nl', '1'])
 		const recipients = page
-			.getByTestId('case-mail-parties-recipients')
+			.getByTestId('cn-count-tables-report-recipients')
 			.locator('tbody tr')
 		await expect(recipients.nth(0).locator('td')).toHaveText([
 			'b@aannemer.nl',
 			'2',
 		])
 		await expect(
-			page.getByTestId('case-mail-parties-domains').locator('tbody tr'),
+			page.getByTestId('cn-count-tables-report-domains').locator('tbody tr'),
 		).toHaveCount(2)
-		await expect(page.getByTestId('case-mail-parties-totals')).toContainText('4')
-		await expect(page.getByTestId('case-mail-parties-csv')).toBeVisible()
+		await expect(page.getByTestId('cn-count-tables-report-totals')).toContainText('4')
+		await expect(page.getByTestId('cn-count-tables-report-csv')).toBeVisible()
 		expect(errors).toEqual([])
 	})
 })

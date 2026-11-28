@@ -5,7 +5,7 @@
  * The colour a status is drawn in, and the three ways it can be absent.
  *
  * A status colour reaches the screen through a chain nothing else checks: the
- * schema enumerates twelve names, a case type's author picks one, and three
+ * schema enumerates fourteen names, a case type's author picks one, and three
  * separate surfaces (the Cases index badge, the case page's transition strip,
  * the Workflow board column) turn that name into CSS. The failure mode is not
  * a wrong colour, it is NO colour — an unset value, a value from a row saved
@@ -22,24 +22,24 @@ import {
 	DEFAULT_STATUS_COLOUR,
 	isLightStatusColour,
 	isStatusColour,
-	mergeColumnColour,
 	normaliseStatusColour,
 	STATUS_COLOUR_BADGE_VARIANTS,
 	STATUS_COLOURS,
 	statusBadgeStyle,
 	statusColourStyle,
 	statusColourToken,
+	statusTextToken,
 } from '../../src/utils/statusColour.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
 describe('the palette', () => {
-	it('carries the twelve names the schema enumerates', () => {
-		expect(STATUS_COLOURS).toHaveLength(12)
+	it('carries the fourteen names the schema enumerates', () => {
+		expect(STATUS_COLOURS).toHaveLength(14)
 	})
 
 	it('names each hue and its light variant', () => {
-		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'grey']) {
+		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'teal', 'grey']) {
 			expect(STATUS_COLOURS).toContain(hue)
 			expect(STATUS_COLOURS).toContain(`${hue}-light`)
 		}
@@ -62,7 +62,7 @@ describe('isStatusColour', () => {
 		['undefined', undefined],
 		['null', null],
 		['a hex value', '#ff0000'],
-		['a name outside the palette', 'teal'],
+		['a name outside the palette', 'magenta'],
 		['a number', 3],
 		['a boolean', true],
 	])('refuses %s', (_label, value) => {
@@ -75,7 +75,7 @@ describe('normaliseStatusColour', () => {
 		expect(normaliseStatusColour('orange')).toBe('orange')
 	})
 
-	it.each([[''], [undefined], [null], ['#ff0000'], ['teal']])(
+	it.each([[''], [undefined], [null], ['#ff0000'], ['magenta']])(
 		'falls back to grey for %s',
 		(value) => {
 			expect(normaliseStatusColour(value)).toBe('grey')
@@ -107,7 +107,7 @@ describe('statusColourToken', () => {
 	})
 
 	it('resolves an unknown name to the grey token', () => {
-		expect(statusColourToken('teal')).toBe(statusColourToken('grey'))
+		expect(statusColourToken('magenta')).toBe(statusColourToken('grey'))
 	})
 })
 
@@ -137,7 +137,7 @@ describe('statusColourStyle', () => {
 	})
 
 	it('always names a background', () => {
-		for (const name of [...STATUS_COLOURS, '', 'teal', undefined]) {
+		for (const name of [...STATUS_COLOURS, '', 'magenta', undefined]) {
 			expect(statusColourStyle(name).backgroundColor).toMatch(
 				/^var\(--nl-color-/,
 			)
@@ -146,18 +146,26 @@ describe('statusColourStyle', () => {
 })
 
 describe('statusBadgeStyle', () => {
-	it('draws a full hue as its own tint with the darkened hue as text', () => {
+	it('draws a full hue as its own tint with the theme\'s pill text, else the darkened hue', () => {
 		const style = statusBadgeStyle('blue')
 		expect(style.backgroundColor).toBe(statusColourToken('blue-light'))
 		expect(style.color).toBe(
-			`color-mix(in srgb, ${statusColourToken('blue')} 65%, var(--color-main-text, #1b1c1d))`,
+			`var(--nl-color-blue-text, color-mix(in srgb, ${statusColourToken('blue')} 65%, var(--color-main-text, #1b1c1d)))`,
 		)
 	})
 
-	it('leaves a light tint as it was: the tint with the main text', () => {
-		expect(statusBadgeStyle('green-light')).toEqual(
-			statusColourStyle('green-light'),
-		)
+	it('leaves a light tint as its tint, with the theme\'s pill text, else the main text', () => {
+		expect(statusBadgeStyle('green-light')).toEqual({
+			backgroundColor: statusColourStyle('green-light').backgroundColor,
+			color: 'var(--nl-color-green-text, var(--color-main-text))',
+		})
+	})
+
+	it('reads the pill text token of every hue', () => {
+		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'grey']) {
+			expect(statusBadgeStyle(hue).color.startsWith(`var(--nl-color-${hue}-text, `), hue).toBe(true)
+			expect(statusTextToken(hue, 'black')).toBe(`var(--nl-color-${hue}-text, black)`)
+		}
 	})
 
 	it('reaches AA on every hue, computed on the fallback ramps', () => {
@@ -184,7 +192,7 @@ describe('statusBadgeStyle', () => {
 						.padStart(2, '0'),
 				)
 				.join('')
-		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'grey']) {
+		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'teal', 'grey']) {
 			const text = mix(hex(statusColourToken(hue)), '#1b1c1d', 0.65)
 			const tint = hex(statusColourToken(`${hue}-light`))
 			const [hi, lo] = [luminance(text), luminance(tint)].sort((a, b) => b - a)
@@ -192,65 +200,19 @@ describe('statusBadgeStyle', () => {
 		}
 	})
 
-	it('is what the status cell draws, while the settings swatches keep the hue', () => {
-		const cell = fs.readFileSync(
-			path.join(ROOT, 'src/components/cells/StatusBadgeCell.vue'),
-			'utf8',
+	it('is drawn by the library badge on the Status column, with the colour read off the status type', () => {
+		const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 'utf8'))
+		const status = manifest.pages.find((p) => p.id === 'Cases').config.columns.find(
+			(c) => typeof c === 'object' && c.key === 'status',
 		)
-		expect(cell).toContain('statusBadgeStyle(this.colour)')
-		expect(cell).not.toContain('statusColourStyle(')
-	})
-})
-
-describe('mergeColumnColour', () => {
-	it('takes the candidate when the column has none yet', () => {
-		expect(mergeColumnColour(null, 'orange')).toBe('orange')
-	})
-
-	it('keeps the colour the column already took', () => {
-		// Two case types can colour the same status name differently and the
-		// merged board column can only be one of them: first wins, and the
-		// second is ignored rather than blended into a third colour neither
-		// author asked for.
-		expect(mergeColumnColour('orange', 'purple')).toBe('orange')
-	})
-
-	it('stays null while neither side names a palette colour', () => {
-		// null rather than grey: the column has no colour YET, and a caller
-		// that merges a third status must still be able to take its colour.
-		expect(mergeColumnColour(null, '')).toBeNull()
-		expect(mergeColumnColour(undefined, 'teal')).toBeNull()
-	})
-
-	it('lets a later status colour a column an earlier one left unset', () => {
-		expect(mergeColumnColour(mergeColumnColour(null, ''), 'red')).toBe('red')
-	})
-
-	it('lets a chosen hue beat a stored grey, whichever arrives first', () => {
-		// The schema defaults `statusType.colour` to grey, so a status nobody
-		// coloured is STORED as grey and is indistinguishable from a deliberate
-		// one. Letting that grey win the merge made the column's colour depend on
-		// which case type the collection endpoint happened to answer first: the
-		// board drew an authored orange status grey while its own status badge
-		// stayed orange.
-		expect(mergeColumnColour('grey', 'orange')).toBe('orange')
-		expect(mergeColumnColour('orange', 'grey')).toBe('orange')
-	})
-
-	it('stays grey when grey is all any of the merged statuses carry', () => {
-		expect(mergeColumnColour('grey', 'grey')).toBe('grey')
-		expect(mergeColumnColour(null, 'grey')).toBe('grey')
-		expect(mergeColumnColour('grey', '')).toBe('grey')
-	})
-
-	it('treats grey-light as a chosen hue, because nothing defaults to it', () => {
-		expect(mergeColumnColour('grey', 'grey-light')).toBe('grey-light')
+		expect(status.widget).toBe('badge')
+		expect(status.widgetProps.resolve).toEqual({ register: 'dossiq', schema: 'statusType', colorField: 'colour' })
 	})
 })
 
 describe('the badge tone of a status colour', () => {
 	it('gives every colour the schema allows a tone the library badge knows', () => {
-		const tones = ['default', 'info', 'success', 'warning', 'error', 'purple']
+		const tones = ['default', 'info', 'success', 'warning', 'error', 'purple', 'teal']
 		for (const hue of STATUS_COLOURS) {
 			expect(tones).toContain(STATUS_COLOUR_BADGE_VARIANTS[hue])
 		}

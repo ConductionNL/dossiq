@@ -26,27 +26,54 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
-use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\TenantMembershipChangedListener;
 use OCA\Dossiq\Listener\ContactMomentPipelinqListener;
 use OCA\Dossiq\Listener\ReportGroupingOnCreateListener;
+use OCA\Dossiq\Listener\SubmissionClosingDateGuard;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\DocumentListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\IntakeFormListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\PersonListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ContactListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\WooListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseAccessListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\CaseLinkListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\ReviewListenerRegistrar
- * @uses \OCA\Dossiq\AppInfo\Registrar\OnboardingListenerRegistrar
+ * @covers \OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\DocumentListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\IntakeFormListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\PersonListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ContactListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\WooListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseAccessListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseLinkListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ReviewListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\OnboardingListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseActivityListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\CaseRequesterListenerRegistrar
+ * @uses \OCA\Dossiq\Listener\Registrar\ForfeitInvoiceListenerRegistrar
  */
 class ObjectListenerRegistrarTest extends TestCase {
+
+	/**
+	 * The closing date guard runs before a submission is created, and not on its later updates.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/tenders-run-on-the-tender-case-type
+	 */
+	public function testTheSubmissionClosingDateGuardIsOnTheCreateOnly(): void {
+		$registered = $this->registrations();
+
+		$this->assertContains(
+			needle: SubmissionClosingDateGuard::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectCreatingEvent'] ?? []),
+			message: 'a late submission must be refused before it is written',
+		);
+		$this->assertNotContains(
+			needle: SubmissionClosingDateGuard::class,
+			haystack: ($registered['OCA\OpenRegister\Event\ObjectUpdatingEvent'] ?? []),
+			message: 'a submission that came in on time keeps moving through its lifecycle after the closing date',
+		);
+	}//end testTheSubmissionClosingDateGuardIsOnTheCreateOnly()
 
 	/**
 	 * The delete guard is registered on OpenRegister's pre-persist delete event.
@@ -91,6 +118,23 @@ class ObjectListenerRegistrarTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A create, update or delete of a tenantUser row reaches the listener that drops kept memberships.
+	 *
+	 * @return void
+	 */
+	public function testATenantUserChangeDropsTheKeptMemberships(): void {
+		$registered = $this->registrations();
+
+		foreach (['Created', 'Updated', 'Deleted'] as $change) {
+			$this->assertContains(
+				needle: TenantMembershipChangedListener::class,
+				haystack: ($registered['OCA\OpenRegister\Event\Object' . $change . 'Event'] ?? []),
+				message: 'without it a user keeps a tenant they left for up to a minute',
+			);
+		}
+	}//end testATenantUserChangeDropsTheKeptMemberships()
+
 	/**
 	 * A created case reaches the report grouping, through the intake registrar
 	 * this one calls (ai-features-on-the-case, REQ-AIC-04).

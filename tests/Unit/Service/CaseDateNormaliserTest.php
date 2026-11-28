@@ -48,10 +48,11 @@ class CaseDateNormaliserTest extends TestCase {
 	 *
 	 * @param string|null $tenantZone The administered zone, or null for none.
 	 * @param LoggerInterface|null $logger An optional logger to assert on.
+	 * @param string $appZone The app's own `timezone` setting.
 	 *
 	 * @return CaseDateNormaliser
 	 */
-	private function normaliser(?string $tenantZone, ?LoggerInterface $logger = null): CaseDateNormaliser {
+	private function normaliser(?string $tenantZone, ?LoggerInterface $logger = null, string $appZone = ''): CaseDateNormaliser {
 		$context = $this->createMock(originalClassName: TenantContext::class);
 		$context->method('isBound')->willReturn($tenantZone !== null);
 		$context->method('getTenantId')->willReturn('tenant-1');
@@ -66,6 +67,7 @@ class CaseDateNormaliserTest extends TestCase {
 
 		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getConfigValue')->willReturnMap([['timezone', '', $appZone]]);
 
 		return new CaseDateNormaliser(
 			tenantContext: $context,
@@ -87,6 +89,20 @@ class CaseDateNormaliserTest extends TestCase {
 		self::assertSame(
 			expected: 'Europe/Amsterdam',
 			actual: $this->normaliser(tenantZone: null)->timeZone()->getName()
+		);
+	}
+
+	/**
+	 * With no tenant bound, the app's own time zone setting is the zone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/admin-tabs-carry-the-settings-board-blocks/specs/tenant-configuration/spec.md
+	 */
+	public function testNoTenantReadsTheAppTimeZone(): void {
+		self::assertSame(
+			expected: 'Europe/Brussels',
+			actual: $this->normaliser(tenantZone: null, appZone: 'Europe/Brussels')->timeZone()->getName()
 		);
 	}
 
@@ -326,5 +342,39 @@ class CaseDateNormaliserTest extends TestCase {
 		$easterMonday = $normaliser->fromParts(2026, 4, 6);
 		self::assertSame(expected: '2026-04-06', actual: $easterMonday->format('Y-m-d'));
 		self::assertSame(expected: 'Europe/Amsterdam', actual: $easterMonday->getTimezone()->getName());
+	}
+
+	/**
+	 * Days between two moments are counted by DayCount, never negative, and
+	 * a day less than 24 hours long by the clock is not a whole day.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function testDaysBetweenCountsWholeDaysEitherWayRound(): void {
+		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
+		$start = $normaliser->parse('2026-09-01', 'from');
+		$end = $normaliser->parse('2026-10-31', 'to');
+
+		self::assertSame(expected: 60, actual: $normaliser->daysBetween(from: $start, to: $end));
+		self::assertSame(expected: 60, actual: $normaliser->daysBetween(from: $end, to: $start));
+		self::assertSame(expected: 0, actual: $normaliser->daysBetween(from: $start, to: $start->modify('+23 hours')));
+	}
+
+	/**
+	 * Signed days are negative once the second moment lies before the first.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
+	 */
+	public function testSignedDaysBetweenIsNegativeForAPassedDeadline(): void {
+		$normaliser = $this->normaliser(tenantZone: 'Europe/Amsterdam');
+		$today = $normaliser->parse('2026-09-10', 'today');
+
+		self::assertSame(expected: 5, actual: $normaliser->signedDaysBetween(from: $today, to: $normaliser->parse('2026-09-15', 'deadline')));
+		self::assertSame(expected: -9, actual: $normaliser->signedDaysBetween(from: $today, to: $normaliser->parse('2026-09-01', 'deadline')));
+		self::assertSame(expected: 0, actual: $normaliser->signedDaysBetween(from: $today, to: $today));
 	}
 }//end class

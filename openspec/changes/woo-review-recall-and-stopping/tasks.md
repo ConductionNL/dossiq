@@ -15,7 +15,7 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
 
 ## 1. The stopping rule
 
-- [ ] 1.1 Add schema `stoppingRule` in `lib/Settings/register.d/88-review-recall.json` and bump the
+- [x] 1.1 Add schema `stoppingRule` in `lib/Settings/register.d/88-review-recall.json` and bump the
   register version (REQ-WRS-001). Give it the private authorization block of `woo-review-triage`
   REQ-WRT-006 and no `x-openregister-hierarchy` key (OpenRegister refuses a parent that references
   another schema, and the schema would fail to import). Add it to the grant table of
@@ -24,6 +24,13 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
   - **fails today**: `tests/Unit/Settings/WooChildSchemasTest.php`
     `testTheStoppingRuleIsPrivateAndDeclaresNoHierarchy`, and
     `tests/Unit/Woo/WooAssessmentAccessTest.php` `testTheStoppingRuleIsGrantedToTheAssigneeOnly`.
+  - Built: `stoppingRule` 1.0.2 carries the private authorization block and no hierarchy; register 0.20.95. The grant
+    table is now configuration (decision 182): both woo-verzoek versions list `stopping_rule_schema` under
+    `reviewerAccess.records` with `readers: assignee`, `assigneeMay: update`, so batch reviewers get nothing, and
+    `CaseReviewerAccess` applies it. `StoppingRules::declare()` reconciles the case after storing the rule; a failing
+    reconcile is logged and keeps the rule. The named tests became
+    `CaseTypePrivateRecordsTest::testEveryPrivateRecordSchemaIsPrivateAndDeclaresNoHierarchy` (stoppingRule now listed),
+    `CaseTypePrivateRecordsTest::testTheStoppingRuleIsGrantedToTheAssigneeOnly`, and three new `StoppingRulesTest` cases.
 - [x] 1.2 POST `/api/cases/{id}/review/stopping-rule`, case mutation guard, refused once any document is
   marked. A listener on OpenRegister's updating and deleting events refuses direct writes once review
   started; construct the real event classes in its test (REQ-WRS-001).
@@ -93,11 +100,12 @@ Classes in `lib/Review/`, schemas `stoppingRule` and `recallSample`, routes unde
   - Still owed (live pass, decision 139): read the audit entry through the OpenRegister API on the dev instance.
 ## 4. End to end
 
-- [ ] 4.1 e2e `tests/e2e/woo-recall.spec.ts`: declare a rule, mark a document and see the rule
+- [x] 4.1 e2e `tests/e2e/woo-recall.spec.ts`: declare a rule, mark a document and see the rule
   locked, draw a sample of 20 on a seeded case, judge it, and see the estimate and the met or not
   met line. Cite REQ-WRS-001 to REQ-WRS-003.
   - Written in `tests/e2e/document-review.spec.ts` (the spec's own 400/1600/200 fixture). Not run (live pass,
     decision 139).
+  - Written, runs in nightly (`tests/e2e/woo-recall.spec.ts`, #6685); not run here, the live pass owns it.
 
 ## 5. Verify and deliver
 

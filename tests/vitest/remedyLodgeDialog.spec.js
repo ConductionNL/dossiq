@@ -32,7 +32,6 @@ const controllerSource = fs.readFileSync(
 )
 const CASE_ID = '11111111-1111-4111-8111-111111111111'
 const NEW_CASE = '22222222-2222-4222-8222-222222222222'
-const WOO_CASE_TYPE = '3c0f5a00-0000-4000-a000-00000000a001'
 
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 const action = caseDetail.config.headerActions.find(
@@ -274,9 +273,9 @@ describe('the remedy-lodge header action', () => {
 
 	it('is scoped to the case type that configures it', () => {
 		expect(action.visibleWhen.all).toContainEqual({
-			field: 'caseType',
+			field: 'caseTypeIdentifier',
 			op: 'eq',
-			value: WOO_CASE_TYPE,
+			value: 'woo-verzoek',
 		})
 		expect(action.visibleWhen.all).toContainEqual({
 			field: '@self.archived',

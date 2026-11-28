@@ -1,0 +1,11 @@
+{
+	"app": "dossiq",
+	"pages": [
+		{ "name": "My work", "path": "/index.php/apps/dossiq/" },
+		{ "name": "Dashboard", "path": "/index.php/apps/dossiq/dashboard" },
+		{ "name": "My queue", "path": "/index.php/apps/dossiq/my-queue" },
+		{ "name": "Cases", "path": "/index.php/apps/dossiq/cases" },
+		{ "name": "Tasks", "path": "/index.php/apps/dossiq/tasks" },
+		{ "name": "Contacts", "path": "/index.php/apps/dossiq/contacts" }
+	]
+}

@@ -1,0 +1,4 @@
+- [x] 1.1 caseType requestFields (register.d/99-case-type-request-fields.json)
+- [x] 1.2 request card fieldsFrom (menu-layout.simple.json); needs nextcloud-vue feat/facts-fields-from-context
+- [x] 1.3 Woo type list (example-sets/zuiddrecht.json)
+- [x] 1.4 tests (CaseTypeRequestFieldsTest)

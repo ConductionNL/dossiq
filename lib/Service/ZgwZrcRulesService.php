@@ -49,6 +49,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\ChecksIdentificatieUnique;
 use OCA\Dossiq\Service\Zgw\ZrcCaseFieldRules;
 use OCA\Dossiq\Service\Zgw\ZrcCaseTypeDefaults;
 use OCA\Dossiq\Service\Zgw\ZrcSubResourceRules;
@@ -62,6 +63,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class ZgwZrcRulesService extends ZgwRulesBase {
+	use ChecksIdentificatieUnique;
+
 	/**
 	 * The field rules a zaak body passes on create, update and patch.
 	 *
@@ -144,20 +147,25 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			return $error;
 		}
 
-		// Zrc-002: Check unique identificatie + bronorganisatie.
-		if (empty($body['identificatie']) === false) {
-			$error = $this->checkFieldUniqueness(
-				field1Value: $body['identificatie'],
-				field1Search: 'identifier',
-				field2Value: $body['bronorganisatie'] ?? '',
-				field2Search: 'sourceOrganisation',
-				errorField: 'identificatie'
-			);
-			if ($error !== null) {
-				return $error;
-			}
+		$error = $this->checkIdentificatieUnique(body: $body);
+		if ($error !== null) {
+			return $error;
 		}
 
+		$body = $this->withCreateDefaults(body: $body, caseTypeUrl: $caseTypeUrl);
+
+		return $this->caseFields->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
+	}//end rulesZakenCreate()
+
+	/**
+	 * The create body with its identificatie, confidentiality, archive status, channel and handler filled in.
+	 *
+	 * @param array $body        The ZGW request body (Dutch field names)
+	 * @param mixed $caseTypeUrl The zaaktype URL from the body
+	 *
+	 * @return array The body
+	 */
+	private function withCreateDefaults(array $body, mixed $caseTypeUrl): array {
 		// Zrc-002: Auto-generate identificatie if not provided.
 		if (empty($body['identificatie']) === true) {
 			$body['identificatie'] = $this->generateIdentificatie(prefix: 'ZAAK');
@@ -180,10 +188,8 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Auto-assign handler from zaaktype defaultAssignee if no handler set.
-		$body = $this->typeDefaults->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
-
-		return $this->caseFields->validateCaseFields(result: $this->isValid(body: $body), existingObject: null);
-	}//end rulesZakenCreate()
+		return $this->typeDefaults->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
+	}//end withCreateDefaults()
 
 	/**
 	 * Validate the zaaktype reference on a create body (zrc-001).
@@ -241,15 +247,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override.
-		$caseTypeUrl = $body['caseType'] ?? '';
-		if (empty($caseTypeUrl) === false) {
-			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
-		}
-
-		return $this->caseFields->validateCaseFields(
-			result: $this->isValid(body: $body),
-			existingObject: $existingObject
-		);
+		return $this->validatedWithCaseTypeDefaults(body: $body, existingObject: $existingObject);
 	}//end rulesZakenUpdate()
 
 	/**
@@ -280,6 +278,19 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-009: Always override from zaaktype to prevent template leakage.
+		return $this->validatedWithCaseTypeDefaults(body: $body, existingObject: $existingObject);
+	}//end rulesZakenPatch()
+
+	/**
+	 * Validate a zaak body after deriving its vertrouwelijkheidaanduiding from its zaaktype.
+	 *
+	 * @param array      $body           The ZGW request body, its zaaktype in `caseType`.
+	 * @param array|null $existingObject The existing zaak data.
+	 *
+	 * @return array The validation result
+	 */
+	private function validatedWithCaseTypeDefaults(array $body, ?array $existingObject): array {
+		$caseTypeUrl = $body['caseType'] ?? '';
 		if (empty($caseTypeUrl) === false) {
 			$body = $this->typeDefaults->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
@@ -288,7 +299,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			result: $this->isValid(body: $body),
 			existingObject: $existingObject
 		);
-	}//end rulesZakenPatch()
+	}//end validatedWithCaseTypeDefaults()
 	/**
 	 * Rules for creating a status (POST /zaken/v1/statussen): zrc-016, answered by the sub-resource rules.
 	 *

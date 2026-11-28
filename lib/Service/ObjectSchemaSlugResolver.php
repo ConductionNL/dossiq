@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\ObjectSchemaSlugResolverInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -49,7 +50,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
-class ObjectSchemaSlugResolver {
+class ObjectSchemaSlugResolver implements ObjectSchemaSlugResolverInterface {
 
 	/**
 	 * Resolved slugs keyed by schema id, for the lifetime of the request.

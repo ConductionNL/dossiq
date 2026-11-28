@@ -27,14 +27,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\JunkRulesInterface;
 use OCP\IAppConfig;
 
 /**
@@ -42,9 +43,9 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
-class JunkRules {
+class JunkRules implements JunkRulesInterface {
 
 	/**
 	 * The app-config key holding the administered rules.
@@ -71,7 +72,7 @@ class JunkRules {
 	 *
 	 * @return array<int, array{name: string, description: string}> The rules.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function rules(): array {
 		$rules = [
@@ -98,7 +99,7 @@ class JunkRules {
 	 *
 	 * @return array{name: string, description: string}|null The rule, or null.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function matching(InboundMessage $message): ?array {
 		if (strtolower(trim($message->header(name: 'x-spam-flag'))) === 'yes') {
@@ -130,7 +131,7 @@ class JunkRules {
 	 *
 	 * @return boolean True when it matches.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function matches(string $rule, InboundMessage $message): bool {
 		$position = strpos($rule, ':');
@@ -152,10 +153,10 @@ class JunkRules {
 	 *
 	 * @return array<int, string> The rules.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function administeredRules(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::RULES_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::RULES_KEY, '');
 		$lines = preg_split('/\R/', trim($raw));
 		if ($lines === false) {
 			return [];

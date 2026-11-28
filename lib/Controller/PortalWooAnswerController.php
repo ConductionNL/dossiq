@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -33,9 +33,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Portal\CitizenManifest;
-use OCA\Dossiq\Portal\PortalAssertionVerifier;
-use OCA\Dossiq\Portal\PortalWooAnswer;
+use OCA\Dossiq\Controller\Support\PortalAnswerRead;
+use OCA\Dossiq\Controller\Support\VerifiesPortalAssertions;
+use OCA\Dossiq\Kernel\Contracts\PortalAssertionVerifierInterface;
+use OCA\Dossiq\Kernel\Contracts\PortalWooAnswerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -46,14 +47,14 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Records the answer the resident portaliq vouches for.
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
  */
 class PortalWooAnswerController extends Controller {
+	use VerifiesPortalAssertions;
 
 	/**
 	 * The brute-force action a rejected assertion counts against.
@@ -66,24 +67,34 @@ class PortalWooAnswerController extends Controller {
 	private const AUDIENCES = ['citizen', 'client'];
 
 	/**
+	 * Reads the answer, and the files with it, from the forwarded request.
+	 *
+	 * @var PortalAnswerRead
+	 */
+	private readonly PortalAnswerRead $submissions;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string                  $appName   The app name.
 	 * @param IRequest                $request   The request.
-	 * @param PortalAssertionVerifier $verifier  Verifies portaliq's assertion.
-	 * @param PortalWooAnswer         $answers   Records the answer.
+	 * @param PortalAssertionVerifierInterface $verifier  Verifies portaliq's assertion.
+	 * @param PortalWooAnswerInterface         $answers   Records the answer.
 	 * @param IThrottler              $throttler Counts rejected assertions.
 	 * @param LoggerInterface         $logger    Logger.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalAssertionVerifier $verifier,
-		private readonly PortalWooAnswer $answers,
+		private readonly PortalAssertionVerifierInterface $verifier,
+		private readonly PortalWooAnswerInterface $answers,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->submissions = new PortalAnswerRead(request: $request);
 	}//end __construct()
 
 	/**
@@ -91,146 +102,29 @@ class PortalWooAnswerController extends Controller {
 	 *
 	 * @return JSONResponse 200 `{requestId, state}`; 401, 403, 400, 404 or 503 `{error}`.
 	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function answer(): JSONResponse {
-		$claims = $this->verifier->verify((string)$this->request->getHeader(PortalAssertionVerifier::HEADER));
-		if ($claims === null) {
-			$this->registerRejectedAssertion();
-			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
+		$claims = $this->portalClaims();
+		if ($claims instanceof JSONResponse) {
+			return $claims;
 		}
 
-		if (in_array((string)($claims['audience'] ?? ''), self::AUDIENCES, true) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		$attachments = $this->attachments();
-		if ($attachments === null) {
+		$submission = $this->submissions->read(subjectRef: (string)($claims['sub'] ?? ''));
+		if ($submission === null) {
 			return new JSONResponse(
 				['error' => 'invalid', 'message' => 'Send at most five files of at most 10 MB each.'],
 				Http::STATUS_UNPROCESSABLE_ENTITY
 			);
 		}
 
-		$result = $this->answers->answer(
-			subjectRef: (string)($claims['sub'] ?? ''),
-			requestId: $this->stringParam(key: 'requestId'),
-			answer: $this->stringParam(key: 'antwoord'),
-			attachments: $attachments,
-		);
+		$result = $this->answers->submit(submission: $submission);
 
 		return new JSONResponse($result['body'], $result['status']);
 	}//end answer()
-
-	/**
-	 * The files portaliq forwarded under `bijlagen` (row-action-carries-files), read into bytes.
-	 *
-	 * Portaliq already checked the number and size; they are checked again
-	 * here because this route trusts the assertion, not the forwarder's checks.
-	 *
-	 * @return list<array{name: string, content: string}>|null The files, or null when there are too many or one is too large.
-	 *
-	 * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-the-requester-answers-a-question-from-mijn-zaken-and-the-answer-lands-on-the-open-request-req-wds-001
-	 */
-	private function attachments(): ?array {
-		$entries = $this->uploadEntries(uploaded: $this->request->getUploadedFile(CitizenManifest::ANSWER_FILES_FIELD));
-		if (count($entries) > CitizenManifest::ANSWER_FILES_MAX) {
-			return null;
-		}
-
-		$files = [];
-		foreach ($entries as $entry) {
-			if ((int)($entry['size'] ?? 0) > CitizenManifest::ANSWER_FILES_MAX_BYTES) {
-				return null;
-			}
-
-			$content = $this->readUpload(path: (string)($entry['tmp_name'] ?? ''));
-			if ($content !== null) {
-				$files[] = ['name' => basename((string)($entry['name'] ?? 'bijlage')), 'content' => $content];
-			}
-		}
-
-		return $files;
-	}//end attachments()
-
-	/**
-	 * One upload or PHP's parallel-array shape, as a list of entries.
-	 *
-	 * @param mixed $uploaded What `IRequest::getUploadedFile()` answered.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function uploadEntries(mixed $uploaded): array {
-		if (is_array($uploaded) === false || isset($uploaded['tmp_name']) === false) {
-			return [];
-		}
-
-		if (is_array($uploaded['tmp_name']) === false) {
-			return [$uploaded];
-		}
-
-		$entries = [];
-		foreach (array_keys($uploaded['tmp_name']) as $key) {
-			$entries[] = [
-				'name' => ($uploaded['name'][$key] ?? ''),
-				'tmp_name' => $uploaded['tmp_name'][$key],
-				'size' => ($uploaded['size'][$key] ?? 0),
-			];
-		}
-
-		return $entries;
-	}//end uploadEntries()
-
-	/**
-	 * The bytes of an uploaded file, or null when it cannot be read.
-	 *
-	 * @param string $path The temporary path.
-	 *
-	 * @return string|null
-	 */
-	private function readUpload(string $path): ?string {
-		if ($path === '' || is_readable($path) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($path);
-		if ($content === false) {
-			return null;
-		}
-
-		return $content;
-	}//end readUpload()
-
-	/**
-	 * A request param as a string, or '' when it is absent or not a string.
-	 *
-	 * @param string $key The param.
-	 *
-	 * @return string
-	 */
-	private function stringParam(string $key): string {
-		$value = $this->request->getParam($key, '');
-		if (is_string($value) === false) {
-			return '';
-		}
-
-		return $value;
-	}//end stringParam()
-
-	/**
-	 * Count a rejected assertion; bookkeeping never turns a 401 into a 500.
-	 *
-	 * @return void
-	 */
-	private function registerRejectedAssertion(): void {
-		try {
-			$this->throttler->registerAttempt(action: self::THROTTLE_ACTION, ip: $this->request->getRemoteAddress());
-		} catch (Throwable $e) {
-			$this->logger->warning('PortalWooAnswerController: registerAttempt failed', ['error' => $e->getMessage()]);
-		}
-	}//end registerRejectedAssertion()
 }//end class

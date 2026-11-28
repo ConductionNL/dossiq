@@ -35,6 +35,8 @@ use Psr\Log\NullLogger;
  * The delivery outcome lands as the configured account, or not at all.
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
+ * @covers \OCA\Dossiq\Listener\Support\ConcludedDelivery
+ * @covers \OCA\Dossiq\Listener\Support\PublicationDeliveryProjection
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */

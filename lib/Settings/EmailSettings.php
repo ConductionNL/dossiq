@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Settings;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\IDelegatedSettings;
 
@@ -49,7 +49,7 @@ class EmailSettings implements IDelegatedSettings {
 	/**
 	 * Intake mailbox and poller config keys this section manages.
 	 *
-	 * Mirrors EmailTemplateController::IMAP_KEYS. There is no password key any
+	 * Mirrors EmailSettingsController::IMAP_KEYS. There is no password key any
 	 * more: Nextcloud Mail holds the account and the credential, so a delegated
 	 * admin here picks an account and names a folder and never sees a secret.
 	 *
@@ -81,11 +81,11 @@ class EmailSettings implements IDelegatedSettings {
 	 * @return TemplateResponse
 	 *
 	 * @spec openspec/specs/case-email-integration/spec.md
-	 * @spec openspec/changes/r5-admin-settings-and-tour-tell-the-truth/specs/admin-settings/spec.md
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function getForm(): TemplateResponse {
 		return new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'settings/email',
 			[]
 		);
@@ -140,6 +140,6 @@ class EmailSettings implements IDelegatedSettings {
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function getAuthorizedAppConfig(): array {
-		return [Application::APP_ID => self::MANAGED_KEYS];
+		return [AppIdentity::APP_ID => self::MANAGED_KEYS];
 	}//end getAuthorizedAppConfig()
 }//end class

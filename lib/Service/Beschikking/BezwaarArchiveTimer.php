@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -39,18 +39,19 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Beschikking;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTimerInterface;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\FlowTimerEngine;
 use OCA\Dossiq\Service\Term\DayCount;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Keeps one engine timer per active bezwaar trigger in step with the trigger.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class BezwaarArchiveTimer {
+class BezwaarArchiveTimer implements BezwaarArchiveTimerInterface {
 
 	/**
 	 * The engine class, resolved lazily so dossiq runs without OpenRegister.
@@ -60,20 +61,6 @@ class BezwaarArchiveTimer {
 	public const ENGINE_CLASS = 'OCA\\OpenRegister\\Service\\Flow\\Timer\\FlowTimerService';
 
 	/**
-	 * The metadata source the fired listener recognises the timer by.
-	 *
-	 * @var string
-	 */
-	public const METADATA_SOURCE = 'dossiq-bezwaartermijn';
-
-	/**
-	 * Outcome: a timer is armed.
-	 *
-	 * @var string
-	 */
-	public const ARMED = 'armed';
-
-	/**
 	 * Outcome: the trigger is switched off and its timers are cancelled.
 	 *
 	 * @var string
@@ -81,25 +68,11 @@ class BezwaarArchiveTimer {
 	public const CANCELLED = 'cancelled';
 
 	/**
-	 * Outcome: the archive date is today or past; the caller acts now.
-	 *
-	 * @var string
-	 */
-	public const DUE = 'due';
-
-	/**
 	 * Outcome: nothing to time (no id, no archive date).
 	 *
 	 * @var string
 	 */
 	public const SKIPPED = 'skipped';
-
-	/**
-	 * Outcome: the engine is absent or refused.
-	 *
-	 * @var string
-	 */
-	public const UNAVAILABLE = 'unavailable';
 
 	/**
 	 * Build the service.
@@ -124,7 +97,7 @@ class BezwaarArchiveTimer {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function sync(array $trigger): string {
 		$triggerId = (string) ($trigger['id'] ?? ($trigger['uuid'] ?? ($trigger['@self']['id'] ?? '')));
@@ -136,6 +109,18 @@ class BezwaarArchiveTimer {
 			return $this->cancel(triggerId: $triggerId, reason: 'Bezwaar trigger switched off') ?? self::CANCELLED;
 		}
 
+		return $this->syncActive(trigger: $trigger, triggerId: $triggerId);
+	}//end sync()
+
+	/**
+	 * Bring the timer of an active trigger in step with its archive date.
+	 *
+	 * @param array<string, mixed> $trigger   The bezwaarTrigger object.
+	 * @param string               $triggerId The trigger's id.
+	 *
+	 * @return string One of the outcome constants.
+	 */
+	private function syncActive(array $trigger, string $triggerId): string {
 		$archive = $this->midnight(value: $trigger['archiveDate'] ?? null);
 		if ($archive === null) {
 			return self::SKIPPED;
@@ -146,11 +131,46 @@ class BezwaarArchiveTimer {
 			return $cancelled;
 		}
 
+		return $this->armUntil(trigger: $trigger, timer: ['triggerId' => $triggerId, 'archive' => $archive]);
+	}//end syncActive()
+
+	/**
+	 * Arm the timer up to the archive date, or report it due when that date has passed.
+	 *
+	 * @param array<string, mixed>                                $trigger The bezwaarTrigger object.
+	 * @param array{triggerId: string, archive: DateTimeImmutable} $timer   The trigger's id, and the archive date at midnight.
+	 *
+	 * @return string One of the outcome constants.
+	 */
+	private function armUntil(array $trigger, array $timer): string {
+		[$triggerId, $archive] = [$timer['triggerId'], $timer['archive']];
 		$today = $this->dates->today();
 		if ($archive <= $today) {
 			return self::DUE;
 		}
 
+		$anchor = $this->anchorFor(trigger: $trigger, dates: ['archive' => $archive, 'today' => $today]);
+
+		return $this->arm(
+			start: new ArchiveTimerStart(
+				trigger: $trigger,
+				triggerId: $triggerId,
+				anchor: $anchor,
+				slaDays: $this->days->between(from: $anchor, to: $archive),
+			)
+		);
+	}//end armUntil()
+
+	/**
+	 * The timer's anchor: the bekendmaking, as AWB 6:7 counts from it.
+	 *
+	 * @param array<string, mixed>                                        $trigger The bezwaarTrigger object.
+	 * @param array{archive: DateTimeImmutable, today: DateTimeImmutable} $dates   `archive` the archive date at midnight; `today` today at midnight.
+	 *
+	 * @return DateTimeImmutable The anchor.
+	 */
+	private function anchorFor(array $trigger, array $dates): DateTimeImmutable {
+		[$archive, $today] = [$dates['archive'], $dates['today']];
 		// Anchored on the bekendmaking, as AWB 6:7 counts from it. A trigger
 		// without a usable one, or with one after its archive date, is
 		// anchored today, so the timer still breaches on the archive date.
@@ -159,67 +179,70 @@ class BezwaarArchiveTimer {
 			$anchor = $today;
 		}
 
-		return $this->arm(trigger: $trigger, triggerId: $triggerId, anchor: $anchor, slaDays: $this->days->between(from: $anchor, to: $archive));
-	}//end sync()
+		return $anchor;
+	}//end anchorFor()
 
 	/**
 	 * Arm the timer.
 	 *
-	 * @param array<string, mixed> $trigger   The trigger.
-	 * @param string               $triggerId Its id.
-	 * @param DateTimeImmutable    $anchor    Midnight of the bekendmaking (or today).
-	 * @param int                  $slaDays   Days from the anchor to the archive date.
+	 * @param ArchiveTimerStart $start The trigger, its id, the anchor and the days to the archive date.
 	 *
 	 * @return string ARMED, or UNAVAILABLE.
 	 */
-	private function arm(array $trigger, string $triggerId, DateTimeImmutable $anchor, int $slaDays): string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
+	private function arm(ArchiveTimerStart $start): string {
+		return $this->timers()->arm(config: fn (): array => $this->timerConfig(start: $start), logContext: ['trigger' => $start->triggerId]);
+	}//end arm()
 
-		$config = [
+	/**
+	 * The timer configuration for the engine.
+	 *
+	 * @param ArchiveTimerStart $start The trigger, its id, the anchor and the days to the archive date.
+	 *
+	 * @return array<string, mixed> The timer configuration.
+	 */
+	private function timerConfig(ArchiveTimerStart $start): array {
+		$trigger = $start->trigger;
+		$triggerId = $start->triggerId;
+		return [
 			'subjectType'     => 'object',
 			'subjectUuid'     => $triggerId,
 			'appId'           => 'dossiq',
 			'title'           => 'Bezwaartermijn '.(string) ($trigger['decisionId'] ?? $triggerId),
 			'purpose'         => 'due',
 			'legalEffect'     => 'none',
-			'sla'             => ['value' => $slaDays, 'unit' => 'calendarDays'],
-			'escalationRules' => [
-				[
-					'trigger'        => 'slaBreached',
-					'offset'         => 0,
-					'offsetUnit'     => 'calendarDays',
-					'notifyRole'     => [],
-					'escalateToRole' => [],
-					'priority'       => 'normal',
-					'message'        => 'bezwaartermijn-verstreken',
-					'openIncident'   => false,
-				],
-			],
+			'sla'             => ['value' => $start->slaDays, 'unit' => 'calendarDays'],
+			'escalationRules' => $this->escalationRules(),
 			'anchorEvent'     => 'bekendmaking',
-			'anchorEventAt'   => $anchor,
-			'metadata'        => [
-				'source'     => self::METADATA_SOURCE,
-				'triggerId'  => $triggerId,
-				'decisionId' => (string) ($trigger['decisionId'] ?? ''),
-				'basis'      => 'Awb 6:7',
-			],
+			'anchorEventAt'   => $start->anchor,
+			'metadata'        => $this->timerMetadata(trigger: $trigger, triggerId: $triggerId),
 		];
+	}//end timerConfig()
 
-		try {
-			$engine->arm(config: $config, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq bezwaar: the engine refused the bezwaartermijn timer',
-				['trigger' => $triggerId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
+	/**
+	 * The escalation rules of the timer: a breach on the archive date.
+	 *
+	 * @return array<int, array<string, mixed>> The escalation rules.
+	 */
+	private function escalationRules(): array {
+		return [$this->timers()->rule(trigger: 'slaBreached', offset: 0, unit: 'calendarDays', message: 'bezwaartermijn-verstreken')];
+	}//end escalationRules()
 
-		return self::ARMED;
-	}//end arm()
+	/**
+	 * The metadata stored on the timer.
+	 *
+	 * @param array<string, mixed> $trigger   The trigger.
+	 * @param string               $triggerId Its id.
+	 *
+	 * @return array<string, string> The metadata.
+	 */
+	private function timerMetadata(array $trigger, string $triggerId): array {
+		return [
+			'source'     => self::METADATA_SOURCE,
+			'triggerId'  => $triggerId,
+			'decisionId' => (string) ($trigger['decisionId'] ?? ''),
+			'basis'      => 'Awb 6:7',
+		];
+	}//end timerMetadata()
 
 	/**
 	 * Cancel the trigger's open timers.
@@ -230,22 +253,7 @@ class BezwaarArchiveTimer {
 	 * @return string|null UNAVAILABLE when the engine is absent or refused, null when done.
 	 */
 	private function cancel(string $triggerId, string $reason): ?string {
-		$engine = $this->engine();
-		if ($engine === null) {
-			return self::UNAVAILABLE;
-		}
-
-		try {
-			$engine->cancelForSubject(subjectType: 'object', subjectUuid: $triggerId, reason: $reason, actor: null);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq bezwaar: the engine refused to cancel the bezwaartermijn timer',
-				['trigger' => $triggerId, 'error' => $e->getMessage()]
-			);
-			return self::UNAVAILABLE;
-		}
-
-		return null;
+		return $this->timers()->cancel(subjectUuid: $triggerId, reason: $reason, logContext: ['trigger' => $triggerId]);
 	}//end cancel()
 
 	/**
@@ -265,11 +273,11 @@ class BezwaarArchiveTimer {
 	}//end midnight()
 
 	/**
-	 * The engine, or null when OpenRegister does not ship it.
+	 * OpenRegister's flow timer engine for this timer.
 	 *
-	 * @return object|null
+	 * @return FlowTimerEngine
 	 */
-	private function engine(): ?object {
-		return $this->settingsService->getOpenRegisterClass(self::ENGINE_CLASS);
-	}//end engine()
+	private function timers(): FlowTimerEngine {
+		return new FlowTimerEngine(settingsService: $this->settingsService, logger: $this->logger, owner: 'Dossiq bezwaar', timer: 'bezwaartermijn timer');
+	}//end timers()
 }//end class

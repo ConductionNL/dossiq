@@ -88,3 +88,91 @@ NOT be computed from closed cases.
 - **GIVEN** a case that has just changed status
 - **WHEN** the workload age is read again
 - **THEN** the case SHALL be counted under its new status
+
+### Requirement: The annual audit lists the forfeited payments by case
+
+`GET /api/deadlines/reports/penalty-payments?year=YYYY` SHALL answer, for a caller in the reporting audience, every
+penalty payment forfeited in that year, newest forfeit first, each with the case id, number and title, the case type's
+title, the requester, the forfeit day (the day the calculation stopped, else its start), the amount in euros and the
+payment status, plus the count, the total and the number disputed. A year outside 2020..2100 SHALL be refused with 400,
+a caller outside the audience with 403. A payment whose case cannot be read SHALL still be listed with what is known.
+
+#### Scenario: Audit 2026
+
+- **GIVEN** three payments forfeited in 2026 (one disputed) and one in 2025
+- **WHEN** the audit for 2026 is read
+- **THEN** it lists the three, newest first, each named by its case, totalling the three amounts, one disputed
+
+### Requirement: The report cards carry their own form
+
+The deadline dashboard SHALL draw the quarterly report with a quarter field and "Rapport laden", and the annual audit
+with a year field and "Audit laden", inside their cards; it SHALL NOT offer the quarter and year as page filters.
+
+#### Scenario: Load another quarter
+
+- **WHEN** the reader enters 2025-Q4 and presses "Rapport laden"
+- **THEN** the quarterly table reads 2025-Q4
+
+### Requirement: the deadline dashboard lists each notice of default by its case, with its penalty
+
+The deadline dashboard MUST list every notice of default, newest receipt first, with its case (opening the case), the day it came in, its assessment, the penalty it started and where that money stands, read from `GET /api/deadlines/notices` behind the reporting audience gate.
+
+#### Scenario: a fixed penalty
+- GIVEN notice 2026-4863 Kapvergunning Parkstraat, received 7 August, valid, its penalty fixed at € 1.442
+- THEN its row reads "Ontvangen 7 aug", "Geldig", "€ 1.442, vastgesteld" and "Betaalsignaal verstuurd"
+
+#### Scenario: a running penalty
+- GIVEN a valid notice whose penalty has run since 16 October and stands at € 207
+- THEN its row reads "€ 207, loopt sinds 16 okt" and "Bedrag nog niet vast"
+
+#### Scenario: no penalty
+- GIVEN a notice received while the term still ran
+- THEN its row reads "Te vroeg: termijn loopt nog", "Geen" and "Niet van toepassing"
+
+#### Scenario: outside the audience
+- GIVEN a caller outside the reporting audience
+- THEN the endpoint answers 403 and reads nothing
+
+### Requirement: The term dashboard lists the terms that end first
+
+The term dashboard SHALL draw "Verloopt het eerst" between the notices of default and the quarterly report: the running terms that end first, each with its case, its end date, the share of the term that has passed and the days left. Progress and days left SHALL be computed at read time, as REQ-TERM-068 requires. The card SHALL NOT be drawn while its source does not answer.
+
+#### Scenario: A controller reads the terms that end first
+@e2e exclude needs the SIG endpoint GET /api/deadlines/ending-first; the configuration is covered by tests/vitest/termijnEndingFirst.spec.js
+- **GIVEN** running terms on several cases
+- **WHEN** a controller opens the term dashboard
+- **THEN** the card lists the soonest ending terms with progress and days left
+- **AND** a row opens its case
+
+### Requirement: The quarterly term report groups by the case type the term belongs to (REQ-WTR-004)
+
+`DeadlineReportingService::generateQuarterlyReport()` SHALL resolve each term instance's case type
+from the case it names (`deadlineInstance.case` to `case.caseType`). When that fails, it SHALL use
+the case type of the instance's `deadlineDefinition`. Each `perType` key SHALL be the case type's
+identifier, with its title beside it. A term whose case type cannot be resolved either way SHALL
+be counted under `unresolved`, and the report SHALL list those instance ids in
+`metadata.unresolvedInstances`. No term SHALL be counted under `unknown`.
+
+#### Scenario: Woo terms are reported under the Woo case type
+- **GIVEN** three Woo cases and two omgevingsvergunning cases, each with a term instance in 2026 Q4
+- **WHEN** GET `/api/termijn/reports/kwartaal?period=2026-Q4` is called
+- **THEN** `perType` SHALL hold the Woo request case type with `totaal` 3 and the omgevingsvergunning type with `totaal` 2
+- **AND** `perType` SHALL have no key `unknown`
+
+#### Scenario: A term without a resolvable case is visible, not hidden
+- **GIVEN** a term instance whose case was deleted and whose definition names no case type
+- **WHEN** the quarterly report is generated
+- **THEN** it SHALL be counted under `unresolved` and its id SHALL be listed in `metadata.unresolvedInstances`
+
+### Requirement: The report says how many requests arrived and how many terms were met (REQ-WTR-005)
+
+For each case type, the quarterly report SHALL add these counts to the existing keys:
+`received` (terms whose `startDate` falls in the quarter), `met` (completed on or before
+`endDateCurrent`), `missed` (status `exceeded`, or completed after `endDateCurrent`), `running`
+and `suspended`, and `metShare` (met over met plus missed, as a percentage with one decimal). The
+existing keys SHALL keep their meaning, because the dashboard reads them.
+
+#### Scenario: Met, missed, running and suspended for Woo
+- **GIVEN** in 2026 Q4 four Woo terms: one completed on time, one completed two days late, one running and one suspended for clarification
+- **WHEN** the quarterly report is generated for 2026-Q4
+- **THEN** the Woo case type SHALL report `received` 4, `met` 1, `missed` 1, `running` 1, `suspended` 1 and `metShare` 50.0

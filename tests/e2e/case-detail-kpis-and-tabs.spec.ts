@@ -35,7 +35,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { openCasePanel } from './helpers/case-panels.ts'
+import { openCasePanel, openCaseTab } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
@@ -67,21 +67,24 @@ import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 // 2026-09-12). The hours card fills the fourth cell of the row.
 const TILE = { number: 0, type: 1, deadline: 2 } as const
 
+/** REQ-CDV-16: the five tabs on the strip, English or Dutch; a tab may carry its count. */
 const TAB_LABELS = [
-	'Data',
-	'Files',
-	'Notes',
-	'Timeline',
-	'People',
-	'Communication',
-	'Email',
-	'Work',
-	'Decisions',
-	'Related',
-	'Custody',
-	'Archiving',
-	'Knowledge',
+	/^(Overview|Overzicht)\b/,
+	/^(Files|Bestanden)\b/,
+	/^Contact\b/,
+	/^(Tasks|Taken)\b/,
+	// The manifest labels this tab History (the tab strip reads
+	// `content.tabs[].label` verbatim); `Case history` was its earlier label.
+	/^(History|Historie)\b/,
 ]
+
+const OVERVIEW = /^(Overview|Overzicht)\b/
+// The manifest labels this tab Parties; `People` was its earlier label.
+const PEOPLE = /^(Parties|Betrokkenen)\b/
+const CONTACT = /^Contact\b/
+const TASKS = /^(Tasks|Taken)\b/
+const RELATED = /^(Related|Gerelateerd)\b/
+
 
 /**
  * The panels that were folded INTO a tab, and the section each one is now.
@@ -90,16 +93,18 @@ const TAB_LABELS = [
  * of assertion that can be satisfied by deleting things. These are what make
  * the difference between a small strip and four missing features.
  */
-const FOLDED_SECTIONS: Array<[string, string, 'registry' | 'integration']> = [
-	['Data', 'case-section-case-core', 'registry'],
-	['Data', 'case-section-case-location-map', 'registry'],
-	['People', 'case-section-case-roles', 'registry'],
-	['Communication', 'case-section-case-communication', 'registry'],
-	['Work', 'case-section-case-tasks', 'registry'],
-	['Work', 'case-section-case-calendar', 'integration'],
-	['Related', 'case-section-case-related', 'registry'],
-	['Related', 'case-section-case-sub-cases', 'registry'],
-	['Related', 'case-section-case-objects', 'registry'],
+const FOLDED_SECTIONS: Array<[RegExp, string, 'registry' | 'integration']> = [
+	[OVERVIEW, 'cn-section-case-core', 'registry'],
+	[OVERVIEW, 'cn-section-case-location-map', 'registry'],
+	// The Parties tab's roles section is `case-party-roles` (the `parties`
+	// widget); `case-roles` was its id before the tab was renamed.
+	[PEOPLE, 'cn-section-case-party-roles', 'registry'],
+	[CONTACT, 'cn-section-case-communication', 'registry'],
+	[TASKS, 'cn-section-case-tasks', 'registry'],
+	[TASKS, 'cn-section-case-calendar', 'integration'],
+	[RELATED, 'cn-section-case-related', 'registry'],
+	[RELATED, 'cn-section-case-sub-cases', 'registry'],
+	[RELATED, 'cn-section-case-objects', 'registry'],
 ]
 
 /**
@@ -165,7 +170,15 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	let caseTypeUsesTheCaseLayer = false
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
-		const api = await playwright.request.newContext({ baseURL })
+		// The case type's title is a translated property ({nl, en}), and
+		// OpenRegister answers in the language the request asks for. The page
+		// asks in the browser's language, so this context asks in the same one:
+		// without it the API reads the Dutch title while the tile shows the
+		// English one, and the identity-row test compares two languages.
+		const api = await playwright.request.newContext({
+			baseURL,
+			extraHTTPHeaders: { 'Accept-Language': 'en-US,en' },
+		})
 		const token = await getRequestToken(api)
 
 		// REUSE a seeded case type; do not create one.
@@ -569,15 +582,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-thirteen-tabs-and-no-more
-	test('the strip holds exactly thirteen tabs, in order, and no more', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
+	test('the strip holds exactly five tabs, in order, and More', async ({
 		page,
 	}) => {
-		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
-		// over one programme while the app menu held at four, because the menu
-		// had a stated ceiling and the strip had nothing counting it. This is
-		// the thing that counts it, and it has to be an exact count: asserting
-		// that nine named tabs are PRESENT would pass on a strip of twelve.
+		// An exact count: asserting that five named tabs are present would
+		// pass on a strip of twelve.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
@@ -590,7 +600,10 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		const labels = (await strip.getByRole('tab').allInnerTexts()).map((l) =>
 			l.trim(),
 		)
-		expect(labels).toEqual(TAB_LABELS)
+		labels.forEach((label, index) => expect(label).toMatch(TAB_LABELS[index]))
+		// The overflow is the strip's Actions menu beside the tablist now (it
+		// used to be a `.cn-tabs__more` button); it lists the folded tabs.
+		await expect(strip.getByTestId('cn-tabs-widget-actions')).toBeVisible()
 
 		for (const label of RETIRED_TAB_LABELS) {
 			await expect(strip.getByRole('tab', { name: label })).toHaveCount(0)
@@ -620,7 +633,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(strip).toBeVisible({ timeout: 30_000 })
 
 		for (const [tabLabel, testid, kind] of FOLDED_SECTIONS) {
-			await strip.getByRole('tab', { name: tabLabel, exact: true }).click()
+			await openCaseTab(page, tabLabel)
 			const panel = strip.locator(
 				'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
 			)
@@ -652,8 +665,13 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			// moments and could pass on either being briefly right.
 			const state = async () =>
 				await section.evaluate((el) => {
-					const heading = el.querySelector('h3')
-					const host = el.querySelector(':scope > *:not(h3)')
+					// CnSectionsWidget draws the heading at the level the page
+					// sets (h2 on this page since the heading-level change), so
+					// the heading is found by its class, not by a tag.
+					const heading = el.querySelector(
+						':scope > .cn-sections-widget__heading',
+					)
+					const host = el.querySelector(':scope > .cn-sections-widget__body')
 					const filled =
 						!!host && (host.textContent || '').trim().length > 0
 					if (!heading)
@@ -721,14 +739,22 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(panel.getByTestId('cn-files-browser')).toBeVisible({
 			timeout: 30_000,
 		})
-		await expect(panel.locator('[data-testid^="case-section-"]')).toHaveCount(0)
+		await expect(panel.locator('[data-testid^="cn-section-"]')).toHaveCount(0)
 		await expect(panel.locator('.case-sections__heading')).toHaveCount(0)
 		await expect(panel.getByText(/^(Documents|Documenten)/)).toHaveCount(0)
-		// The trail runs from the user's files root down to this case's folder.
+		// The folder is read through OpenRegister's files API under the case's
+		// own access rule (the files leaf's default `source: openregister`), so
+		// anyone who may read the case sees its files without a share. The
+		// browser's root is therefore the case folder itself, and its root
+		// crumb names the case rather than a path in somebody's own Files.
+		const crumbs = panel.getByTestId('cn-files-browser-crumb')
+		// At the root the browser keeps the crumb for screen readers but does
+		// not draw a trail of one, so the crumb is read, not looked at.
+		await expect(crumbs.first()).toBeAttached({ timeout: 30_000 })
 		await expect(
-			panel.getByTestId('cn-files-browser-crumb'),
-			'the crumbs must read the whole path to the case folder',
-		).not.toHaveCount(1)
+			crumbs.first(),
+			'the root crumb must name this case',
+		).toHaveAttribute('aria-label', /E2E KPI case/)
 	})
 
 	test('the Actions menu sits beside the strip, not inside the tablist', async ({
@@ -776,7 +802,9 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(1)
 
-		await strip.getByRole('tab', { name: 'Related', exact: true }).click()
+		// Related is one of the tabs folded under the strip's overflow menu, so
+		// it is opened the way a user opens it, through that menu.
+		await openCaseTab(page, RELATED)
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 
 		// Switching BACK must not tear the first panel down, or every switch
@@ -784,7 +812,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		// asserts: opening a THIRD tab would leave three panels mounted, since
 		// staying mounted is the property under test, and the count would be
 		// right while the scenario said nothing.
-		await strip.getByRole('tab', { name: 'Data', exact: true }).click()
+		await openCaseTab(page, OVERVIEW)
 		await expect.poll(mounted, { timeout: 15_000 }).toBe(2)
 	})
 
@@ -847,27 +875,26 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 	})
 
 	// @e2e openspec/specs/ncvue-w2-leaves-adoption/spec.md
-	test('the sidebar Notes tab renders the notes leaf, not an unknown element', async ({
+	test('the Notes tab renders the notes leaf, not an unknown element', async ({
 		page,
 	}) => {
+		// Notes is a strip TAB now (folded under the overflow menu), and the
+		// sidebar copy went with the REQ-CDV-17 resolution described at
+		// RETIRED_TAB_LABELS: the sidebar declares audit, terms, assistant,
+		// access, sharing, avg and tags, and no `notes`. So the leaf is asserted
+		// where it lives, in the strip.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await dismissSupportDialog(page)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
 		})
 
-		// NcAppSidebar renders its own toggle while closed; open it when so.
-		const toggle = page.locator('.app-sidebar__toggle')
-		if (await toggle.isVisible()) await toggle.click()
-		const sidebar = page.locator('.app-sidebar')
-		await expect(sidebar).toBeVisible({ timeout: 15_000 })
-
 		// The leaf this tab renders comes from dossiq's OWN bundle
-		// (`builtinIntegrations` in @conduction/nextcloud-vue, resolved by
-		// `leafTab('notes')`), not from OpenRegister's global registry bundle,
-		// which CI never has (openregister gitignores `/js/`). Probe that
-		// registry anyway and record the answer, so a failure here can be read
-		// against it, but do not skip on it: the tab must render without it.
+		// (`builtinIntegrations` in @conduction/nextcloud-vue), not from
+		// OpenRegister's global registry bundle, which CI never has
+		// (openregister gitignores `/js/`). Probe that registry anyway and
+		// record the answer, so a failure here can be read against it, but do
+		// not skip on it: the tab must render without it.
 		const registryHasNotes = await page.evaluate(() => {
 			const w = window as unknown as {
 				OCA?: {
@@ -887,15 +914,12 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 					: `has('notes') = ${registryHasNotes}`,
 		})
 
-		// By id, not label: NcAppSidebarTab renders `#tab-button-<id>` for the
-		// manifest tab id, which is the same on an English and a Dutch instance.
-		const tabButton = sidebar.locator('#tab-button-notes')
-		test.skip(
-			(await tabButton.count()) === 0,
-			'the case sidebar declares no `notes` tab in this build; nothing to render',
+		const strip = page.locator('.cn-tabs-widget')
+		await expect(strip).toBeVisible({ timeout: 30_000 })
+		await openCaseTab(page, /^Notes\b/)
+		const panel = strip.locator(
+			'.cn-tabs__content > [role="tabpanel"]:not([hidden])',
 		)
-		await tabButton.click()
-		const panel = sidebar.locator('[data-testid="cn-object-sidebar-tab-notes"]')
 		await expect(panel).toBeVisible({ timeout: 15_000 })
 
 		// The tab used to write its resolved leaf as a TAG, which Vue emits as
@@ -909,13 +933,17 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 			.toBeGreaterThan(1)
 		// And the thing that mounted is the notes leaf itself, not the panel's
 		// own chrome: CnNotesTab renders a `.cn-sidebar-tab` root with the
-		// add-note composer inside it.
+		// add-note control inside it.
 		await expect(panel.locator('.cn-sidebar-tab').first()).toBeVisible({
 			timeout: 15_000,
 		})
-		await expect(panel.locator('.cn-sidebar-tab__composer').first()).toBeVisible(
-			{ timeout: 15_000 },
-		)
+		// The add-note composer folds behind its toggle until it is asked for;
+		// either the composer or its toggle is the leaf's own control.
+		await expect(
+			panel
+				.locator('.cn-sidebar-tab__composer, .cn-sidebar-tab__composer-toggle')
+				.first(),
+		).toBeVisible({ timeout: 15_000 })
 	})
 
 	// @e2e openspec/specs/realtime-updates-ui/spec.md#a-colleagues-change-appears

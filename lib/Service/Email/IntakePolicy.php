@@ -31,14 +31,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntakePolicyInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
@@ -51,14 +52,14 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) — the static calls here are named
  *  constructors and value-object factories (`InboundMessage::fromRow()`,
  *  `FilterVerdict::accept()`, `AuthenticationVerdict::unknown()`), which hold no
  *  state and exist so a caller cannot build a half-built value.
  */
-class IntakePolicy {
+class IntakePolicy implements IntakePolicyInterface {
 
 	use SearchesObjects;
 
@@ -126,7 +127,7 @@ class IntakePolicy {
 	 *
 	 * @return string One of {@see self::ALL}.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function forCaseType(string $caseTypeId): string {
 		if ($caseTypeId === '') {
@@ -140,18 +141,23 @@ class IntakePolicy {
 			return self::DEFAULT_POLICY;
 		}
 
+		return $this->readPolicy(store: [$objectService, $register, $schema], caseTypeId: $caseTypeId);
+	}//end forCaseType()
+
+	/**
+	 * Read the case type and return its normalised intake policy.
+	 *
+	 * @param array{0: object, 1: string, 2: string} $store      OpenRegister's object service, the dossiq register and the case type schema.
+	 * @param string                                $caseTypeId The case type uuid.
+	 *
+	 * @return string The policy, or the default when the case type cannot be read.
+	 */
+	private function readPolicy(array $store, string $caseTypeId): string {
+		[$objectService, $register, $schema] = $store;
 		try {
-			$caseType = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseTypeId
-			);
+			$caseType = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $caseTypeId);
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: the case type behind an intake policy could not be read',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
-			);
+			$this->logger->debug('Dossiq: the case type behind an intake policy could not be read', ['caseType' => $caseTypeId, 'error' => $e->getMessage()]);
 			return self::DEFAULT_POLICY;
 		}
 
@@ -160,7 +166,7 @@ class IntakePolicy {
 		}
 
 		return $this->normalise(value: (string)($caseType[self::PROPERTY] ?? ''));
-	}//end forCaseType()
+	}//end readPolicy()
 
 	/**
 	 * What to do with a message under one policy and one set of results.
@@ -175,7 +181,7 @@ class IntakePolicy {
 	 *
 	 * @return string The policy that applies: `accept`, `quarantine` or `refuse`.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function outcomeFor(string $policy, array $results): string {
 		foreach ($results as $result) {
@@ -192,10 +198,10 @@ class IntakePolicy {
 	 *
 	 * @return string The group id, or '' when none is named.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function intakeRole(): string {
-		return trim($this->appConfig->getValueString(Application::APP_ID, self::INTAKE_ROLE_KEY, ''));
+		return trim($this->appConfig->getValueString(AppIdentity::APP_ID, self::INTAKE_ROLE_KEY, ''));
 	}//end intakeRole()
 
 	/**
@@ -211,7 +217,7 @@ class IntakePolicy {
 	 *
 	 * @return boolean True when they may.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function mayRunIntake(string $userId): bool {
 		if ($userId === '') {
@@ -237,7 +243,7 @@ class IntakePolicy {
 	 *
 	 * @return string One of {@see self::ALL}.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	private function normalise(string $value): string {
 		$policy = strtolower(trim($value));

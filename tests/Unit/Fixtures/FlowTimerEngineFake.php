@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeInterface;
 use OCA\OpenRegister\Db\FlowTimer;
+use OCA\OpenRegister\Kernel\Contracts\TimerChange;
+use OCA\OpenRegister\Kernel\Contracts\TimerSubjectRef;
 use RuntimeException;
 
 if (class_exists(FlowTimerEngineFake::class, false) === true) {
@@ -83,14 +85,13 @@ class FlowTimerEngineFake {
 	 *
 	 * @return FlowTimer
 	 */
-	public function suspend(
-		string $uuid,
-		string $reason,
-		?DateTimeInterface $until,
-		?string $actor,
-		?string $basis = null,
-		?DateTimeInterface $now = null,
-	): FlowTimer {
+	public function suspend(object $suspension, object $act): FlowTimer {
+		$uuid = $suspension->uuid;
+		$reason = $suspension->reason;
+		$until = $suspension->until;
+		$basis = $suspension->basis;
+		$actor = $act->actor;
+		$now = null;
 		$this->record(operation: 'suspend', args: ['uuid' => $uuid, 'reason' => $reason, 'until' => $until, 'actor' => $actor, 'basis' => $basis, 'now' => $now]);
 		return new FlowTimer();
 	}
@@ -105,7 +106,11 @@ class FlowTimerEngineFake {
 	 *
 	 * @return FlowTimer
 	 */
-	public function resume(string $uuid, ?string $reason, ?string $actor, ?DateTimeInterface $now = null): FlowTimer {
+	public function resume(object $decision, object $act): FlowTimer {
+		$uuid = $decision->uuid;
+		$reason = $decision->reason;
+		$actor = $act->actor;
+		$now = null;
 		$this->record(operation: 'resume', args: ['uuid' => $uuid, 'reason' => $reason, 'actor' => $actor, 'now' => $now]);
 		return new FlowTimer();
 	}
@@ -122,14 +127,13 @@ class FlowTimerEngineFake {
 	 *
 	 * @return FlowTimer
 	 */
-	public function extend(
-		string $uuid,
-		int $amount,
-		string $unit,
-		string $rationale,
-		?string $actor,
-		?DateTimeInterface $now = null,
-	): FlowTimer {
+	public function extend(object $request, object $act): FlowTimer {
+		$uuid = $request->uuid;
+		$amount = $request->amount;
+		$unit = $request->unit;
+		$rationale = $request->rationale;
+		$actor = $act->actor;
+		$now = null;
 		$this->record(operation: 'extend', args: ['uuid' => $uuid, 'amount' => $amount, 'unit' => $unit, 'rationale' => $rationale, 'actor' => $actor]);
 		return new FlowTimer();
 	}
@@ -146,14 +150,13 @@ class FlowTimerEngineFake {
 	 *
 	 * @return FlowTimer
 	 */
-	public function extendWithOverride(
-		string $uuid,
-		int $amount,
-		string $unit,
-		string $rationale,
-		string $actor,
-		?DateTimeInterface $now = null,
-	): FlowTimer {
+	public function extendWithOverride(object $request, object $act): FlowTimer {
+		$uuid = $request->uuid;
+		$amount = $request->amount;
+		$unit = $request->unit;
+		$rationale = $request->rationale;
+		$actor = (string)$act->actor;
+		$now = null;
 		$this->record(operation: 'extendWithOverride', args: ['uuid' => $uuid, 'amount' => $amount, 'unit' => $unit, 'rationale' => $rationale, 'actor' => $actor]);
 		return new FlowTimer();
 	}
@@ -161,22 +164,13 @@ class FlowTimerEngineFake {
 	/**
 	 * Cancel by subject (mirrors FlowTimerService::cancelForSubject()).
 	 *
-	 * @param string $subjectType Subject type.
-	 * @param string $subjectUuid Subject uuid.
-	 * @param string $reason Why.
-	 * @param string|null $actor Actor.
-	 * @param DateTimeInterface|null $now The clock.
+	 * @param TimerSubjectRef $subject The subject's type and uuid.
+	 * @param TimerChange     $change  Why, who and when.
 	 *
 	 * @return int
 	 */
-	public function cancelForSubject(
-		string $subjectType,
-		string $subjectUuid,
-		string $reason,
-		?string $actor,
-		?DateTimeInterface $now = null,
-	): int {
-		$this->record(operation: 'cancelForSubject', args: ['subjectType' => $subjectType, 'subjectUuid' => $subjectUuid, 'reason' => $reason, 'actor' => $actor]);
+	public function cancelForSubject(TimerSubjectRef $subject, TimerChange $change): int {
+		$this->record(operation: 'cancelForSubject', args: ['subjectType' => $subject->type, 'subjectUuid' => $subject->uuid, 'reason' => $change->reason, 'actor' => $change->actor]);
 		return 2;
 	}
 

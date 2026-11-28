@@ -38,9 +38,9 @@ test.describe('A Woo term is computed by law', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/changes/one-term-engine/specs/woo-case-type/spec.md#scenario-a-woo-term-ending-on-a-holiday-rolls
-	// @e2e openspec/changes/one-term-engine/specs/woo-case-type/spec.md#scenario-the-extension-counts-from-the-original-end-unrolled
-	// @e2e openspec/changes/one-term-engine/specs/woo-case-type/spec.md#scenario-only-one-extension-allowed
+	// @e2e openspec/specs/woo-case-type/spec.md#scenario-a-woo-term-ending-on-a-holiday-rolls
+	// @e2e openspec/specs/woo-case-type/spec.md#scenario-the-extension-counts-from-the-original-end-unrolled
+	// @e2e openspec/specs/woo-case-type/spec.md#scenario-only-one-extension-allowed
 	test('The deadline rolls past Christmas, and the term extends once', async ({
 		playwright,
 		baseURL,
@@ -68,7 +68,7 @@ test.describe('A Woo term is computed by law', () => {
 		const created = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Woo-verzoek over de ringweg`,
 			caseType: objectId(caseType),
-			startDate: '2026-11-27',
+			registrationDate: '2026-11-27',
 		})
 		const caseId = objectId(created)
 

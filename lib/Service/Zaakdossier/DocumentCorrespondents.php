@@ -41,7 +41,7 @@ namespace OCA\Dossiq\Service\Zaakdossier;
  * `contacts-domain`'s act, and doing it here would fill the People tab with
  * one row per newsletter.
  *
- * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 class DocumentCorrespondents {
 
@@ -84,7 +84,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return array{sender: bool, recipients: bool} Which fields are allowed.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-012-direction-decides-which-correspondent-a-document-may-carry
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-012-direction-decides-which-correspondent-a-document-may-carry
 	 */
 	public function allowedFor(string $direction): array {
 		return match (trim($direction)) {
@@ -104,25 +104,21 @@ class DocumentCorrespondents {
 	 *
 	 * @return array{sender: string, recipients: array<int, string>} What may be stored.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function resolve(mixed $sender, mixed $recipients, array $parties, string $direction): array {
 		$allowed = $this->allowedFor(direction: $direction);
-		$index = $this->indexOf(parties: $parties);
+		$index = new CasePartyIndex(parties: $parties);
 
 		$one = '';
 		if ($allowed['sender'] === true) {
-			$one = $this->matchOne(value: $sender, index: $index);
+			$one = $index->match(value: $sender);
 		}
 
 		$many = [];
 		if ($allowed['recipients'] === true) {
-			foreach ($this->asList(value: $recipients) as $candidate) {
-				$match = $this->matchOne(value: $candidate, index: $index);
-				if ($match !== '' && in_array($match, $many, true) === false) {
-					$many[] = $match;
-				}
-			}
+			$many = $index->matchAll(values: $recipients);
 		}
 
 		return ['sender' => $one, 'recipients' => $many];
@@ -139,10 +135,11 @@ class DocumentCorrespondents {
 	 *
 	 * @return string The party's identifier, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function partyHolding(string $address, array $parties): string {
-		return $this->matchOne(value: $address, index: $this->indexOf(parties: $parties));
+		return (new CasePartyIndex(parties: $parties))->match(value: $address);
 	}//end partyHolding()
 
 	/**
@@ -158,7 +155,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function nameOf(string $identifier, array $parties): string {
 		$wanted = trim($identifier);
@@ -166,25 +163,36 @@ class DocumentCorrespondents {
 			return '';
 		}
 
-		foreach ($parties as $party) {
-			if (is_array($party) === false) {
-				continue;
-			}
-
-			if ($this->identifierOf(party: $party) !== $wanted) {
-				continue;
-			}
-
-			$name = trim((string)($party['displayName'] ?? ''));
-			if ($name !== '') {
-				return $name;
-			}
-
-			return trim((string)($party['contactUid'] ?? $wanted));
+		$party = $this->partyIdentifiedAs(identifier: $wanted, parties: $parties);
+		if ($party === []) {
+			return $wanted;
 		}
 
-		return $wanted;
+		$name = trim((string)($party['displayName'] ?? ''));
+		if ($name !== '') {
+			return $name;
+		}
+
+		return trim((string)($party['contactUid'] ?? $wanted));
 	}//end nameOf()
+
+	/**
+	 * The first party link stored under an identifier, empty when none is.
+	 *
+	 * @param string                           $identifier The trimmed, non-empty identifier.
+	 * @param array<int, array<string, mixed>> $parties    The party links of the case.
+	 *
+	 * @return array<string, mixed> The party link.
+	 */
+	private function partyIdentifiedAs(string $identifier, array $parties): array {
+		foreach ($parties as $party) {
+			if (is_array($party) === true && $this->identifierOf(party: $party) === $identifier) {
+				return $party;
+			}
+		}
+
+		return [];
+	}//end partyIdentifiedAs()
 
 	/**
 	 * A document's correspondents, named for a reader.
@@ -198,7 +206,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return array{senderName: string, recipientNames: array<int, string>} The names.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function describe(array $document, array $parties): array {
 		$recipients = [];
@@ -226,7 +234,7 @@ class DocumentCorrespondents {
 	 *
 	 * @return bool True when the document names that party.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
 	public function mentions(array $document, string $identifier): bool {
 		$wanted = trim($identifier);
@@ -260,11 +268,7 @@ class DocumentCorrespondents {
 
 		$identifiers = [];
 		foreach ($stored as $entry) {
-			if (is_string($entry) === false && is_numeric($entry) === false) {
-				continue;
-			}
-
-			$identifier = trim((string)$entry);
+			$identifier = $this->storedIdentifier(entry: $entry);
 			if ($identifier !== '' && in_array($identifier, $identifiers, true) === false) {
 				$identifiers[] = $identifier;
 			}
@@ -272,6 +276,21 @@ class DocumentCorrespondents {
 
 		return $identifiers;
 	}//end storedRecipients()
+
+	/**
+	 * One stored recipient entry as a trimmed identifier, '' when it is not text or a number.
+	 *
+	 * @param mixed $entry The stored entry.
+	 *
+	 * @return string The identifier, or ''.
+	 */
+	private function storedIdentifier(mixed $entry): string {
+		if (is_string($entry) === false && is_numeric($entry) === false) {
+			return '';
+		}
+
+		return trim((string)$entry);
+	}//end storedIdentifier()
 
 	/**
 	 * The identifier a party link is stored under: its party uuid, else its
@@ -285,99 +304,10 @@ class DocumentCorrespondents {
 	 *
 	 * @return string The identifier, or ''.
 	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function identifierOf(array $party): string {
-		$uuid = trim((string)($party['partyUuid'] ?? ''));
-		if ($uuid !== '') {
-			return $uuid;
-		}
-
-		return trim((string)($party['contactUid'] ?? ''));
+		return (new CasePartyIndex(parties: []))->identifierOf(party: $party);
 	}//end identifierOf()
-
-	/**
-	 * Every way one party of the case may be named, mapped to its identifier.
-	 *
-	 * @param array<int, array<string, mixed>> $parties The party links.
-	 *
-	 * @return array<string, string> Lowercased key to identifier.
-	 */
-	private function indexOf(array $parties): array {
-		$index = [];
-		foreach ($parties as $party) {
-			if (is_array($party) === false) {
-				continue;
-			}
-
-			$identifier = $this->identifierOf(party: $party);
-			if ($identifier === '') {
-				continue;
-			}
-
-			foreach ([$identifier, (string)($party['contactUid'] ?? ''), (string)($party['email'] ?? '')] as $key) {
-				$key = mb_strtolower(trim($key));
-				if ($key !== '' && isset($index[$key]) === false) {
-					$index[$key] = $identifier;
-				}
-			}
-		}
-
-		return $index;
-	}//end indexOf()
-
-	/**
-	 * One submitted value as the identifier of a party of the case, or ''.
-	 *
-	 * @param mixed $value The submitted value.
-	 * @param array<string, string> $index The index of the case's parties.
-	 *
-	 * @return string The identifier, or '' when nothing matched.
-	 */
-	private function matchOne(mixed $value, array $index): string {
-		$wanted = '';
-		if (is_string($value) === true || is_numeric($value) === true) {
-			$wanted = mb_strtolower(trim((string)$value));
-		}
-
-		// A picker hands back the option object it was given, not its value.
-		if (is_array($value) === true) {
-			foreach (['partyUuid', 'id', 'contactUid', 'email'] as $key) {
-				$candidate = mb_strtolower(trim((string)($value[$key] ?? '')));
-				if ($candidate !== '' && isset($index[$candidate]) === true) {
-					return $index[$candidate];
-				}
-			}
-		}
-
-		if ($wanted === '') {
-			return '';
-		}
-
-		return ($index[$wanted] ?? '');
-	}//end matchOne()
-
-	/**
-	 * A submitted recipients value as a list, whatever shape it arrived in.
-	 *
-	 * @param mixed $value One value, a list of them, or nothing.
-	 *
-	 * @return array<int, mixed> The candidates.
-	 */
-	private function asList(mixed $value): array {
-		if (is_array($value) === false) {
-			if ($value === null || $value === '') {
-				return [];
-			}
-
-			return [$value];
-		}
-
-		// An associative array is ONE option object, not a list of them.
-		if ($value !== [] && array_is_list($value) === false) {
-			return [$value];
-		}
-
-		return $value;
-	}//end asList()
 }//end class

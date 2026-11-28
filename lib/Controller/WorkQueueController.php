@@ -28,13 +28,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use DateTime;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\WorkQueueService;
+use OCA\Dossiq\Controller\Support\WorkloadScope;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\CoveredWorkInterface;
+use OCA\Dossiq\Kernel\Contracts\WorkQueueServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -42,7 +43,11 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for the intelligent work-queue endpoints.
  *
+ * The queue and the covered work read their own collaborator; which handlers
+ * the workload shows is the workload scope's answer.
+ *
  * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/changes/method-decomposition/tasks.md
  */
 class WorkQueueController extends Controller {
 	/**
@@ -50,44 +55,62 @@ class WorkQueueController extends Controller {
 	 *
 	 * @param IRequest $request The HTTP request.
 	 * @param IUserSession $userSession The user session.
-	 * @param IGroupManager $groupManager The group manager (coordinator = NC admin guard).
-	 * @param WorkQueueService $workQueueService The work queue scoring/aggregation service.
+	 * @param WorkQueueServiceInterface $workQueueService The work queue scoring/aggregation service.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CoveredWorkInterface $coveredWork The cases the caller covers for an absent colleague.
+	 * @param WorkloadScope $scope The reader's teams and coordinator role, which scope the workload.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private IUserSession $userSession,
-		private IGroupManager $groupManager,
-		private WorkQueueService $workQueueService,
+		private WorkQueueServiceInterface $workQueueService,
 		private LoggerInterface $logger,
+		private CoveredWorkInterface $coveredWork,
+		private WorkloadScope $scope,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
 	 * Return the authenticated user's urgency-scored open cases and tasks.
+	 *
+	 * With `covering=1` the queue also holds the open cases the caller covers
+	 * for an absent colleague (board DqAanMijToegewezen, "Inclusief werk
+	 * waarvoor u waarneemt"), each marked `coveredFor`, and `coveredCount`
+	 * says how many. Only cases the caller may already read are added.
+	 *
+	 * @param string $covering `1` to include the work the caller covers.
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 	 */
 	#[NoAdminRequired]
-	public function index(): JSONResponse {
+	public function index(string $covering = ''): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
 		try {
-			$items = $this->workQueueService->computeQueue($user->getUID());
+			$covered = [];
+			if (in_array(strtolower(trim($covering)), ['1', 'true'], true) === true) {
+				$covered = $this->coveredWork->casesFor(user: $user);
+			}
+
+			$items = $this->workQueueService->computeQueue($user->getUID(), null, $covered);
 			return new JSONResponse(
 				[
 					'items' => $items,
 					'computedAt' => (new DateTime())->format(DateTime::ATOM),
+					'coveredCount' => count(array_filter($items, static fn (array $item): bool => ($item['coveredFor'] ?? null) !== null)),
 				]
 			);
 		} catch (\Throwable $e) {
@@ -97,13 +120,15 @@ class WorkQueueController extends Controller {
 	}//end index()
 
 	/**
-	 * Return per-handler open-case counts. Coordinator-only (NC admin).
+	 * Return per-handler open-case counts: for a coordinator (NC admin), and
+	 * for a member of a team, who sees the people of their own teams only.
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	#[NoAdminRequired]
 	public function workload(): JSONResponse {
@@ -112,35 +137,23 @@ class WorkQueueController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->isCoordinator(userId: $user->getUID()) === false) {
-			return new JSONResponse(['error' => 'This action requires the coordinator role'], Http::STATUS_FORBIDDEN);
+		$teamGroupIds = $this->scope->teamGroupIds(user: $user);
+		$inATeam      = ($teamGroupIds !== null && $teamGroupIds !== []);
+		if ($inATeam === false && $this->scope->isCoordinator(userId: $user->getUID()) === false) {
+			return new JSONResponse(
+				['error' => 'This action requires the coordinator role or a team'],
+				Http::STATUS_FORBIDDEN
+			);
 		}
 
 		try {
-			$handlers = $this->workQueueService->computeWorkload();
+			$handlers = $this->scope->withDisplayNames(
+				handlers: $this->scope->ofTeams(teamGroupIds: $teamGroupIds, handlers: $this->workQueueService->computeWorkload())
+			);
 			return new JSONResponse(['handlers' => $handlers]);
 		} catch (\Throwable $e) {
 			$this->logger->error('WorkQueue: workload failed', ['error' => $e->getMessage()]);
 			return new JSONResponse(['error' => 'Failed to compute workload'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end workload()
-
-	/**
-	 * Whether a user holds the dossiq coordinator role (NC admin).
-	 *
-	 * Coordinator authority is delegated to Nextcloud admin membership, the
-	 * same model used elsewhere in dossiq (e.g.
-	 * {@see \OCA\Dossiq\Controller\SubstitutionController::isCoordinator()}).
-	 *
-	 * @param string $userId The user id.
-	 *
-	 * @return bool
-	 */
-	private function isCoordinator(string $userId): bool {
-		if ($userId === '') {
-			return false;
-		}
-
-		return $this->groupManager->isAdmin($userId);
-	}//end isCoordinator()
 }//end class

@@ -24,7 +24,7 @@ CaseType
 └── subCaseTypes[]       — Allowed sub-case types
 ```
 
-**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`)
+**Standards**: CMMN 1.1 (CaseDefinition), ZGW Catalogi API (ZaakType), Schema.org (`PropertyValueSpecification`), OIO Sag og Dokument (Denmark)
 **Feature tier**: MVP (core type CRUD, statuses, deadlines, draft/published, validity), V1 (result types, role types, property definitions, document types, decision types, confidentiality, suspension/extension)
 
 ## Data Model
@@ -1377,6 +1377,1277 @@ specific term.
 - WHEN the case type is saved
 - THEN the case type MUST carry `queueCriticalDays` 10
 
+### Requirement: A case type names the teams that handle it (REQ-CT-44)
+
+A case type SHALL name the teams that handle its cases as Nextcloud group ids:
+its default group (`handling.defaultGroup`, REQ-SEED-01) and the groups in
+`handling.teams`. The default group SHALL always count as a handling team.
+`CaseTypeHandling::teams()` SHALL be the one reader and SHALL return the
+default group first, then `handling.teams` in order, without duplicates and
+without empty ids. An administrator SHALL set `handling.teams` on the case type
+form as "Handling teams", a choice of Nextcloud groups, and saving SHALL keep
+the other switches of the handling block. A user is in a team when Nextcloud
+says they are a member of that group; dossiq SHALL keep no member list of its
+own for this.
+
+#### Scenario: The default group and the extra teams together
+@e2e exclude A pure reader over a case type row, asserted in CaseTypeHandlingSwitchesTest.
+- **GIVEN** a case type whose default group is `vergunningen` and whose `handling.teams` is `["handhaving", "vergunningen", ""]`
+- **WHEN** its handling teams are read
+- **THEN** they SHALL be `["vergunningen", "handhaving"]`
+
+#### Scenario: A case type that names only a default group is linked
+@e2e exclude A pure reader, asserted in CaseTypeHandlingSwitchesTest.
+- **GIVEN** a case type with a default group `woo` and no `handling.teams`
+- **WHEN** its handling teams are read
+- **THEN** they SHALL be `["woo"]`
+
+#### Scenario: An administrator adds a handling team
+@e2e exclude The field's write is asserted in tests/vitest/generalTabHandlingTeams.spec.js; the e2e instance has no Nextcloud groups seeded for case types.
+- **GIVEN** an administrator on a case type's General tab
+- **WHEN** they choose "Toezicht en handhaving" under Handling teams
+- **THEN** the form SHALL hold `handling.teams` `["handhaving"]`
+- **AND** the default group, handler, messages and intake screen of the block SHALL be unchanged
+
+### Requirement: A shipped case type is published unless it says otherwise (REQ-CT-45)
+
+Every case type the app ships SHALL declare `isDraft`. A shipped case type meant for
+handlers SHALL declare `isDraft: false`, so the new case form offers it on a fresh
+install. On an existing install the app SHALL publish, once, the shipped case types
+that were stored as drafts only because their seed left `isDraft` unset, and SHALL
+NOT change them again after that run.
+
+#### Scenario: A fresh install offers every shipped case type
+@e2e exclude a fresh install is not something an e2e run can make; proven by tests/Unit/Repair/PublishSeededCaseTypesTest.php::testEveryShippedCaseTypeDeclaresIsDraft
+
+- **GIVEN** the shipped case type seeds
+- **WHEN** they are read
+- **THEN** every case type SHALL declare `isDraft`, and the 13 named in this change SHALL declare `false`
+
+#### Scenario: An existing install publishes the seeded drafts once
+@e2e exclude a repair step has no screen; proven by tests/Unit/Repair/PublishSeededCaseTypesTest.php::testTheSeededDraftsArePublishedAndNothingElse
+
+- **GIVEN** an install where "Sloopmelding" is stored with `isDraft: true` and an administrator's own case type is a draft
+- **WHEN** the repair step runs
+- **THEN** "Sloopmelding" SHALL be stored with `isDraft: false`
+- **AND** the administrator's own draft SHALL be left a draft
+
+#### Scenario: A later draft is left alone
+@e2e exclude a repair step has no screen; proven by tests/Unit/Repair/PublishSeededCaseTypesTest.php::testARecordedRunDoesNotRunAgain
+
+- **GIVEN** the step has run once on this instance
+- **WHEN** an administrator makes "Sloopmelding" a draft and repair runs again
+- **THEN** "Sloopmelding" SHALL stay a draft
+
+### Requirement: A case type save is judged by the flow it names @e2e exclude backend save listener, no UI change: covered by PHPUnit
+
+A check made while a case type is saved SHALL read the moves of the flow the
+incoming case type names in `workflowDefinition`. Only when that name is empty
+or does not resolve to a stored flow SHALL it fall back to the case type's
+active flow.
+
+#### Scenario: An upgraded instance holds an older active flow
+
+- **GIVEN** an instance whose active flow for the Woo case type has no move from Ontvangst to Afgehandeld
+- **AND** the shipped case type names flow `cb967581-…`, which has that move
+- **WHEN** the shipped case type is saved
+- **THEN** the portal withdrawal check passes and the case type is written
+
+#### Scenario: The named flow is not stored
+
+- **WHEN** the saved case type names a flow the instance does not hold
+- **THEN** the check judges the active flow, as before
+
+### Requirement: Packages installed on upgrade are followed by the register import @e2e exclude repair step run by occ upgrade, no UI: covered by PHPUnit
+
+The shipped package step SHALL run on install and on every upgrade, and a
+package at the version already installed SHALL write nothing. When the step
+installed a package, it SHALL import the register configuration again, unforced,
+and name every shipped object that import still could not write.
+
+#### Scenario: The Woo flow arrives with the upgrade
+
+- **GIVEN** an upgraded instance holding the Woo case type at version 1, without a handling team and without flow `cb967581-…`
+- **WHEN** the upgrade runs the package step
+- **THEN** the `woo-verzoek` package writes the flow
+- **AND** the register is imported again, so the case type is updated to 1.4.7 with `handling.defaultGroup: behandelaars` and the flow
+
+#### Scenario: Nothing new to install
+
+- **WHEN** every automatic package is already current
+- **THEN** the register is not imported again
+
+### Requirement: An open case without a team takes its case type's handling team @e2e exclude repair step run by occ upgrade, no UI: covered by PHPUnit
+
+On install and on every upgrade, every open case whose `assignedGroup` is empty
+SHALL be given its case type's current handling group
+(`handling.defaultGroup`). A case that has a team, a closed case, and a case of
+a case type without a handling group SHALL be left as they are. Only
+`assignedGroup` SHALL be written, and a second run SHALL write nothing.
+
+#### Scenario: A case filed while its case type had no handling block
+
+- **GIVEN** an open case of the Woo case type with no `assignedGroup`
+- **AND** the case type now has `handling.defaultGroup: behandelaars`
+- **WHEN** the upgrade runs the repair step
+- **THEN** the case's `assignedGroup` is `behandelaars` and its other fields are unchanged
+
+#### Scenario: A case that already has a team
+
+- **WHEN** an open case's `assignedGroup` names another team
+- **THEN** the repair step leaves it
+
+#### Scenario: A closed case
+
+- **WHEN** a case without a team is in a final status
+- **THEN** the repair step leaves it
+
+### Requirement: A case type answers its phases with their tasks (REQ-CTP-1)
+
+`GET /api/case-types/{id}/phases` SHALL answer the case type's statuses as
+phases in their order, each with the tasks of the active workflow definition
+whose step names that status, in step order, with title, role, lead time and
+whether the step is required, and the acts available in every phase. A step
+whose task is switched off SHALL be left out; a step naming an unknown status
+SHALL be listed under `unplaced`. An unreadable case type SHALL answer 404.
+
+#### Scenario: Tasks sit under their phase
+@e2e exclude a read endpoint covered by tests/Unit/Service/CaseType/CaseTypePhasesTest.php
+
+- **GIVEN** a case type with statuses Ontvangst and Beoordeling and steps on both
+- **WHEN** its phases are requested
+- **THEN** each step SHALL be listed under its status, in order
+
+### Requirement: Example rows are written in the shape their schemas declare
+
+Before the writer gets them, a package's example rows SHALL have every
+property that JsonEncodedStringProperties lists for their schema encoded as a
+JSON string, and each row SHALL match its schema's types, enums and required
+properties.
+
+#### Scenario: A shipped package installs with its example case
+- GIVEN an instance that loaded example data
+- WHEN bezwaar-beroep is installed
+- THEN its example case is written, with `statusHistory` as a JSON string
+
+#### Scenario: Every shipped example row matches its schema
+- GIVEN every `examples/*.json` file of every shipped package
+- WHEN its rows are prepared as the installer writes them
+- THEN no row has a property of another type than its schema declares
+
+### Requirement: A case type's statuses and fields are edited from its page (REQ-CT-PARTS-1)
+
+The CaseTypeDetail page MUST open a status or a field of the case type on a
+page of its own from its list, where the record is edited, and MUST offer
+deleting a row from the list.
+
+#### Scenario: open a status
+- GIVEN a case type with statuses
+- WHEN the admin clicks a status in the Statuses list
+- THEN the StatusTypeDetail page opens for that status
+
+#### Scenario: delete a field
+- GIVEN a case type with a field
+- WHEN the admin chooses Delete on the field's row
+- THEN the field is deleted through the object API, with an Undo
+
+### Requirement: A case type is deleted only while it is an unused draft (REQ-CT-DEL-1)
+
+Deleting a case type through any path MUST be refused when it is published or
+when a case uses it, and an allowed delete MUST remove the case type's status
+types.
+
+#### Scenario: delete a published case type
+- GIVEN a published case type
+- WHEN it is deleted through the object API
+- THEN the delete is refused with "A published case type cannot be deleted"
+
+#### Scenario: delete an unused draft
+- GIVEN a draft case type no case uses, with two status types
+- WHEN it is deleted
+- THEN the delete goes ahead and both status types are removed
+
+### Requirement: An email template keeps its earlier wording on every write path (REQ-CT-TPL-1)
+
+A change to an email template's name, subject or body MUST keep the earlier
+wording as an inactive copy and raise the template's version, whichever API
+made the change.
+
+#### Scenario: edit a message from the case type page
+- GIVEN an active template at version 2
+- WHEN its body is changed through the object API
+- THEN an inactive copy at version 2 holds the earlier body
+- AND the template is at version 3 with previousVersion pointing at the copy
+
+### Requirement: The Case types pages are the only case type editor (REQ-CT-EDIT-1)
+
+Case types MUST be created and edited on the Case types and CaseTypeDetail
+pages; the Nextcloud admin settings MUST link there instead of carrying an
+editor of their own.
+
+#### Scenario: an administrator looks for the case type editor in admin settings
+- GIVEN the dossiq admin settings page
+- WHEN the administrator reads the Case type management section
+- THEN it links to the Case types page
+
+#### Scenario: edit a status's checklist
+- GIVEN a case type with a status
+- WHEN the administrator opens the case type's Statuses tab
+- THEN the statuses editor offers the status's checklist and field rules
+
+#### Scenario: edit or reorder a status that has a capacity
+- GIVEN a status with capacity 12 and a phase term
+- WHEN the administrator renames it, or drags it to another position
+- THEN the saved status still has capacity 12 and its phase term
+
+### Requirement: A case type states its service target and notification domain (REQ-CT-SVC-1)
+
+A case type MUST be able to carry a service target, an ISO 8601 duration the
+organisation aims to finish a case within. The case type page MUST show the
+service target with the terms and the notification domain with the case type,
+and the create form MUST ask both.
+
+#### Scenario: set a service target at creation
+- GIVEN the Case types page
+- WHEN an administrator creates a case type with service target P42D and notification domain Zaken
+- THEN the case type page shows P42D under Terms and Zaken under Case type
+
+### Requirement: Stored legacy archival actions are mapped onto the enum (REQ-CT-ARCH-1)
+
+On upgrade, a result type whose `archivalAction` holds `retain` MUST be
+rewritten to `bewaren`, and one holding `destroy` to `vernietigen`. The step
+MUST read and write as the system user, MUST leave every other value alone,
+and running it again MUST change nothing.
+
+#### Scenario: a result type saved by the retired editor
+- GIVEN a result type with archivalAction `destroy`
+- WHEN dossiq is upgraded
+- THEN its archivalAction reads `vernietigen`
+
+#### Scenario: a second upgrade
+- GIVEN every legacy value has been mapped
+- WHEN the step runs again
+- THEN nothing is written
+
+### Requirement: A case type carries a colour and an icon
+
+A case type SHALL have an optional `colour` from the hue list `statusType.colour` uses (which includes `teal`) and an
+optional `icon` naming a registered icon. Every shipped case type SHALL name both. The case type form and card SHALL
+offer the colour as a select with a swatch per hue and the icon as a select that shows each icon. The type pill on a
+case, the case type tag in the case lists and a pinned case type's menu entry SHALL show the case type's colour and
+icon.
+
+#### Scenario: a Woo request
+
+- **GIVEN** a case of the shipped Woo-verzoek case type
+- **THEN** its type pill is red with the document icon
+- **AND** the Woo-verzoek entry in the menu shows the document icon
+
+#### Scenario: a case type without them
+
+- **GIVEN** a case type with no colour and no icon
+- **THEN** its pill and tags draw as before and its menu entry shows the filter icon
+
+### Requirement: A shipped status takes the colour its boards draw
+
+Every status dossiq ships SHALL name the colour the palette gives its name. An upgrade SHALL give a status dossiq seeded
+that colour while the status holds no colour, grey, or the colour dossiq shipped it with, and SHALL leave any other
+colour, and every status an administrator created, as it is.
+
+#### Scenario: a case in progress
+
+- **GIVEN** a case in the shipped status "In behandeling"
+- **THEN** its status pill is purple
+
+#### Scenario: a colour an administrator chose
+
+- **GIVEN** a shipped status whose colour an administrator set to red
+- **WHEN** dossiq upgrades
+- **THEN** the status stays red
+
+### Requirement: A status badge sets the theme's pill text
+
+A status badge SHALL set its text to the theme's pill text for its hue (`--nl-color-<hue>-text`) when the theme names
+one, and to the hue mixed 65% into the main text (the main text for a `-light` colour) otherwise.
+
+#### Scenario: under the Zuiddrecht set
+
+- **GIVEN** a case in a status coloured blue
+- **THEN** its status pill text is the set's #234A78 on #EAF0F7
+
+### Requirement: The case type tabs follow the board (REQ-CTB-1)
+
+In the simple structure profile, the case type page SHALL show these tabs in
+this order: Overview, Fields, Statuses, Phases and tasks, Rules, Rights,
+Privacy, Translations, Versions and History. The Portal tab SHALL sit under the
+tab strip's Actions menu. The Rules tab SHALL hold the case rules widget.
+
+#### Scenario: The strip reads as the board
+@e2e exclude manifest configuration, covered by tests/vitest/caseTypeBoards.spec.js
+
+- **WHEN** the simple profile builds the case type page
+- **THEN** the tabs in the strip SHALL be Overview, Fields, Statuses, Phases and tasks, Rules, Rights, Privacy, Translations, Versions and History
+- **AND** Portal SHALL be an overflow tab
+
+### Requirement: Phases and tasks shows the board's four cards (REQ-CTB-2)
+
+The Phases and tasks tab SHALL hold the phase board, Variants, Terms and the
+messages to the applicant, in that order.
+
+- The phase board's header link SHALL open the workflow canvas page.
+- Every phase SHALL carry an "Add a task" action that opens that page too.
+- The workflow canvas SHALL NOT render inline on the tab.
+- The document types, decision types and blueprint SHALL move to the Statuses
+  tab.
+
+#### Scenario: The canvas is one click away
+@e2e exclude manifest configuration, covered by tests/vitest/caseTypeBoards.spec.js
+
+- **GIVEN** a case type page
+- **WHEN** the reader follows "View as flow"
+- **THEN** `/settings/case-types/{id}/flow` SHALL show the workflow canvas for that case type
+
+### Requirement: A case type declares its variants (REQ-CTB-3)
+
+`caseType.variants` SHALL be a list of `{ name, description, isDefault }`. The
+Variants card SHALL list them and mark the default one.
+
+#### Scenario: A variant is listed
+@e2e exclude schema and configuration, covered by tests/vitest/caseTypeBoards.spec.js
+
+- **GIVEN** a case type with the variants Regulier (default) and Met welstand
+- **WHEN** its Phases and tasks tab opens
+- **THEN** the Variants card SHALL list both, with Regulier marked as the default
+
+### Requirement: The terms read as words (REQ-CTB-4)
+
+`GET /api/case-types/{id}/terms` SHALL answer `decisionTerm`, `suspension` and
+`serviceTarget` as sentences in the reader's language. A term of whole weeks
+SHALL read in weeks. An unreadable case type SHALL answer 404.
+
+#### Scenario: A term with an extension
+@e2e exclude a read endpoint covered by tests/Unit/Service/CaseType/CaseTypeTermsTest.php
+
+- **GIVEN** a case type with processing deadline P56D, an allowed extension of P42D and at most one extension
+- **WHEN** its terms are requested
+- **THEN** `decisionTerm` SHALL read "8 weeks, extendable once by 6 weeks"
+
+### Requirement: The side facts read as labels (REQ-CTB-5)
+
+The side column's data card SHALL show these rows:
+
+- the domain;
+- the origin, "Shipped" for a case type dossiq delivered and "Own case type"
+  otherwise;
+- the intake form, when one is bound;
+- the handling teams.
+
+It SHALL NOT show raw codes such as the handling model or the confidentiality
+key.
+
+#### Scenario: A shipped case type
+@e2e exclude manifest configuration, covered by tests/vitest/caseTypeBoards.spec.js
+
+- **GIVEN** a case type owned by `__system__`
+- **WHEN** its page opens
+- **THEN** the data card SHALL read Origin: Shipped
+
+### Requirement: The Overview tab summarises the translations
+
+The case type Overview tab SHALL show one row per language the register declares, with the number of its labels that are
+translated and not out of date, and a pill that says the language is complete or how many labels it misses. Edit SHALL
+open the Translations tab, which keeps the editor.
+
+#### Scenario: DqZaaktypeOverzicht
+
+- **GIVEN** a case type with two translatable labels, Dutch the source and one current English label
+- **THEN** the Overview tab reads "Nederlands … Compleet" and "Engels 1 van 2 labels … 1 ontbreken"
+
+### Requirement: An administrator reloads the shipped templates
+
+dossiq SHALL offer `POST /api/packages/reload`, which installs every shipped
+package that is installed on this instance or marked `install: auto`, one at a
+time through the same install as a single package (REQ-CT-49), and answers one
+outcome per package. A package at the shipped version SHALL write nothing and
+answer `current`. The endpoint SHALL refuse anyone who is not an administrator
+before any package is read or written, and SHALL answer 500 when a package failed,
+else 200. The case type list SHALL offer it in its Actions menu as "Reload
+templates", after a confirmation.
+
+#### Scenario: Only installed and automatic packages are reloaded
+@e2e exclude no user interface beyond a menu entry; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse
+
+- **GIVEN** an on-request package that was never installed
+- **WHEN** an administrator reloads the templates
+- **THEN** nothing SHALL be written
+- **AND** after the package is installed once, a reload SHALL answer `current` for it and write nothing
+
+#### Scenario: A non-administrator changes nothing
+@e2e exclude the admin check is the AuthorizedAdminSetting middleware; proven by tests/Unit/Controller/PackageControllerTest.php::testReloadIsAdminOnlyAndRefusesWithoutAUser
+
+- **GIVEN** a request without a user, or from a user who is not an administrator
+- **WHEN** it posts to `/api/packages/reload`
+- **THEN** the installer SHALL not be called
+
+### Requirement: The case type list exports its selection
+
+The case type list SHALL allow its export and the `caseType` schema SHALL be
+flagged exportable (`configuration.exportable`), so the Actions menu offers
+"Export selection as JSON" for the selected case types.
+
+#### Scenario: Two selected case types
+@e2e exclude configuration only; proven by tests/Unit/Settings/CaseTypeListExportTest.php
+- **GIVEN** two case types selected in the list
+- **WHEN** an administrator chooses Export selection as JSON
+- **THEN** one JSON file SHALL hold those two case types
+
+### Requirement: The blueprint counts inherited and overridden fields
+
+The case type blueprint SHALL count its fields: all of them, those a parent type gave, and those the type overrides by
+declaring a row with the same name as a parent's. The parent type card SHALL show those counts for a type with a parent.
+
+#### Scenario: DqZaaktypeVelden
+
+- **GIVEN** Omgevingsvergunning regulier, a child of Omgevingsvergunning, with 14 fields of which 6 come from the parent and none replace a parent's
+- **THEN** the card reads "Erft van Omgevingsvergunning", "Geërfde velden 6 van 14", "Overschreven 0"
+
+### Requirement: A case type says whether a late decision costs a penalty
+
+A case type SHALL be able to say whether a late decision costs the applicant a penalty, and the most it can come to.
+The terms endpoint SHALL answer it as a sentence that names the notice of default the penalty waits on, and the
+Termijnen card SHALL show it.
+
+#### Scenario: DqZaaktype
+
+- **GIVEN** a case type with `penaltyOnLateDecision: true`
+- **THEN** its Termijnen card reads "Dwangsom bij niet tijdig beslissen: Ja, na een ingebrekestelling"
+
+### Requirement: The Fields tab draws the board's cards
+
+The case type page's Fields tab SHALL hold the fields editor and the field rights only. The raw terms SHALL be
+edited from the Termijnen card on Fasen en taken, as board DqZaaktype draws it; there is no Properties tab.
+
+#### Scenario: Opening the Fields tab
+
+- **GIVEN** an administrator on a case type page
+- **WHEN** they open the Fields tab
+- **THEN** they see the Fields card and the "who sees and fills what" card, with the choice list and the parent type beside them
+
+#### Scenario: Editing the raw terms
+
+- **GIVEN** the Terms card on Phases and tasks
+- **WHEN** the administrator presses Edit
+- **THEN** the terms open for editing on that card, and no Properties tab opens
+
+### Requirement: The Overview draws a case type's statuses as coloured tiles
+
+The Statuses card on a case type's Overview SHALL list the statuses in their order as tiles, each with the status's
+colour, its name, and "Start", "Term suspended" or "End" when the status is the intake, waits on the applicant or is
+final, followed by a line saying where colour and order apply.
+
+#### Scenario: A permit case type
+
+- **GIVEN** a case type whose first status has role intake and whose last two are final
+- **WHEN** an administrator opens its Overview
+- **THEN** the first tile ends in "Start", the last two in "End", and each tile shows its status colour
+
+### Requirement: Variant toevoegen sits in the Varianten title row
+
+The Varianten card on a case type's Phases and tasks tab SHALL draw its add button in the card's title row.
+
+#### Scenario: Adding a variant
+
+- **WHEN** an administrator presses "Variant toevoegen" beside the Varianten title
+- **THEN** the name and description fields open above the variants
+
+### Requirement: The case type flow page loads its workflow when opened directly
+
+The page `/settings/case-types/:id/flow` MUST wait until the app's object stores are registered before it reads the case
+type's workflow versions, so that a direct load shows the same workflow as a visit through "View as flow".
+
+#### Scenario: Opening the flow page directly
+- GIVEN a case type with a published workflow
+- WHEN a user opens `/settings/case-types/{id}/flow` directly
+- THEN the page shows a loading state until the stores are up
+- AND then draws the workflow editor for that case type, not "No workflow defined"
+
+### Requirement: The case type pill names its version
+
+A case type page's status pill SHALL read "Versie {version} gepubliceerd" for a published version and "Versie
+{version} concept" for a draft.
+
+#### Scenario: A draft fifth version
+
+- **GIVEN** case type version 5, a draft
+- **THEN** the pill beside the domain reads "Versie 5 concept" in amber
+
+### Requirement: The Gegevens card says how many cases run on the type
+
+The case type's Gegevens card SHALL end with "Lopende zaken": the number of cases of this case type that have not
+reached a final status.
+
+#### Scenario: A permit case type with 43 open cases
+
+- **THEN** the Gegevens card reads "Lopende zaken 43"
+
+### Requirement: The Historie card names the case type's reference
+
+The Historie card beside a case type's Phases and tasks SHALL end in "Kenmerk {identifier}".
+
+#### Scenario: The permit case type
+
+- **THEN** the Historie card ends in "Kenmerk ZT-OMV-REG"
+
+### Requirement: The Velden table shows inherited fields and where each comes from
+
+The Velden table SHALL list a case type's own fields (editable) followed by the fields it inherits (read only), with a
+Herkomst column ("Eigen veld" or "Geërfd van {type}") and an In de lijst column saying whether the case list of this
+case type shows the field.
+
+#### Scenario: A regulier permit inheriting from Omgevingsvergunning
+
+- **GIVEN** a case type with its own field Bouwkosten, shown in its case list, and the inherited field Locatie
+- **THEN** Bouwkosten reads Eigen veld · Ja and Locatie reads Geërfd van Omgevingsvergunning, without row actions
+
+### Requirement: The Statuses tab reads as the board
+
+The Statuses tab SHALL subtitle Statuses and Results with what each list is for, SHALL label each Add with what it adds,
+SHALL list a status by name, list colour, whether it is final and its public label, and SHALL show a result's retention
+period in words.
+
+#### Scenario: DqZaaktypeStatussen
+
+- **GIVEN** the Statuses tab of a case type
+- **THEN** Statuses reads "Volgorde, kleur en wat de aanvrager ziet" under its title with "Status toevoegen", and a
+  result kept ten years reads "10 jaar"
+
+### Requirement: The blueprint reads as a summary card
+
+The case type blueprint SHALL render as a titled card that states the number of statuses with how many are final, the
+number of results, and the number of attributes with how many are inherited and from which parent, and SHALL keep every
+row reachable in the same card.
+
+#### Scenario: DqZaaktypeStatussen
+
+- **GIVEN** a case type with 6 statuses of which 2 final, 3 results and 14 attributes of which 6 inherited
+- **THEN** the card reads "6, waarvan 2 eindstatussen", "3" and "14 velden, 6 geërfd van Omgevingsvergunning"
+
+### Requirement: The Rules tab lists rules as rows
+
+The Rules tab SHALL draw "Rules on the case" as a titled card with one row per rule, titled by the field the rule writes
+or by its kind, with one line saying what it does and a pill (Calculated, On, Off), and SHALL keep trying a rule
+against a case behind a disclosure.
+
+#### Scenario: DqZaaktypeRegels
+
+- **GIVEN** the Rules tab of a case type
+- **THEN** the deadline calculation reads "Uiterste datum" with its first descriptive sentence and "Berekend", and no
+  table wider than the card is drawn
+
+### Requirement: The case type's tabs say how much each holds
+
+The case type page's tab strip SHALL show a count after Fasen en taken (the tasks over all phases), Regels (the
+rules of this case type) and Vertalingen (the languages the case type is kept in), as it does after Velden,
+Statussen and Versies.
+
+#### Scenario: A permit case type with six tasks, three rules and two languages
+
+- **GIVEN** a case type whose phases run six tasks, with three rules, in a register kept in Dutch and English
+- **THEN** the tabs read "Fasen en taken 6", "Regels 3" and "Vertalingen 2"
+
+### Requirement: The Versies card says each version's state and offers the next step
+
+The case type's side Versies card SHALL label a draft "Concept", a version closed for new cases "Vastgezet" and
+any other version "Actief". On a published version it SHALL end with "Een gepubliceerde versie verandert niet
+meer. Wijzigen maakt een nieuwe versie." above "Nieuwe versie maken" across the card, which opens the new version
+dialog; on a draft it SHALL end with "Publiceren".
+
+#### Scenario: Version 4 of Omgevingsvergunning regulier, published
+
+- **GIVEN** versions 4 (in force), 3 and 2 (closed)
+- **THEN** the card reads Actief, Vastgezet, Vastgezet and ends with the note and "Nieuwe versie maken"
+
+#### Scenario: Version 5, a draft
+
+- **THEN** the card reads Concept for version 5 and ends with "Publiceren"
+
+### Requirement: The Termijnen card follows the board order
+
+The Termijnen card SHALL list the decision term, then the penalty on a late decision, then the suspension.
+
+#### Scenario: DqZaaktype
+
+- **THEN** the card reads Beslistermijn, Dwangsom bij niet tijdig beslissen, Opschorten
+
+### Requirement: The Overview's Regels card lists the case type's own rules
+
+The Overview tab's Regels card SHALL list the case type's own rules as the Rules tab does ("Als … / dan …" with an
+Aan or Uit pill), without row menus, an Add button, the schema inventory or the trial, and SHALL say "Nog geen regels
+voor zaken" when there are none. "Regel toevoegen" in its header SHALL open the Rules tab.
+
+#### Scenario: Omgevingsvergunning regulier with three rules
+
+- **THEN** the card reads "Als Bouwkosten groter is dan € 100.000 / dan taak Toets door constructeur toevoegen" with
+  Aan, and two more rows
+
+### Requirement: The messages card is the board's data table
+
+The Berichten aan de aanvrager card SHALL be drawn as the board's card table and SHALL end with the opt-out note in an
+info box.
+
+#### Scenario: DqZaaktype
+
+- **THEN** Moment, Kanaal, Bericht read as a header band over 40px rows, and the note sits in a blue box
+
+### Requirement: The Vertalingen summary is a titled card
+
+The Overview tab's translations summary SHALL be a card titled Vertalingen with a Bewerken button that opens the
+Translations tab.
+
+#### Scenario: DqZaaktypeOverzicht
+
+- **THEN** Vertalingen sits beside Privacy as a card, its rows Nederlands and English inside it
+
+### Requirement: A field rule can be limited to statuses
+
+A case type's field rule SHALL take an optional list of statuses. A rule with statuses SHALL be enforced only while a
+case is in one of them; a rule without statuses SHALL hold in every status.
+
+#### Scenario: Bouwkosten read only for the intake once the case is in behandeling
+
+- **GIVEN** a rule readOnly on bouwkosten for Intaker with statuses In behandeling and Afgehandeld
+- **THEN** an Intaker may change bouwkosten while the case is Ontvangen, and not after
+
+### Requirement: The Fields tab shows the field rights per role and status
+
+The Fields tab SHALL show "Wie wat ziet en invult, per rol en status" as a matrix with a column per status and a row
+per field a rule names or a status requires; a cell SHALL say Verplicht, the roles that lose the field or may only
+read it, or Bewerken when nothing restricts it.
+
+#### Scenario: DqZaaktypeVelden
+
+- **THEN** Bouwkosten reads "Verplicht" under Ontvangen and "Alleen lezen voor Intaker" under In behandeling
+
+### Requirement: The Rules tab reads side by side
+
+The Rules tab SHALL start the reads of the rule vocabulary, the case schema, the rule inventory, the case type, its
+blueprint and its document type, message template and role lists before any of them answers.
+
+#### Scenario: DqZaaktypeRegels
+
+- **WHEN** an administrator opens the Rules tab of a case type
+- **THEN** all reads are under way at once, and the rows show once the slowest has answered
+
+### Requirement: The Statuses table writes the list colour as a word
+
+The Statuses table on a case type SHALL show each status's list colour as its translated palette name in plain text.
+
+#### Scenario: DqZaaktypeStatussen
+
+- **WHEN** an administrator opens the Statuses tab
+- **THEN** the colour column reads Blauw, Oranje, Paars, Groenblauw, Groen, Rood as plain words
+
+### Requirement: The blueprint facts are a two-column list on the card's inset
+
+The blueprint summary card SHALL draw its facts as a label column as wide as the longest label, left aligned, beside the
+values, 8px 16px apart, without an inset of its own inside the card.
+
+#### Scenario: DqZaaktypeStatussen
+
+- **WHEN** an administrator opens the Statussen tab
+- **THEN** "Statussen", "Resultaten" and "Kenmerken" start at the card's inset with their values beside them
+
+### Requirement: Status and result names are strong text, a status with its colour dot
+
+The Statussen and Resultaten tables SHALL draw their names as links without an underline (14px, the link colour), the
+Statussen names with a dot in the status colour, and the archival action in sentence case.
+
+#### Scenario: DqZaaktypeStatussen
+
+- **WHEN** an administrator opens the Statussen tab
+- **THEN** "Ontvangen" has a blue dot and reads in the link colour without an underline, and a result's archival
+  action reads "Vernietigen"
+
+### Requirement: The Rules tab is headed and adds a rule from the start
+
+The Rules tab SHALL be headed "Rules on the case" with its line, and SHALL offer "Add rule" at the start under the
+heading, with a plus.
+
+#### Scenario: DqZaaktypeRegels
+
+- **WHEN** an administrator opens the Rules tab
+- **THEN** it reads "Regels op de zaak", the line under it, and "Regel toevoegen" with a plus under that
+
+### Requirement: Every Rules tab row reads in Dutch
+
+Every title and line the Rules tab shows for the case schema's rules SHALL have a Dutch translation.
+
+#### Scenario: DqZaaktypeRegels
+
+- **WHEN** an administrator opens the Rules tab in Dutch
+- **THEN** a row reads "Dagen te laat" with "Berekend uit de zaak, bij elk opslaan." under it, not "Days overdue"
+
+### Requirement: A package install reaches the rows it shipped, whoever runs it
+
+A package install SHALL read and write the rows it ships past the caller's access check, so a CLI run with no user refreshes a case it shipped earlier. A plain install SHALL still keep a row changed here, and only `--over-local-changes` SHALL let the package's keys replace it.
+
+#### Scenario: jeugdwet 1.12.0 over local changes from occ
+
+- **GIVEN** case e0b306d2 was shipped by jeugdwet 1.0.0 without `legalBasis`
+- **WHEN** `occ dossiq:package:install jeugdwet --over-local-changes` runs
+- **THEN** the case reads `legalBasis` "Jeugdwet artikel 2.3" and `initiatorDisplayName` "Huisarts, met toestemming van de ouders"
+
+#### Scenario: a plain install keeps a local edit
+
+- **GIVEN** the case's assignee was changed here
+- **WHEN** the package is installed without `--over-local-changes`
+- **THEN** the case is kept as it is
+
+### Requirement: The Jeugdwet case type is drawn teal
+
+The jeugdwet package SHALL give its case type the colour teal.
+
+#### Scenario: DqSociaalDomein
+
+- **THEN** the "Melding Jeugdwet" type pill is teal
+
+### Requirement: A package install reports what its refresh did
+
+`occ dossiq:package:install` SHALL print how many rows already present were refreshed and which were kept.
+
+#### Scenario: jeugdwet over local changes
+
+- **THEN** the output reads "2 row(s) refreshed, 1 kept as this instance holds them: c-1"
+
+### Requirement: A case type marks its side statuses
+
+A status type SHALL be able to say it is off the main path (`offPath`), and the case's stages strip SHALL leave such a status out unless the case is in it.
+
+#### Scenario: Melding Jeugdwet
+
+- **THEN** the strip draws Melding ontvangen to Afgehandeld, without Verlenging aangevraagd and Ingetrokken
+
+### Requirement: A task card names its role and term, or says what the task is
+
+The phases endpoint SHALL give each task `roleName`, the name of the role type its step routes to (`routingRule.roleType`
+or `assigneeRole`), read in the reader's language from the case type's role types and those it inherits; empty when the
+step routes to none. The Fasen en taken card of a task with a term SHALL read the role and the term; of a task without a
+term, its description, or its role when it has none. The Nextcloud group SHALL show only for a task routed to no role.
+
+#### Scenario: A task with a term
+
+- **GIVEN** the step "Volledigheid toetsen" routed to role type Intaker with a term of 5 working days
+- **WHEN** the Fasen en taken tab is drawn
+- **THEN** its card reads "Intaker · 5 werkdagen"
+
+#### Scenario: A task without a term
+
+- **GIVEN** the step "Ontvangstbevestiging" with no role, no term and the description "Automatisch, bericht aan de aanvrager"
+- **WHEN** the Fasen en taken tab is drawn
+- **THEN** its card reads "Automatisch, bericht aan de aanvrager", not "0 werkdagen"
+
+### Requirement: The field rights matrix draws its rows as the board does
+
+The field rights matrix SHALL set its heads and cells at the normal line height, vertically centred, pad its body cells
+11px 12px, and draw the field name in weight 400 on the card's own ground.
+
+#### Scenario: DqZaaktypeVelden
+
+- **GIVEN** the matrix with five columns whose heads wrap to five lines
+- **WHEN** the Fields tab is drawn
+- **THEN** the head row is about 105px high and "Bouwkosten" reads in the regular weight on white
+
+### Requirement: The case type Historie card draws compact rows
+
+The side card Historie of a case type SHALL draw its stacked rows compact, 10px above and below, as DqZaaktype draws them.
+
+#### Scenario: DqZaaktype Historie
+
+- **GIVEN** the case type page on Fasen en taken in the board look
+- **WHEN** its Historie card lists "Versie 4 gepubliceerd" with "Lars de Koning · 2 okt"
+- **THEN** that row is 56px high
+
+### Requirement: The In the list column of the fields table filters as drawn
+
+The case type fields table SHALL draw a sort control and a filter on its "In the list" column, as on its other columns.
+Field names SHALL keep their words whole without giving up that filter (the reorder grip's width is held by nc-vue).
+
+#### Scenario: DqZaaktypeVelden
+
+- **GIVEN** the Fields tab of a case type
+- **WHEN** the Velden table is drawn
+- **THEN** "In de lijst" has a sort control and a funnel, and "Welstandsgebied" reads on one line
+
+### Requirement: Bezwaar and beroep install on request as one package (REQ-CT-50)
+
+The app SHALL ship the bezwaar and beroep case types, their status types, role types, guarded fields and flows as the case definition package `bezwaar-beroep`, marked `install: on-request`. The setup action `seed` SHALL install that package through the package installer. When the package is installed or already current the action SHALL answer success and record `setup_seed_done`; when the installer refuses it or a write fails the action SHALL answer 422 with the installer's message and SHALL NOT record the step. Every transition in the package's flows SHALL run between two statuses of its case type, and every field a transition guards on SHALL be declared for that case type.
+
+#### Scenario: An administrator installs bezwaar and beroep
+
+- **GIVEN** an administrator on an instance without the bezwaar and beroep case types
+- **WHEN** they run the setup action `seed`
+- **THEN** the action SHALL answer success
+- **AND** the Bezwaar and Beroep case types SHALL open on the case type page, each with its published flow
+- **AND** running the action again SHALL answer success and write nothing
+
+### Requirement: An administrator lists and installs packages through the API (REQ-CT-52)
+
+The app SHALL answer `GET /api/packages` with every shipped package, its version, its install mode and the version installed here, and `POST /api/packages/{id}/install` by installing that package through the package installer. Both SHALL require an administrator. An install that is installed or already current SHALL answer 200; a package that is unknown, invalid or needs a capability this instance lacks SHALL answer 422 with the installer's reason; a write that failed and was taken back SHALL answer 500.
+
+#### Scenario: An on-request package installs through the API
+@e2e tests/e2e/packages/besluitvorming.spec.ts
+
+- **GIVEN** an administrator and a shipped package marked `on-request`
+- **WHEN** they post to `/api/packages/{id}/install`
+- **THEN** the response SHALL be 200 with status `installed` or `current`
+
+#### Scenario: A refused install says why
+@e2e exclude no user interface; proven by tests/Unit/Controller/PackageControllerTest.php
+
+- **GIVEN** a package id that is not shipped
+- **WHEN** an administrator posts to `/api/packages/{id}/install`
+- **THEN** the response SHALL be 422 with the installer's message
+
+### Requirement: A case type's side history shows what people changed
+
+The side History card of a case type SHALL leave out the entries System wrote (refreshes, upgrades, example-set upkeep). The case type's All history tab SHALL keep every entry.
+
+#### Scenario: DqZaaktype after a window refresh
+- GIVEN Lars de Koning published version 4 and changed the variants, and the daily refresh saved the case type as System since
+- WHEN the case type opens on Fasen en taken
+- THEN its History card lists "Versie 4 gepubliceerd" and "Varianten gewijzigd" by Lars de Koning, and no System edit
+
+### Requirement: An adopted case type gets the fields it lacks and keeps the ones it has (REQ-CT-ADOPT-01)
+
+When a package adopts a case type the instance already holds, the installer SHALL add each case-type field the package ships that the stored row does not have (no such key, or null), with references pointed at this instance's ids. It SHALL NOT change a field the stored row has, an empty one included. The fields SHALL be written only after the install is recorded, so a failed install leaves the adopted row as it was. Other adopted rows (statuses, roles, results, flows) SHALL stay as they are.
+
+#### Scenario: A seeded case type gets the record import the package adds
+
+- **GIVEN** an instance holding the case type `wmo-melding` without `recordImports`, written by the register seed
+- **WHEN** the Wmo-melding package is installed or upgraded
+- **THEN** the stored case type SHALL carry the package's `recordImports`
+- **AND** its title and every other field it already had SHALL be unchanged
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+#### Scenario: A field the administrator emptied stays empty
+
+- **GIVEN** an adopted case type whose `description` is an empty string
+- **WHEN** a package that ships a description is installed
+- **THEN** the description SHALL stay empty
+- @e2e exclude installer behaviour, asserted in PHPUnit
+
+### Requirement: A package can ship example rows
+
+A shipped package MAY declare an `examples` part. Its `examples/*.json` files
+SHALL follow the seed file rules, and the installer SHALL write their rows
+with the package, after the seed rows, recorded in the shipped-set ledger
+like every other row.
+
+#### Scenario: Example rows install with the package
+- GIVEN an instance that loaded example data
+- AND a package that declares `examples` with one case row
+- WHEN the package is installed
+- THEN the case is written and recorded under the package
+
+#### Scenario: Dates are relative to the install day
+- GIVEN an example row whose `startDate` is `{{date:-3}}`
+- WHEN the package is installed
+- THEN the case's `startDate` is the date three days before the install day
+
+### Requirement: Example rows install only where example data is wanted
+
+The installer SHALL write a package's example rows only when the setup
+wizard's example data decision (`demo_data_decided`) is `installed`. On any
+other instance, never asked or "None" chosen, it SHALL install the package
+without them and log one line.
+
+#### Scenario: A production install gets no example case
+- GIVEN an instance whose operator chose "None" for example data
+- WHEN a package with an `examples` part is installed
+- THEN the case type is written and the example case is not
+
+#### Scenario: An instance with example data gets the example case
+- GIVEN an instance whose operator loaded example data
+- WHEN a package with an `examples` part is installed
+- THEN the example case is written with the package
+
+### Requirement: The Zuiddrecht set does not depend on an on-request package
+
+The Zuiddrecht example-set fragment SHALL NOT look up a case type or a role
+type that only an on-request package ships. Example data of such a case type
+SHALL ship with its package.
+
+#### Scenario: The set installs without the on-request packages
+- GIVEN an instance without bezwaar-beroep, jeugdwet and aanbesteding
+- WHEN the Zuiddrecht set is checked
+- THEN no lookup of dossiq's fragment refers to a key only those packages ship
+
+### Requirement: A rights row grants to the caller's own team
+
+A case type rights row SHALL accept department `$ownTeam`, granting its actions on the cases assigned to a team the caller is a member of, resolved when access is checked.
+
+#### Scenario: an intaker sees only their own team's cases
+
+- **GIVEN** case type Omgevingsvergunning regulier with a row Intaker, `$ownTeam`, read
+- **AND** user A, an Intaker in team Vergunningen
+- **WHEN** A lists cases
+- **THEN** A sees the Vergunningen cases of that type and none of team Toezicht
+- @e2e exclude {access is enforced in OpenRegister; covered by PHPUnit with the real permission handler}
+
+### Requirement: A rights row can be limited to statuses
+
+A rights row SHALL accept `statuses`. Its edit verbs SHALL apply only while the case is in one of them; its read verbs SHALL apply in every status.
+
+#### Scenario: an intaker edits in the first phase only
+
+- **GIVEN** a row Intaker, `$ownTeam`, read and update, statuses [Ontvangen]
+- **WHEN** A edits a case in Ontvangen and one in In behandeling
+- **THEN** the first edit succeeds and the second is refused
+- **AND** A still reads the case in In behandeling
+- @e2e exclude {covered by PHPUnit with the real permission handler}
+
+### Requirement: Documents have their own rights per role
+
+A rights row SHALL accept `documentActions` (`read`, `add`, `delete`), enforced on the case's files.
+
+#### Scenario: an inspector reads documents and adds none
+
+- **GIVEN** a row Toezichthouder, `*`, read, documents read
+- **WHEN** an inspector lists a case's files and then uploads one
+- **THEN** the files are listed and the upload is refused
+- @e2e exclude {enforced in OpenRegister's file access; covered by PHPUnit through its FilesController}
+
+### Requirement: The Overview reads decisions from the mandate register
+
+The Overview's Rights card SHALL show per role the decision right from the active mandates for this case type: the highest ceiling as "Tot € <amount>", "Onbeperkt" without a ceiling, "Nee" without a mandate. The tenant setup checklist SHALL mark "Mandaten ingesteld" when the organisation has an active mandate.
+
+#### Scenario: the permit case type's Rights card
+
+- **GIVEN** the rows above and an active mandate for Vergunningverlener with ceiling 5,000,000 cents for this case type
+- **THEN** the card reads Intaker · Eigen team · Fase 1 · Nee · Toevoegen; Vergunningverlener · Alle · Alle fasen · Tot € 50.000 · Alles; Toezichthouder · Alle · Nee · Nee · Lezen
+- @e2e exclude {projection covered by PHPUnit and the card by vitest; the board pixel pass checks the drawn card}
+
+### Requirement: A procedure ships as a package on disk (REQ-CT-46)
+
+The app SHALL install case definition packages from `lib/Settings/packages/<id>/`. A package SHALL carry a `package.json` manifest with `id` (equal to its directory name), `title`, `version` (major.minor.patch), `requires` (a list of capability names), `parts` (a non-empty list of `case-type`, `flows`, `seed`, `settings`) and optionally `install` (`auto`, the default, or `on-request`). Every row a package carries SHALL have a fixed UUID `id`, used once in the package. The installer SHALL refuse a package that breaks any of these rules, naming each break, and SHALL write nothing for it.
+
+#### Scenario: An invalid package is refused with its errors
+@e2e exclude the installer has no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnInvalidPackageIsRefusedWithItsErrors
+
+- **GIVEN** a package whose manifest names another id, a version `1`, an unknown part, a row without an id and a seed file without rows
+- **WHEN** the installer installs it
+- **THEN** it SHALL answer `refused` and list each break
+- **AND** it SHALL write no row
+
+### Requirement: A package whose capability is missing is refused by name (REQ-CT-47)
+
+The installer SHALL refuse a package when this instance lacks a capability the package requires, or one its parts imply, or an app it names as `app:<app id>`, before writing a row, and SHALL name every missing capability.
+
+#### Scenario: A package needs a capability this instance does not have
+@e2e exclude the installer has no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingCapabilityIsRefusedByName
+
+- **GIVEN** a package that requires `term` and `app:decidiq`, on an instance that provides neither
+- **WHEN** the installer installs it
+- **THEN** it SHALL answer `refused` naming `term` and `app:decidiq`
+- **AND** it SHALL write no row
+
+### Requirement: A package is written whole or not at all (REQ-CT-48)
+
+The installer SHALL write every row of a package in one run. When any row fails, or a part's schema is not configured, or a row cannot be recorded in the shipped-set ledger, it SHALL take back every row that run created, across all parts. It SHALL NOT write a package when the shipped-set ledger is not configured.
+
+#### Scenario: A refused row takes the whole package back
+@e2e exclude a store refusal cannot be provoked from the browser; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testARefusedRowTakesTheWholePackageBack
+
+- **GIVEN** a package with a case type, statuses, a role, a flow and a seed row
+- **AND** the store refuses the flow
+- **WHEN** the installer installs it
+- **THEN** it SHALL answer `error` with the store's reason
+- **AND** no case type, status, role, flow, seed or ledger row from it SHALL remain
+
+### Requirement: Every installed row is recorded, and a reinstall changes nothing (REQ-CT-49)
+
+The installer SHALL record every row it writes in the shipped-set ledger, with the package id as the set and the package version as the set version, and SHALL record the package itself with its version and a digest of its files. Installing a package at the version already recorded, with the digest already recorded, SHALL write nothing. Installing a newer version, or the same version whose files differ from the recorded digest, or a package whose record carries no digest, SHALL write the rows the instance does not hold. For every row it already holds in dossiq's register, after the write and the ledger record succeeded, it SHALL write the shipped version when the ledger records the row under this package and the row still hashes to its stamp, and SHALL stamp it with the version; it SHALL keep a row edited here, a row another set or nobody shipped, and a row it cannot read, and SHALL log each kept row by id. A row whose content already is what the package ships SHALL not be written. The outcome SHALL report how many rows were refreshed and the ids of the rows kept. The `InstallShippedPackages` repair step SHALL, on install and on upgrade, install every package whose `install` is `auto` and every package already installed here whatever its `install` mode; a package marked `on-request` that was never installed SHALL install only when an administrator asks (`occ dossiq:package:install <id>`).
+
+#### Scenario: A package installs and is recorded
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAPackageWritesEveryRowAndRecordsEachInTheLedger and live by the packages workflow, which installs on a clean instance and reads the rows back
+
+- **GIVEN** a clean instance and the fixture package
+- **WHEN** the installer installs it
+- **THEN** every row SHALL be readable from its schema
+- **AND** every row SHALL have a ledger row naming the package and its version
+
+#### Scenario: A newer version keeps a local edit
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testANewerVersionAddsNewRowsAndLeavesExistingOnesAlone and ::testANewerVersionKeepsARowEditedHereAndNamesIt
+
+- **GIVEN** an installed package whose case type was edited here
+- **WHEN** a newer version that adds a role and changes the case type installs
+- **THEN** the role SHALL be written
+- **AND** the edited case type SHALL keep the edit
+- **AND** the outcome SHALL name the case type as kept
+
+#### Scenario: An upgrade updates an installed on-request package
+@e2e exclude no user interface; proven by tests/Unit/Repair/InstallShippedPackagesTest.php::testTheUpgradeUpdatesEveryInstalledPackage and tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReloadUpdatesAnInstalledOnRequestPackageAndKeepsAnEdit
+
+- **GIVEN** an on-request package installed at 1.0.0, with one row edited here
+- **WHEN** the app upgrades and ships version 1.1.0 of it
+- **THEN** the repair step SHALL install 1.1.0
+- **AND** the rows nobody edited SHALL hold what 1.1.0 ships
+- **AND** the edited row SHALL keep the edit
+
+#### Scenario: An on-request package nobody installed
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAReloadInstallsWhatIsInstalledOrAutomaticAndNothingElse
+
+- **GIVEN** an on-request package never installed here
+- **WHEN** the repair step runs
+- **THEN** nothing of it SHALL be written
+
+#### Scenario: A newer version refreshes the rows nobody edited
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testANewerVersionRefreshesRowsNobodyEdited
+
+- **GIVEN** an installed package nobody edited here
+- **WHEN** a newer version that changes the case type description and renames a status installs
+- **THEN** the case type and the status SHALL hold what the newer version ships
+- **AND** their ledger rows SHALL name the newer version
+- **AND** a row the newer version did not change SHALL not be written
+
+#### Scenario: The same version with changed content
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testTheSameVersionWithChangedContentRefreshesUntouchedRows
+
+- **GIVEN** an installed package nobody edited here
+- **WHEN** the same version, with a changed case type description, installs
+- **THEN** the outcome SHALL be `installed`, not `current`
+- **AND** the case type SHALL hold the description the package now ships
+- **AND** a third install SHALL be `current` and write nothing
+
+#### Scenario: A record from before the digest
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testARecordWithoutADigestInstallsOnceMore
+
+- **GIVEN** a package recorded at its version without a digest
+- **WHEN** the same version installs
+- **THEN** the outcome SHALL be `installed` and write no row
+- **AND** the next install SHALL be `current`
+
+### Requirement: An operator can take a package's keys over a local edit (REQ-CT-57)
+
+`occ dossiq:package:install <id> --over-local-changes` SHALL install as above, and for a row the ledger records under this package that was changed here SHALL write every key the package ships and keep the value of every key it does not ship, and SHALL stamp the row with the version. A row another set or nobody shipped SHALL still be kept. Without the option an edited row SHALL be kept. The option SHALL apply even when the version and digest are current.
+
+#### Scenario: An edited case type takes the package's keys
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testOverLocalChangesTakesThePackagesKeysAndKeepsTheRest
+
+- **GIVEN** an installed package whose case type title was edited here and that holds a local key the package does not ship
+- **WHEN** the same version installs with `--over-local-changes`
+- **THEN** the case type SHALL hold the title the package ships
+- **AND** the local key SHALL keep its value
+- **AND** the outcome SHALL not name the case type as kept
+
+### Requirement: A translatable case type title or status name is read as text (REQ-CT-58)
+
+Wherever dossiq reads a case type's `title`, or the `name` of a status,
+result or role type, as text, it SHALL read a language map in the reader's
+language when one is known, then Dutch, then the first text in the map. It
+SHALL NOT show, store or log the string "Array" for such a value. The
+workflow backfill SHALL name a basis template "{case type title} (basis)",
+and SHALL heal a basis template it stored with "Array" in its title, step
+titles, step descriptions or move labels, keeping every step and move id and
+leaving any template it did not write untouched.
+
+#### Scenario: a refusal names the statuses, not Array
+@e2e exclude a save refusal on the case type import path with no screen of its own; covered in tests/Unit/Listener/CaseTypePortalWithdrawalListenerTest.php::testStatusNamesStoredAsLanguageMapsAreNamedInTheRefusal
+
+- **GIVEN** a case type whose status names are stored as language maps
+- **WHEN** its withdrawal names a status no move reaches
+- **THEN** the refusal SHALL read "A case in Ontvangen cannot move to Ingetrokken"
+- **AND** it SHALL NOT contain "Array"
+
+#### Scenario: a new basis template is named in text
+@e2e exclude a repair step with no screen; covered in tests/Unit/Repair/MigrateWorkflowDefinitionsLabelsTest.php::testANewBasisTemplateIsNamedInText
+
+- **GIVEN** a Woo case type whose title and status names are language maps
+- **WHEN** the workflow backfill builds its basis template
+- **THEN** the template SHALL be titled "Woo-verzoek (basis)"
+- **AND** each move SHALL be labelled with its target status name
+
+#### Scenario: a basis template stored with Array labels is healed
+@e2e exclude a repair step with no screen; the lifecycle dialog's buttons read these labels, checked live on review-check; covered in tests/Unit/Repair/MigrateWorkflowDefinitionsLabelsTest.php::testABasisTemplateStoredWithArrayLabelsIsHealed and testATemplateTheBackfillDidNotWriteIsLeftAlone
+
+- **GIVEN** a basis template stored as "Array — basis" with steps and moves labelled "Array"
+- **WHEN** the workflow backfill runs again
+- **THEN** the template SHALL be titled "Woo-verzoek (basis)"
+- **AND** its steps and moves SHALL carry the status names, with their ids unchanged
+- **AND** a template the backfill did not write SHALL NOT be changed
+
+### Requirement: A case type a seeder already wrote is adopted, not duplicated (REQ-CT-51)
+
+A seeder wrote its case types under random ids; the package that replaces it ships fixed ids. When the installer meets a case type row whose id this instance does not hold, it SHALL look for a case type with the same `identifier`, and, when none exists, for a case type with the same `title` that carries no identifier (a seeder that keyed its case types by slug, such as the VTH seeder, never set one). When one exists it SHALL adopt it: write nothing, record the existing row in the ledger under the package, and point every later row of the package that names the package's id (a plain field or inside a JSON string such as a flow's transitions) at the existing id. A row of an adopted case type SHALL be adopted when the case type holds a row of that schema with the same identifier, name, title or key, in that order; otherwise it SHALL be written, pointing at the adopted case type. A failed install SHALL never remove an adopted row. An adopted row SHALL be recorded once per package, so a newer version does not reset its fingerprint (decision 190).
+
+#### Scenario: An existing case type is adopted and nothing is written
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnExistingCaseTypeIsAdoptedByIdentifierAndNothingIsWritten
+
+- **GIVEN** an instance where a seeder wrote the fixture case type, its statuses, role, flow and property under random ids
+- **WHEN** the installer installs the fixture package
+- **THEN** no row SHALL be written, changed or removed
+- **AND** each existing row SHALL have a ledger row naming the package and its version
+
+#### Scenario: An adopted case type gets only the rows it lacks
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAnAdoptedCaseTypeGetsOnlyTheRowsItLacksPointingAtItsOwnIds
+
+- **GIVEN** an instance where a seeder wrote only the fixture case type and its statuses
+- **WHEN** the installer installs the fixture package
+- **THEN** the role, flow and property SHALL be written pointing at the existing case type
+- **AND** the flow's transitions SHALL name the existing statuses
+
+#### Scenario: Another identifier is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithAnotherIdentifierIsNotAdopted
+
+- **GIVEN** a case type with the same title but another identifier
+- **WHEN** the installer installs the fixture package
+- **THEN** the package's case type SHALL be written beside it
+
+#### Scenario: A case type without an identifier is adopted by its title
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithoutAnIdentifierIsAdoptedByTitle
+
+- **GIVEN** an instance where a seeder wrote the fixture case type without an identifier, with its statuses, role, flow and property
+- **WHEN** the installer installs the fixture package
+- **THEN** no row SHALL be written, changed or removed
+
+#### Scenario: A case type without an identifier and another title is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testACaseTypeWithoutAnIdentifierAndAnotherTitleIsNotAdopted
+
+- **GIVEN** a case type with another title and no identifier
+- **WHEN** the installer installs the fixture package
+- **THEN** the package's case type SHALL be written beside it
+
+### Requirement: A package setting may name another app's schema (REQ-CT-53)
+
+A schema id differs per instance, so a package SHALL NOT ship one. A value in `settings.json` MAY instead name a schema as `{"schema": {"app": "<app id>", "register": "<slug>" or ["<slug>", "<older slug>"], "slug": "<schema slug>"}}`. The installer SHALL resolve it at install time to the id of that schema in the first named register that holds it, and store the id. When the app is not installed or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, write no row and no setting, and record nothing, so the next install tries again. A reference without an app, a register and a slug SHALL make the package invalid (decision 198).
+
+#### Scenario: A reference is stored as the schema's id here
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingNamingAnotherAppsSchemaIsStoredAsItsIdHere
+
+- **GIVEN** the neutral settings package, whose setting names `fixture-app`'s schema `fixture_source`
+- **AND** `fixture-app` is installed and its register holds that schema with id 60
+- **WHEN** the installer installs the package
+- **THEN** the setting SHALL hold `60`
+
+#### Scenario: A missing schema refuses the package and names the app
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAMissingReferencedSchemaRefusesThePackageAndNamesTheApp
+
+- **GIVEN** `fixture-app`'s register does not hold `fixture_source`
+- **WHEN** the installer installs the package
+- **THEN** the outcome SHALL be refused, naming `fixture-app` and `fixture_source`
+- **AND** no setting SHALL be written and nothing recorded
+
+### Requirement: A package that writes no rows is recorded at its version (REQ-CT-54)
+
+The installer SHALL record every installed package once in the shipped-set ledger, as a row whose target schema is `package` and whose target object is the package id, updated in place on a newer version. A package that writes no rows, such as a settings-only package, SHALL therefore report `current` on a second install of the same version and show its installed version in the catalogue.
+
+#### Scenario: A settings-only package is current on the second install
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASettingsOnlyPackageIsCurrentOnTheSecondInstall
+
+- **GIVEN** the neutral settings package was installed
+- **WHEN** the installer installs it again
+- **THEN** the outcome SHALL be current and no setting SHALL be applied again
+
+### Requirement: A seed file may write into another app's register (REQ-CT-55)
+
+A package seed file SHALL name the schema its rows go to either by a settings key of this app, or by the owning app, the register slug (or the slugs that register has had, newest first) and the schema slug. For the second form the installer SHALL find the register and schema on this instance and write the rows there, record each row in the shipped-set ledger, and on a failed install take each row back out of the register it went into. When the app is not installed, or no named register holds the schema, the installer SHALL refuse the package, name the app and the schema, and write nothing. A seed file MAY name one property (`match`) by which a row this instance already holds under another id is recognised; such a row SHALL be adopted, not written a second time, and every row of that file SHALL carry the property.
+
+#### Scenario: Seed rows land in the other app's register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedFileNamingAnotherAppsSchemaWritesItsRowsIntoThatRegister
+
+- **GIVEN** the neutral shared-seed package, whose seed file names `fixture_source` of `fixture-app` in register `fixture-register`
+- **AND** `fixture-app` is installed and the register holds the schema
+- **WHEN** the installer installs the package
+- **THEN** both rows SHALL be written into that register and schema
+- **AND** the ledger SHALL hold one row for each, naming the package
+
+#### Scenario: The other app is missing
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedForAnAppThatIsNotInstalledRefusesThePackage
+
+- **GIVEN** `fixture-app` is not installed
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the outcome SHALL be refused, naming `fixture-app:fixture_source`
+- **AND** no row SHALL be written
+
+#### Scenario: A row held under another id is adopted by the match property
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByThePropertyTheSeedFileMatchesOn
+
+- **GIVEN** the other register already holds a row with key `fixture.first` under another id
+- **WHEN** the installer installs the shared-seed package
+- **THEN** that row SHALL be adopted and left as it is
+- **AND** only the second row SHALL be written
+
+#### Scenario: A failed install takes a row back from the other register
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testAFailedInstallTakesARowBackFromTheOtherRegister
+
+- **GIVEN** the store refuses the second row
+- **WHEN** the installer installs the shared-seed package
+- **THEN** the first row SHALL be deleted from the other app's register
+- **AND** the ledger SHALL hold no row for the package
+
+### Requirement: A seed file may recognise a row by a flag or by several properties (REQ-CT-56)
+
+The `match` of a package seed file SHALL be one property name or a list of property names. A row this instance already holds SHALL be adopted when it is equal to the package row on every property named. A matched value SHALL be a text, a whole number or a flag; a flag and a number SHALL be compared by meaning, so a flag the store answers as `1` or `"true"` counts as set. A file that matches on a flag alone SHALL adopt the row that has the flag set whatever that row is called, so an instance that replaced a shipped default gets no second one. A `match` that names no property, or a row that lacks a named property, SHALL make the package invalid.
+
+#### Scenario: An instance that replaced the default gets no second one
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedByAFlagWhateverTheExistingRowIsCalled
+
+- **GIVEN** a seed file that matches on `active` and ships one row with `active` true
+- **AND** the register holds a row under another id and another name with `active` true
+- **WHEN** the installer installs the package
+- **THEN** the existing row SHALL be adopted and left as it is
+- **AND** no row SHALL be written
+
+#### Scenario: A row with the flag cleared is not adopted
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsNotAdoptedByARowWithTheFlagCleared
+
+- **GIVEN** the register holds only a row with `active` false
+- **WHEN** the installer installs the package
+- **THEN** the package row SHALL be written beside it
+
+#### Scenario: A row is adopted only when every matched property is equal
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedRowIsAdoptedOnlyWhenEveryMatchedPropertyIsEqual
+
+- **GIVEN** a seed file that matches on `row` and `column`
+- **AND** the register holds a row for A and 1, and a row for B and 2
+- **WHEN** the installer installs a package that ships A and 1, and A and 2
+- **THEN** the row for A and 1 SHALL be adopted
+- **AND** the row for A and 2 SHALL be written
+
+#### Scenario: A match that names no property is refused
+@e2e exclude no user interface; proven by tests/Unit/Service/CaseDefinition/PackageInstallerTest.php::testASeedMatchThatNamesNoPropertyIsInvalid
+
+- **GIVEN** a seed file whose `match` is an empty list, a flag, or a list holding something that is not a property name
+- **WHEN** the installer installs the package
+- **THEN** the outcome SHALL be refused and the errors SHALL say what `match` must name
+
+### Requirement: The Velden table describes each field in words
+
+The Velden table on a case type's Fields tab SHALL read Veld, Soort and Invullen: the field's name, the kind of
+answer in words and whether it is required, optional or read only.
+
+#### Scenario: A choice list
+
+- **GIVEN** a field "Soort bouwwerk" with six options, required
+- **THEN** its row reads Soort bouwwerk · Keuzelijst, 6 opties · Verplicht
+
+### Requirement: A row the store filled in is still untouched
+
+A package upgrade SHALL refresh a row whose keys the package ships are as the
+package shipped them, whatever properties the store filled in on save, and
+SHALL keep the values of keys the package does not ship. A row with a shipped
+key edited here SHALL be kept.
+
+#### Scenario: Properties filled in on save
+- GIVEN a case type the store saved with properties the package never named
+- WHEN a newer version of the package is installed
+- THEN the case type takes the newer version
+
+#### Scenario: A field filled in here
+- GIVEN a case type with a field set here that the package does not ship
+- WHEN a newer version of the package is installed
+- THEN the case type takes the newer version and keeps that field's value
+
 ## UI References
 
 - **Case Type List**: See wireframe 3.6 in DESIGN-REFERENCES.md (admin settings, case type cards with status/deadline/validity)
@@ -1399,7 +2670,6 @@ specific term.
 - General tab (`src/views/settings/tabs/GeneralTab.vue`) with all core fields: title, description, purpose, trigger, subject, processing deadline, service target, extension allowed/period, suspension allowed, origin, confidentiality, publication required/text, valid from, valid until.
 - Statuses tab (`src/views/settings/tabs/StatusesTab.vue`) with ordered status type list, drag-and-drop reorder, inline editing, add/delete, isFinal checkbox, notifyInitiator toggle with notification text.
 - Draft/published lifecycle with publish validation (publish errors displayed in UI).
-- Default case type selection stored via `SettingsService` config key `default_case_type`.
 - Case type validation utilities (`src/utils/caseTypeValidation.js`).
 - All case type sub-entity schemas defined in `dossiq_register.json` and mapped in `SettingsService::SLUG_TO_CONFIG_KEY`: caseType, statusType, resultType, roleType, propertyDefinition, documentType, decisionType.
 - ZGW Catalogi API compatibility via `ZtcController` (`lib/Controller/ZtcController.php`) and `ZgwZtcRulesService` (`lib/Service/ZgwZtcRulesService.php`).
@@ -1438,6 +2708,66 @@ This is a comprehensive, highly detailed spec that is implementation-ready for b
 - No specification of bulk operations (e.g., import multiple status types at once).
 - Case type versioning strategy not specified -- can a published type be edited in-place or must it be versioned?
 - No specification of case type search/filter in the admin list.
+
+<!-- Synced from openspec/changes/archive/2026-11-25-case-type-conditional-rules (25 Nov 2026) -->
+
+### Requirement: A case type carries conditional rules
+
+A case type SHALL carry an ordered list of rules. Each rule SHALL have a moment (created, saved, status entered), a list
+of conditions over the case's fields, status and documents, all of which must hold, and a list of actions: add a task,
+set a field, choose a variant, require a document, send a message. A rule SHALL be on or off.
+
+#### Scenario: Structural review on large building costs
+
+- **GIVEN** a permit case type with the rule "when saved, if bouwkosten is greater than 100000, add task Toets door constructeur"
+- **WHEN** a case of that type is saved with bouwkosten 150000
+- **THEN** the case has the task Toets door constructeur, once, also after it is saved again
+
+### Requirement: Rules are evaluated by the engines that own the actions
+
+Publishing a case type SHALL project its rules onto OpenRegister's lifecycle, schema rules and notifications, and onto
+the case type's flow where no engine action exists. The projection SHALL be scoped to the case type and SHALL leave
+other case types' entries untouched. Dossiq SHALL NOT evaluate a rule itself.
+
+#### Scenario: Two case types publish rules
+
+- **GIVEN** two case types that each declare rules
+- **WHEN** one of them is published again without one of its rules
+- **THEN** that rule is gone from the case schema and every rule of the other case type is still there
+
+### Requirement: The Rules tab reads and writes the case type's rules
+
+The Rules tab SHALL list the case type's rules as "Als … / dan …" rows with an On or Off pill above the calculated
+fields, and "Regel toevoegen" SHALL add one through a form that offers this case type's own fields, tasks, variants,
+document types and message templates.
+
+#### Scenario: DqZaaktypeRegels
+
+- **GIVEN** the Omgevingsvergunning case type with three rules
+- **THEN** the Rules tab reads "Als Bouwkosten groter is dan € 100.000 / dan taak Toets door constructeur toevoegen" with "Aan"
+
+### Requirement: A rule's effect happens once per rule, case and trigger version
+
+Every effect of a rule SHALL be keyed on the rule id, the case id and the version of the trigger that fired it (the case
+version for saved, the status for status entered, the creation for created), and a second firing with the same key SHALL
+change nothing. A rule that adds a task SHALL add it once per case.
+
+#### Scenario: Saved twice
+
+- **GIVEN** the rule "when saved, if bouwkosten is greater than 100000, add task Toets door constructeur"
+- **WHEN** a case with bouwkosten 150000 is saved, and saved again with another change
+- **THEN** the case has exactly one task Toets door constructeur
+
+### Requirement: The rule inventory can be asked for one case type's rules
+
+OpenRegister's rule inventory SHALL accept a scope filter and return the rules scoped to that value plus the rules
+without a scope. The Rules tab SHALL ask for its own case type's rules.
+
+#### Scenario: Two case types
+
+- **GIVEN** rules projected by two case types
+- **WHEN** the Rules tab of one of them opens
+- **THEN** it lists that type's rules and the schema-wide calculations, and none of the other type's rules
 
 **Open questions:**
 1. Should editing a published case type require unpublishing first, or can it be edited in-place with a warning?

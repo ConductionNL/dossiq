@@ -92,7 +92,6 @@ class FileRequestControllerTest extends TestCase {
 		$this->access->method('hasCaseMutationAccess')->willReturn(true);
 
 		$this->controller = new FileRequestController(
-			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
@@ -193,7 +192,6 @@ class FileRequestControllerTest extends TestCase {
 			]
 		);
 		$controller = new FileRequestController(
-			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
@@ -296,7 +294,6 @@ class FileRequestControllerTest extends TestCase {
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 		$controller = new FileRequestController(
-			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
@@ -326,7 +323,6 @@ class FileRequestControllerTest extends TestCase {
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn(null);
 		$controller = new FileRequestController(
-			appName: 'dossiq',
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,

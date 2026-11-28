@@ -28,11 +28,14 @@ use OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Covers the read-modify-write an update has to be.
  *
- * @coversNothing
+ * @covers \OCA\Dossiq\Service\Workflow\WorkflowDefinitionRepository
+ * @uses \OCA\Dossiq\Service\Workflow\DefinitionRows
  */
 class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 
@@ -84,7 +87,9 @@ class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The stored row.
 			 */
-			public function find(string $id, ?string $register = null, ?string $schema = null): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				if ($this->stored === null) {
 					throw new \RuntimeException('Object not found: ' . $id);
 				}
@@ -102,10 +107,13 @@ class WorkflowDefinitionRepositoryUpdateTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?string $register = null,
-				?string $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
 			): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->written[] = $object;
 
 				return array_merge($object, ['id' => ($uuid ?? 'created')]);

@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+ * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
  */
 
 declare(strict_types=1);
@@ -37,10 +37,13 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Kernel\Contracts\TermijnServiceInterface;
+use OCA\Dossiq\Service\Term\TermStarts;
 use OCA\Dossiq\Service\Termijn\CaseDeadlineMirror;
-use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Termijn\TermDefinitions;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -49,7 +52,14 @@ use RuntimeException;
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class TermijnService {
+class TermijnService implements TermijnServiceInterface {
+
+	/**
+	 * The fields of an event that say who it is told to, and what it tells them.
+	 *
+	 * @var array<int, string>
+	 */
+	public const NOTICE_FIELDS = ['notify', 'caseTitle', 'endDate'];
 
 	/**
 	 * What a case type's term definitions say.
@@ -64,6 +74,13 @@ class TermijnService {
 	 * @var TermInstanceStore
 	 */
 	private readonly TermInstanceStore $store;
+
+	/**
+	 * How a statutory term starts, and its first stored instance.
+	 *
+	 * @var TermStarts
+	 */
+	private readonly TermStarts $starts;
 
 	/**
 	 * Constructor.
@@ -86,7 +103,10 @@ class TermijnService {
 	 * @param CaseDeadlineMirror|null $mirror Writes a statutory term's end date onto its case after
 	 *        every save of that term, so the case list and the case page read one date (REQ-OTE-01).
 	 *        Optional so a test build that never chose it saves terms exactly as before.
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @param IL10N|null $l10n Writes the start event's sentence in Nextcloud's language; left out it is the
+	 *        Dutch sentence the case history keys on.
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -96,6 +116,7 @@ class TermijnService {
 		?TermDefinitions $definitions = null,
 		?TermInstanceStore $store = null,
 		private readonly ?CaseDeadlineMirror $mirror = null,
+		private readonly ?IL10N $l10n = null,
 	) {
 		$this->definitions = ($definitions ?? new TermDefinitions(
 			settingsService: $settingsService,
@@ -104,6 +125,7 @@ class TermijnService {
 			timer: $timerService,
 		));
 		$this->store = ($store ?? new TermInstanceStore(settingsService: $settingsService, logger: $logger));
+		$this->starts = new TermStarts(definitions: $this->definitions, store: $this->store);
 	}//end __construct()
 
 	/**
@@ -132,9 +154,10 @@ class TermijnService {
 	 * @throws NoTermijnDefinitieException When no TermijnDefinitie matches the zaaktype.
 	 * @throws RuntimeException When the instance cannot be persisted.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function createTermijnInstance(
 		string $caseId,
@@ -142,66 +165,70 @@ class TermijnService {
 		?DateTimeImmutable $startDate = null,
 		?array $resolution = null,
 	): array {
-		$startDate = ($startDate ?? new DateTimeImmutable());
-		$definitie = (($resolution['definition'] ?? null) ?? $this->getTermijnDefinitie(caseType: $caseType));
-		if ($definitie === null) {
-			// A DISTINCT type, because this is the one refusal a caller can
-			// act on and the one that must not be swallowed at debug level:
-			// it means no statutory clock started for this case at all.
-			throw new NoTermijnDefinitieException(
-				message: 'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
-			);
-		}
+		$start = $this->starts->begin(caseId: $caseId, start: ['caseType' => $caseType, 'startDate' => $startDate, 'resolution' => $resolution]);
 
-		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
-		// COUNTED AND ROLLED IN ONE CALL. The Algemene termijnenwet roll used to
-		// sit here, one line below the count, and the two always ran together.
-		// They live together now, on the class that reads what the definition
-		// declares, so no caller can take the count without the roll.
-		$endDate = $this->definitions
-			->endDateFor(start: $startDate, days: $durationDays, definitie: $definitie)
-			->format('Y-m-d');
+		$saved = $this->starts->store(start: $start);
 
-		$instance = [
-			'case' => $caseId,
-			'deadlineDefinition' => (string)($definitie['id'] ?? ''),
-			// The kind this instance carries. A term created here is the one the
-			// Awb sets and the citizen is told about, and every instance written
-			// before the four kinds existed is one of these too, which is why
-			// {@see TermKind::ofInstance()} reads an absent kind as statutory.
-			'kind' => TermKind::STATUTORY,
-			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
-			'endDateCalculated' => $endDate,
-			'endDateCurrent' => $endDate,
-			'status' => 'lopend',
-			'countExtensions' => 0,
-			'notificatiesVerstuurd' => [],
-		];
+		$this->recordStart(
+			saved: $saved,
+			start: ['definitie' => $start->definitie, 'durationDays' => $start->durationDays, 'startDate' => $start->startDate]
+		);
 
-		// Which rule produced this term, recorded rather than re-derivable. A
-		// term somebody disputes has to be explainable a year later, and the
-		// configuration will have changed by then.
-		if ($resolution !== null) {
-			$instance['resolvedFrom'] = (string)($resolution['resolvedFrom'] ?? '');
-			$instance['resolutionSnapshot'] = (array)($resolution['snapshot'] ?? []);
-		}
+		return $this->armOrFollow(saved: $saved, definitie: $start->definitie);
+	}//end createTermijnInstance()
 
-		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
-		if ($saved === null) {
-			throw new RuntimeException(
-				'Failed to persist TermijnInstance for zaak "' . $caseId . '" (persistence unavailable)'
-			);
-		}
 
+	/**
+	 * Record the start event of a stored instance.
+	 *
+	 * @param array<string, mixed>                                                                  $saved The stored instance.
+	 * @param array{definitie: array<string, mixed>, durationDays: int, startDate: DateTimeImmutable} $start The start it was stored from:
+	 *                                                                                                       its definition, duration and
+	 *                                                                                                       start date.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function recordStart(array $saved, array $start): void {
 		$this->recordEvent(
 			termInstanceId: (string)($saved['id'] ?? ''),
 			type: 'start',
-			basis: (string)($definitie['legalBasis'] ?? 'AWB 4:13'),
-			rationale: 'Termijn gestart bij zaak-aanmaak',
-			daysImpact: $durationDays,
-			moment: $startDate,
+			basis: (string)($start['definitie']['legalBasis'] ?? 'AWB 4:13'),
+			rationale: $this->startRationale(),
+			daysImpact: $start['durationDays'],
+			moment: $start['startDate'],
 		);
+	}//end recordStart()
 
+	/**
+	 * Why a term starts when its case is created, in the language Nextcloud writes the case's notes in.
+	 *
+	 * Without a translator the stored sentence is the Dutch one the case history keys on.
+	 *
+	 * @return string The sentence.
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 */
+	private function startRationale(): string {
+		if ($this->l10n === null) {
+			return 'Termijn gestart bij zaak-aanmaak';
+		}
+
+		return $this->l10n->t('Deadline started when the case was created');
+	}//end startRationale()
+
+	/**
+	 * Arm the engine timer, or bring the case in line when no timer was armed.
+	 *
+	 * @param array<string, mixed> $saved    The stored instance.
+	 * @param array<string, mixed> $definitie The definition it started under.
+	 *
+	 * @return array<string, mixed> The instance as last written.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function armOrFollow(array $saved, array $definitie): array {
 		$armed = $this->armEngineTimer(instance: $saved, definitie: $definitie);
 		if ($armed !== null) {
 			// Arming wrote the instance again through updateTermijnInstance(),
@@ -212,7 +239,10 @@ class TermijnService {
 		$this->followCase(instance: $saved);
 
 		return $saved;
-	}//end createTermijnInstance()
+	}//end armOrFollow()
+
+
+
 
 	/**
 	 * Arm the engine timer for a freshly created instance and store its
@@ -225,7 +255,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null The instance carrying `engineTimerId`, or null.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	private function armEngineTimer(array $instance, array $definitie): ?array {
 		if ($this->timerService === null) {
@@ -250,7 +280,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnInstance(string $termInstanceId): ?array {
 		return $this->store->read(termInstanceId: $termInstanceId);
@@ -263,7 +293,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnInstanceForZaak(string $caseId): ?array {
 		return $this->store->latestForCase(caseId: $caseId);
@@ -284,7 +314,7 @@ class TermijnService {
 	 *
 	 * @throws RefusedException When the store could not be asked.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function instancesForCase(string $caseId): array {
 		return $this->store->allForCase(caseId: $caseId);
@@ -303,8 +333,8 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null The stored instance, or null when the store refused.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function saveTermInstance(array $instance): ?array {
 		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
@@ -329,8 +359,8 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function updateTermijnInstance(string $termInstanceId, array $patch): ?array {
 		$current = $this->getTermijnInstance(termInstanceId: $termInstanceId);
@@ -360,7 +390,7 @@ class TermijnService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	private function followCase(?array $instance): void {
 		$this->mirror?->followInstance(instance: $instance);
@@ -376,7 +406,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnDefinitie(string $caseType): ?array {
 		return $this->definitions->activeFor(caseType: $caseType);
@@ -396,7 +426,7 @@ class TermijnService {
 	 *
 	 * @return array<int, array<string, mixed>> The active definitions.
 	 *
-	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function definitionsFor(string $caseType): array {
 		return $this->definitions->allActiveFor(caseType: $caseType);
@@ -416,7 +446,7 @@ class TermijnService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
 	 */
 	public function markTermijnCompleted(
 		string $termInstanceId,
@@ -424,45 +454,80 @@ class TermijnService {
 		string $documentLink = '',
 		string $rationale = '',
 	): ?array {
-		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
-
-		$updated = $this->updateTermijnInstance(
+		return $this->complete(
 			termInstanceId: $termInstanceId,
-			patch: ['status' => 'completed', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
+			completion: ['voltooiDatum' => ($voltooiDatum ?? new DateTimeImmutable()), 'documentLink' => $documentLink, 'rationale' => $rationale]
 		);
+	}//end markTermijnCompleted()
+
+	/**
+	 * Set the instance completed and, once written, record the completion.
+	 *
+	 * @param string               $termInstanceId Instance id.
+	 * @param array<string, mixed> $completion     When completed (`voltooiDatum`, a DateTimeImmutable), the optional
+	 *                                             document ref (`documentLink`) and why the term ended (`rationale`).
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function complete(string $termInstanceId, array $completion): ?array {
+		$patch = ['status' => 'completed', 'voltooiDatum' => $completion['voltooiDatum']->format('Y-m-d')];
+		$updated = $this->updateTermijnInstance(termInstanceId: $termInstanceId, patch: $patch);
 
 		if ($updated !== null) {
-			$why = trim($rationale);
-			if ($why === '') {
-				$why = 'Termijn voltooid door beschikking';
-			}
-
-			$this->recordEvent(
-				termInstanceId: $termInstanceId,
-				type: 'voltooi',
-				basis: 'AWB 4:13',
-				// WHY A TERM ENDED IS NOT ALWAYS "door beschikking". A rebind
-				// closes a running term to re-arm it against the new case
-				// type's definition, and recording that as a decision would put
-				// a beschikking in the audit trail of a case that never got
-				// one. The default is the old sentence, so every existing
-				// caller reads exactly as it did.
-				rationale: $why,
-				daysImpact: 0,
-				moment: $voltooiDatum,
-				documentLink: $documentLink,
-			);
-
-			// Completion cancels every open timer of the instance, in the
-			// same operation that made the term terminal (REQ-TOT-001).
-			$this->timerService?->cancelForInstance(
-				instanceId: $termInstanceId,
-				reason: $why
-			);
+			$this->recordCompletion(termInstanceId: $termInstanceId, completion: $completion);
 		}
 
 		return $updated;
-	}//end markTermijnCompleted()
+	}//end complete()
+
+	/**
+	 * Record the completion event and cancel every open timer of the instance.
+	 *
+	 * @param string               $termInstanceId Instance id.
+	 * @param array<string, mixed> $completion     When completed (`voltooiDatum`, a DateTimeImmutable), the optional
+	 *                                             document ref (`documentLink`) and why the term ended (`rationale`).
+	 *
+	 * @return void
+	 */
+	private function recordCompletion(string $termInstanceId, array $completion): void {
+		$why = $this->completionReason(rationale: $completion['rationale']);
+
+		$this->recordEvent(
+			termInstanceId: $termInstanceId,
+			type: 'voltooi',
+			basis: 'AWB 4:13',
+			// WHY A TERM ENDED IS NOT ALWAYS "door beschikking". A rebind
+			// closes a running term to re-arm it against the new case
+			// type's definition, and recording that as a decision would put
+			// a beschikking in the audit trail of a case that never got
+			// one. The default is the old sentence, so every existing
+			// caller reads exactly as it did.
+			rationale: $why,
+			daysImpact: 0,
+			moment: $completion['voltooiDatum'],
+			documentLink: $completion['documentLink'],
+		);
+
+		// Completion cancels every open timer of the instance, in the
+		// same operation that made the term terminal (REQ-TOT-001).
+		$this->timerService?->cancelForInstance(instanceId: $termInstanceId, reason: $why);
+	}//end recordCompletion()
+
+	/**
+	 * Why the term ended: the caller's reason, or the decision sentence by default.
+	 *
+	 * @param string $rationale The caller's reason, possibly empty.
+	 *
+	 * @return string
+	 */
+	private function completionReason(string $rationale): string {
+		$why = trim($rationale);
+		if ($why === '') {
+			return 'Termijn voltooid door beschikking';
+		}
+
+		return $why;
+	}//end completionReason()
 
 	/**
 	 * Append an immutable TermijnGebeurtenis row.
@@ -478,10 +543,16 @@ class TermijnService {
 	 * @param array<int, string> $items What was asked for, or what came in. Awb 4:5
 	 *        joins asking to suspending, so the record that carries the suspension
 	 *        carries what was asked in the same row rather than in a second one.
+	 * @param array<string, string> $notice Who the event is told to and what it tells them:
+	 *        `notify` (a Nextcloud user id), `caseTitle` and `endDate`. Only those three
+	 *        keys are kept, and only when not empty. A notification rule on the event
+	 *        schema fires on a row that carries `notify`, so an event without a notice
+	 *        tells nobody, exactly as before.
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/archive/2026-06-13-termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
 	 */
 	public function recordEvent(
 		string $termInstanceId,
@@ -493,6 +564,7 @@ class TermijnService {
 		string $documentLink = '',
 		string $actor = 'system',
 		array $items = [],
+		array $notice = [],
 	): ?array {
 		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
@@ -503,32 +575,99 @@ class TermijnService {
 			'basis' => $basis,
 			'rationale' => $rationale,
 			'daysImpact' => $daysImpact,
+			'documentLink' => $documentLink,
 		];
-		if ($documentLink !== '') {
-			$event['documentLink'] = $documentLink;
+
+		return $this->storeEvent(event: $event, extras: ['moment' => $moment, 'items' => $items, 'notice' => $notice]);
+	}//end recordEvent()
+
+	/**
+	 * Store the event row with its items and notice, and mirror it on the case.
+	 *
+	 * @param array<string, mixed> $event  The base row; `documentLink` is kept only when not empty.
+	 * @param array<string, mixed> $extras When it happened (`moment`), the `items` and the `notice`.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function storeEvent(array $event, array $extras): ?array {
+		if ($event['documentLink'] === '') {
+			unset($event['documentLink']);
 		}
 
+		$event = $this->withItems(event: $event, items: $extras['items']);
+		$event = $this->withNotice(event: $event, notice: $extras['notice']);
+
+		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
+
+		$this->mirrorEvent(event: $event, moment: $extras['moment']);
+
+		return $saved;
+	}//end storeEvent()
+
+	/**
+	 * The event with the notice it carries, when there is one.
+	 *
+	 * Only the declared notice fields are kept, and an empty one is left off,
+	 * so the notification rule's `notify` filter reads an absent field rather
+	 * than an empty string, and the base fields can never be overwritten.
+	 *
+	 * @param array<string, mixed>  $event  The event row.
+	 * @param array<string, string> $notice The notice fields.
+	 *
+	 * @return array<string, mixed> The event row.
+	 *
+	 * @spec openspec/changes/expired-pause-resumes-the-term/tasks.md
+	 */
+	private function withNotice(array $event, array $notice): array {
+		foreach (self::NOTICE_FIELDS as $field) {
+			$value = trim((string)($notice[$field] ?? ''));
+			if ($value !== '') {
+				$event[$field] = $value;
+			}
+		}
+
+		return $event;
+	}//end withNotice()
+
+	/**
+	 * Mirror a recorded event as an entry on the case.
+	 *
+	 * The event row names its instance, and the instance names the case.
+	 * That read belongs here: this is the only class that knows how to
+	 * reach a term instance, and the entry writer asking for it would
+	 * depend on the class that depends on it. An instance that cannot be
+	 * read arrives as an empty array and the writer declines it, which is
+	 * a guard there rather than a branch this class has to carry.
+	 *
+	 * @param array<string, mixed> $event  The event row as stored.
+	 * @param DateTimeImmutable    $moment When the event happened.
+	 *
+	 * @return void
+	 */
+	private function mirrorEvent(array $event, DateTimeImmutable $moment): void {
+		$this->termEntry?->recordEvent(
+			instance: (array)$this->getTermijnInstance(termInstanceId: $event['deadlineInstance']),
+			type: $event['type'],
+			basis: $event['basis'],
+			rationale: $event['rationale'],
+			moment: $moment,
+		);
+	}//end mirrorEvent()
+
+	/**
+	 * The event with the items it is about, when there are any.
+	 *
+	 * @param array<string, mixed> $event The event row.
+	 * @param array<int, mixed>    $items The items, possibly none.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withItems(array $event, array $items): array {
 		if (count($items) > 0) {
 			$event['items'] = array_values($items);
 		}
 
-		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
-
-		// The event row names its instance, and the instance names the case.
-		// That read belongs here: this is the only class that knows how to
-		// reach a term instance, and the entry writer asking for it would
-		// depend on the class that depends on it. An instance that cannot be
-		// read arrives as an empty array and the writer declines it, which is
-		// a guard there rather than a branch this class has to carry.
-		$this->termEntry?->recordEvent(
-			instance: (array)$this->getTermijnInstance(termInstanceId: $termInstanceId),
-			type: $type,
-			basis: $basis,
-			rationale: $rationale,
-			moment: $moment,
-		);
-
-		return $saved;
-	}//end recordEvent()
+		return $event;
+	}//end withItems()
 
 }//end class

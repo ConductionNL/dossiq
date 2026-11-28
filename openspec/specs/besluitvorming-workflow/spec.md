@@ -6,37 +6,34 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Provides end-to-end decision-making workflows for municipal College-besluit, Raadsbesluit, and Mandaatbesluit cases, shipping pre-configured case-type and workflow templates that run from drafting through parafering, agenda compilation, decision recording, publication, and archival. Drives a sequential signing (parafering) chain, auto-transitions cases to agenda-ready status once all signatures are collected, records formal decisions with voting results and attending members, validates mandate authority, and dispatches publication payloads to DROP/LVBB before archiving the complete dossier.
+
 ## Requirements
+
 ### Requirement: REQ-BVW-001 Zaaktype templates MUST be pre-configured for the three core besluitvorming types
 
-The system SHALL ship pre-configured `caseType` + `workflowTemplate` bundles for College-besluit, Raadsbesluit, and Mandaatbesluit, activated via the repair step. Each bundle MUST include `statusType`, `propertyDefinition`, `roleType`, `documentType`, and `resultType` records.
+The system SHALL ship the College-besluit, Raadsbesluit and Mandaatbesluit case types, each with its `statusType`, `propertyDefinition`, `roleType`, `documentType` and `resultType` records and its `workflowTemplate`, as the case definition package `besluitvorming`, marked `install: on-request` because decision types are managed in decidiq. An administrator SHALL install it through `POST /api/packages/besluitvorming/install` or `occ dossiq:package:install besluitvorming`. Installing it again SHALL write nothing, and on an instance where the former besluitvorming seeder already wrote these case types, installing it SHALL adopt them rather than write them a second time.
 
 #### Scenario REQ-BVW-001-A: Activate College-besluit template
+@e2e tests/e2e/packages/besluitvorming.spec.ts
 
-- **GIVEN** the workflow engine is installed and the besluitvorming templates are present
-- **WHEN** an administrator activates the "College-besluit" template via `POST /api/besluitvorming/templates/college-besluit/activate`
-- **THEN** a `caseType` object MUST be created with `title = 'College-besluit'` and `publicationRequired = true`
-- **AND** a `workflowTemplate` MUST be created with the nine standard process steps in order (Voorstel opstellen, Ambtelijk advies, Parafering, Gereed voor agendering, Geagendeerd, Vergadering, Besluit genomen, Bekendmaking, Gearchiveerd)
-- **AND** `statusType` records MUST be created for each step with the correct `order` and `isFinal` values
-- **AND** `propertyDefinition` records MUST be created for: `stemuitslag`, `portefeuillehouder`, `vergadergremium`, `agendanummer`, `publicatieReferentie`
-- **AND** `roleType` records MUST be created for: Steller, Portefeuillehouder, Beleidsadviseur, Afdelingshoofd
-- **AND** the activation MUST be idempotent (re-running does not create duplicate records)
+- **GIVEN** an administrator on an instance where the package is not installed
+- **WHEN** they install the package `besluitvorming`
+- **THEN** the install SHALL answer `installed` or `current`
+- **AND** the College-besluit, Raadsbesluit and Mandaatbesluit case types SHALL open on the case type page, each with its flow
+- **AND** installing it again SHALL answer `current` and write nothing
 
 #### Scenario REQ-BVW-001-B: Raadsbesluit template includes griffier role and extended deadline
+@e2e exclude a property of the shipped rows, read back by tests/integration/packages/besluitvorming.postman_collection.json on a clean instance
 
-- **GIVEN** the besluitvorming templates are installed
-- **WHEN** an administrator activates the "Raadsbesluit" template
-- **THEN** the resulting `caseType` MUST have `processingDeadline = 'P60D'`
-- **AND** a `roleType` for "Griffier" MUST exist on this `caseType`
+- **GIVEN** the besluitvorming package is installed
+- **THEN** the Raadsbesluit case type SHALL have `processingDeadline = 'P60D'`
+- **AND** a `roleType` named "Griffier" SHALL exist on it
 
 #### Scenario REQ-BVW-001-C: Mandaatbesluit template has confidentiality set to intern
+@e2e exclude a property of the shipped rows, read back by tests/integration/packages/besluitvorming.postman_collection.json on a clean instance
 
-- **GIVEN** the besluitvorming templates are installed
-- **WHEN** an administrator activates the "Mandaatbesluit" template
-- **THEN** the resulting `caseType` MUST have `confidentiality = 'intern'` and `publicationRequired = false`
-- **AND** the workflow MUST include a mandate-authority guard on the "Besluit genomen" transition
-
----
+- **GIVEN** the besluitvorming package is installed
+- **THEN** the Mandaatbesluit case type SHALL have `confidentiality = 'intern'` and `publicationRequired = false`
 
 ### Requirement: REQ-BVW-004 Agenda compiler MUST support hamerstukken and bespreekstukken with configurable ordering
 
@@ -152,34 +149,27 @@ When a besluit must be published, the system SHALL assemble the publication payl
 
 ### Requirement: REQ-BVW-007 Mandaatbesluit MUST validate signing authority against the mandaatregister
 
-Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL verify that the signing official has sufficient delegated authority for the subject matter of the decision.
+Before a Mandaatbesluit case can advance to "Besluit genomen", the system SHALL ask decidiq's delegatie- en mandaatregister whether the signing official holds the authority for the case's `mandaatCategorie`, through the `delegatedAuthorityGuard`.
 
 #### Scenario REQ-BVW-007-A: Valid mandate allows transition to Besluit genomen
 
-- **GIVEN** a Mandaatbesluit case for "vergunningverlening kleine bouwwerken" where the signing official is the Afdelingshoofd Vergunningen
-- **WHEN** the workflow guard checks the mandate via `MandaatValidationService.validate()`
-- **AND** the mandaatregister confirms the Afdelingshoofd has authority for category "VTH-M-04" (small permits up to EUR 250.000)
+- **GIVEN** a Mandaatbesluit case with `mandaatCategorie` "VTH-M-04" whose signing official holds an effective toedeling in decidiq for that act
+- **WHEN** the workflow guard asks decidiq
 - **THEN** the transition guard MUST pass
-- **AND** the case MUST advance to "Besluit genomen"
 
 #### Scenario REQ-BVW-007-B: Insufficient mandate blocks transition with clear error
 
-- **GIVEN** a Mandaatbesluit case for a decision exceeding the mandate limit of the signing official
-- **WHEN** the workflow guard queries the mandaatregister
-- **AND** the mandaatregister returns that the official's mandate does not cover the decision scope
+- **GIVEN** a Mandaatbesluit case whose signing official holds no toedeling for the act, or one whose ceiling the amount exceeds
+- **WHEN** the workflow guard asks decidiq
 - **THEN** the transition to "Besluit genomen" MUST be blocked
-- **AND** the case handler MUST see an error message: "De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister."
-- **AND** a link to the relevant mandaatregister entry MUST be shown
+- **AND** the case handler MUST see: "De ondertekenende ambtenaar heeft onvoldoende mandaat voor dit besluit. Raadpleeg het mandaatregister." (or the ceiling sentence)
 
-#### Scenario REQ-BVW-007-C: Mandaatregister unreachable falls back to manual confirmation
+#### Scenario REQ-BVW-007-C: An unreachable register refuses
 
-- **GIVEN** the mandaatregister endpoint is configured but currently unreachable
-- **WHEN** the workflow guard attempts validation
-- **THEN** the guard MUST NOT silently pass
-- **AND** the handler MUST be prompted to confirm manually that the signing official has sufficient authority
-- **AND** the manual confirmation MUST be logged in the case audit trail
-
----
+- **GIVEN** decidiq is not installed or its register cannot be read
+- **WHEN** the workflow guard asks
+- **THEN** the guard MUST NOT pass, and the handler sees why
+- **AND** there is no manual confirmation path: the remedy is a toedeling in decidiq (open question for Ruben, refactor Q8)
 
 ### Requirement: REQ-BVW-008 Archival MUST link all case documents in the dossier before closing
 
@@ -215,4 +205,3 @@ When a besluitvorming case is archived, the system SHALL verify that all require
 - **AND** `case.archiveNomination` MUST be set to `'blijvend_bewaren'`
 
 ---
-

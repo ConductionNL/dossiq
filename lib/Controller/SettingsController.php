@@ -26,24 +26,23 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Controller\Support\AdminCaller;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
 /**
  * Controller for managing Dossiq application settings.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class SettingsController extends Controller {
 
@@ -71,23 +70,23 @@ class SettingsController extends Controller {
 	 * @param IRequest $request The request object
 	 * @param ContainerInterface $container The container
 	 * @param IAppManager $appManager The app manager
-	 * @param SettingsService $settingsService The settings service
-	 * @param IGroupManager $groupManager The group manager
-	 * @param IUserSession $userSession The user session
-	 * @param IL10N $l10n The translation service (libresign-besluit-signing hint).
+	 * @param SettingsServiceInterface $settingsService The settings service
+	 * @param AdminCaller $adminCaller Whether the caller is an administrator.
+	 * @param IL10N $l10n The translation service (signing hint, refusal sentences).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly ContainerInterface $container,
 		private readonly IAppManager $appManager,
-		private SettingsService $settingsService,
-		private readonly IGroupManager $groupManager,
-		private readonly IUserSession $userSession,
+		private SettingsServiceInterface $settingsService,
+		private readonly AdminCaller $adminCaller,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -96,7 +95,7 @@ class SettingsController extends Controller {
 	 * @return \OCA\OpenRegister\Contract\ObjectServiceInterface|null The OpenRegister service if available, null otherwise.
 	 * @throws \RuntimeException If the service is not available.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?\OCA\OpenRegister\Contract\ObjectServiceInterface {
 		if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()) === true) {
@@ -113,7 +112,7 @@ class SettingsController extends Controller {
 	 * @return \OCA\OpenRegister\Service\ConfigurationService|null The Configuration service if available, null otherwise.
 	 * @throws \RuntimeException If the service is not available.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getConfigurationService(): ?\OCA\OpenRegister\Service\ConfigurationService {
 		if (in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()) === true) {
@@ -131,38 +130,63 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function index(): JSONResponse {
-		$user = $this->userSession->getUser();
-		$isAdmin = $user !== null && $this->groupManager->isAdmin($user->getUID());
+		$isAdmin = $this->adminCaller->isAdmin();
 
-		$config = match ($isAdmin) {
+		$config = $this->settingsFor(isAdmin: $isAdmin);
+
+		$signingAvailable = $this->appManager->isEnabledForUser('filinq');
+		$signingHint = $this->signingHint(signingAvailable: $signingAvailable);
+
+		return new JSONResponse([
+			'success' => true,
+			'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
+			'isAdmin' => $isAdmin,
+			'config' => $config,
+			'signingAvailable' => $signingAvailable,
+			'signingHint' => $signingHint,
+		]);
+	}//end index()
+
+	/**
+	 * The settings the caller may read: all of them for an admin, the public ones otherwise.
+	 *
+	 * @param bool $isAdmin Whether the caller is an admin.
+	 *
+	 * @return array<string, mixed> The settings.
+	 *
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function settingsFor(bool $isAdmin): array {
+		return match ($isAdmin) {
 			true => $this->settingsService->getSettings(),
 			default => $this->settingsService->getPublicSettings(),
 		};
+	}//end settingsFor()
 
-		$libresignAvailable = $this->appManager->isEnabledForUser('libresign');
-		$libresignHint = null;
-		if ($libresignAvailable === false) {
-			$libresignHint = $this->l10n->t(
-				'LibreSign is not installed or enabled. Digital signing falls back to '
-				. 'the built-in stub adapter — install and enable the LibreSign app to '
-				. 'sign beschikkingen with a real eIDAS-aligned signature.'
-			);
+	/**
+	 * The hint shown when filinq is not available, or null when it is.
+	 *
+	 * Filinq signs decisions (signing-through-filinq); without it a decision
+	 * cannot be signed at all, and the settings say so.
+	 *
+	 * @param bool $signingAvailable Whether filinq is enabled for the user.
+	 *
+	 * @return string|null The hint.
+	 *
+	 * @spec openspec/changes/signing-through-filinq/tasks.md
+	 */
+	private function signingHint(bool $signingAvailable): ?string {
+		$signingHint = null;
+		if ($signingAvailable === false) {
+			$signingHint = $this->l10n->t('Filinq is not installed or enabled, so decisions cannot be signed. Install and enable filinq to sign them.');
 		}
 
-		return new JSONResponse(
-			[
-				'success' => true,
-				'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
-				'isAdmin' => $isAdmin,
-				'config' => $config,
-				'libresignAvailable' => $libresignAvailable,
-				'libresignHint' => $libresignHint,
-			]
-		);
-	}//end index()
+		return $signingHint;
+	}//end signingHint()
 
 	/**
 	 * Update settings with provided data.
@@ -177,7 +201,7 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function update(): JSONResponse {
@@ -186,12 +210,15 @@ class SettingsController extends Controller {
 			$config = $this->settingsService->updateSettings($data);
 		} catch (RuntimeException $e) {
 			// A refusal (RefusedException) names its rule and status; anything else is not ours to answer.
-			if (method_exists($e, 'getRule') === false || method_exists($e, 'getStatus') === false) {
+			if (method_exists($e, 'getRule') === false
+				|| method_exists($e, 'getStatus') === false
+				|| method_exists($e, 'getSentence') === false
+			) {
 				throw $e;
 			}
 
 			return new JSONResponse(
-				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule())],
+				['success' => false, 'error' => $e->getRule(), 'message' => $this->refusalSentence(rule: $e->getRule(), detail: $e->getSentence())],
 				$e->getStatus()
 			);
 		}
@@ -209,15 +236,24 @@ class SettingsController extends Controller {
 	/**
 	 * The translated sentence for a refused settings save.
 	 *
-	 * @param string $rule The refusal rule.
+	 * @param string $rule   The refusal rule.
+	 * @param string $detail What the rule names: the refused zone, or the setting and what it allows.
 	 *
 	 * @return string The sentence.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
-	private function refusalSentence(string $rule): string {
+	private function refusalSentence(string $rule, string $detail): string {
 		if ($rule === 'woo-throughput-needs-reader-group') {
 			return $this->l10n->t('Name an existing reader group before switching the throughput report on.');
+		}
+
+		if ($rule === 'unknown-timezone') {
+			return $this->l10n->t('"%s" is not a time zone dossiq can use.', [$detail]);
+		}
+
+		if ($rule === 'setting-out-of-range') {
+			return $this->l10n->t('This value is not allowed (%s).', [$detail]);
 		}
 
 		return $this->l10n->t('These settings could not be saved.');
@@ -264,7 +300,7 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function create(): JSONResponse {
@@ -279,7 +315,7 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function load(): JSONResponse {

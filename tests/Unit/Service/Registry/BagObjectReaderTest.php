@@ -17,7 +17,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/bag-client-retired/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
+ * @spec openspec/specs/bag-location-save-validation/spec.md#requirement-a-bag-location-is-checked-through-integriq-where-the-check-is-switched-on
  */
 
 declare(strict_types=1);
@@ -39,6 +39,7 @@ use RuntimeException;
  *
  * @covers \OCA\Dossiq\Service\Registry\BagObjectReader
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\Registry\IntegriqLeaf
  */
 class BagObjectReaderTest extends TestCase {
 	/**

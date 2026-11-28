@@ -36,7 +36,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 
 declare(strict_types=1);
@@ -47,6 +47,8 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\Intake\IntakeTermStart;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\OpenRegister\Service\Flow\Timer\SlaAddition;
+use OCA\OpenRegister\Service\Flow\Timer\WorkingCalendar;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -58,7 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Termijn\WorkingDayRoll
  *
- * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+ * @spec openspec/specs/burger-notifications/spec.md
  */
 class IntakeTermStartTest extends TestCase {
 
@@ -67,7 +69,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testASundayFilingStartsOnMonday(): void {
 		$sunday = new DateTimeImmutable('2026-03-08T20:14:00+01:00');
@@ -88,7 +90,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAFilingInsideTheWorkingWeekStartsAtOnce(): void {
 		$tuesday = new DateTimeImmutable('2026-03-10T10:00:00+01:00');
@@ -117,7 +119,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAnEarlyMorningFilingOnTheSameDayIsStillOutside(): void {
 		$sevenAm = new DateTimeImmutable('2026-03-10T07:00:00+01:00');
@@ -137,7 +139,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAnUnreachableCalendarStampsNothing(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
@@ -160,7 +162,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testACalendarAnsweringEarlierIsRefused(): void {
 		$sunday = new DateTimeImmutable('2026-03-08T20:14:00+01:00');
@@ -174,7 +176,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testAStampedCaseIsNotStampedAgain(): void {
 		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));
@@ -189,7 +191,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function testTheArrivalMomentComesFromTheCase(): void {
 		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));
@@ -210,7 +212,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function testTheTermStartIsTheStampOrDerivedFromTheArrival(): void {
 		$monday = new DateTimeImmutable('2026-03-09T09:00:00+01:00');
@@ -233,7 +235,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function testAnUnreadableStampFallsBackToTheArrival(): void {
 		$logger = $this->createMock(LoggerInterface::class);
@@ -255,7 +257,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+	 * @spec openspec/specs/termijn-binding/spec.md
 	 */
 	public function testWithoutACalendarTheTermStartsAtArrival(): void {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
@@ -279,7 +281,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testADayOnlyReceiptOnAWorkingDayIsInside(): void {
 		$nineAm = new DateTimeImmutable('2026-03-10T09:00:00+01:00');
@@ -296,7 +298,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testADayOnlyReceiptOnASundayIsOutside(): void {
 		$monday = new DateTimeImmutable('2026-03-09T09:00:00+01:00');
@@ -312,7 +314,7 @@ class IntakeTermStartTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/receipt-and-start-dates-are-set-at-creation/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-dossiq-sets-the-receipt-and-start-dates-when-a-case-is-created-req-term-042
 	 */
 	public function testAnImportedReceiptAnswerIsTheArrival(): void {
 		$intake = $this->intake(answering: new DateTimeImmutable('2026-03-09T09:00:00+01:00'));
@@ -391,14 +393,11 @@ class FakeIntakeCalculator {
 	/**
 	 * Answer the fixed instant.
 	 *
-	 * @param \DateTimeInterface $from     The moment asked about.
-	 * @param float              $value    The amount, zero for the walk.
-	 * @param string             $unit     The unit.
-	 * @param object             $calendar The calendar.
+	 * @param SlaAddition $addition The moment asked about, the amount (zero for the walk), the unit and the calendar.
 	 *
 	 * @return DateTimeImmutable The answer.
 	 */
-	public function add(\DateTimeInterface $from, float $value, string $unit, object $calendar): DateTimeImmutable {
+	public function add(SlaAddition $addition): DateTimeImmutable {
 		return $this->answering;
 	}//end add()
 }//end class
@@ -414,9 +413,11 @@ class FakeIntakeCalendars {
 	 * @param string|null $slug         The calendar slug.
 	 * @param string|null $organisation The organisation.
 	 *
-	 * @return object The calendar.
+	 * @return WorkingCalendar The calendar.
 	 */
-	public function resolve(?string $slug, ?string $organisation): object {
-		return new \stdClass();
+	public function resolve(?string $slug, ?string $organisation): WorkingCalendar {
+		return WorkingCalendar::fromArray(
+			['slug' => 'nl-national', 'workingWeekdays' => [1, 2, 3, 4, 5], 'hoursPerWorkingDay' => 8, 'timezone' => 'Europe/Amsterdam']
+		);
 	}//end resolve()
 }//end class

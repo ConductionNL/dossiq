@@ -33,8 +33,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use OCA\Dossiq\Service\Access\CaseReviewerAccess;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Kernel\Contracts\CaseReviewerAccessInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCollectionQueriesInterface;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -45,9 +46,10 @@ use RuntimeException;
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
  */
-class WooCollectionQueries {
+class WooCollectionQueries implements WooCollectionQueriesInterface {
 
 	use SearchesObjects;
+	use StoresWooRows;
 
 	/**
 	 * The query's config key.
@@ -57,18 +59,18 @@ class WooCollectionQueries {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService    $settingsService The register and the schemas.
+	 * @param SettingsServiceInterface    $settingsService The register and the schemas.
 	 * @param IRootFolder        $rootFolder      The caller's own files, for a files re-run.
 	 * @param WooSources         $sources         integriq's search, for a Microsoft 365 re-run.
 	 * @param WooCaseDocuments   $caseDocuments   What is already on the case.
-	 * @param CaseReviewerAccess $access          The grants of a new query.
+	 * @param CaseReviewerAccessInterface $access          The grants of a new query.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SettingsServiceInterface $settingsService,
 		private readonly IRootFolder $rootFolder,
 		private readonly WooSources $sources,
 		private readonly WooCaseDocuments $caseDocuments,
-		private readonly CaseReviewerAccess $access,
+		private readonly CaseReviewerAccessInterface $access,
 	) {
 	}//end __construct()
 
@@ -86,16 +88,33 @@ class WooCollectionQueries {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
 	 */
 	public function store(string $caseId, array $search, string $userId): array {
+		$saved = $this->save(row: $this->searchRow(search: $search, run: ['case' => $caseId, 'runBy' => $userId]), uuid: '');
+		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
+
+		return $saved;
+	}//end store()
+
+	/**
+	 * The search row to store: its source checked, its terms, result keys, filters and period.
+	 *
+	 * @param array<string, mixed>               $search The search as run: source, terms, filters, periodFrom, periodTo, resultKeys.
+	 * @param array{case: string, runBy: string} $run    The case it belongs to and who ran it.
+	 *
+	 * @return array<string, mixed> The row.
+	 *
+	 * @throws WooCorpusRefused When the source is not one the corpus knows.
+	 */
+	private function searchRow(array $search, array $run): array {
 		$source = (string)($search['source'] ?? '');
 		if (in_array($source, [WooSources::SOURCE_FILES, WooSources::SOURCE_CASES, WooSources::SOURCE_MICROSOFT365], true) === false) {
 			throw new WooCorpusRefused(reason: 'unknown_source', status: 400);
 		}
 
 		$row = [
-			'case' => $caseId,
+			'case' => $run['case'],
 			'source' => $source,
 			'terms' => trim((string)($search['terms'] ?? '')),
-			'runBy' => $userId,
+			'runBy' => $run['runBy'],
 			'runAt' => gmdate('Y-m-d\TH:i:s\Z'),
 			'resultKeys' => $this->keys(values: (array)($search['resultKeys'] ?? [])),
 		];
@@ -112,11 +131,8 @@ class WooCollectionQueries {
 			}
 		}
 
-		$saved = $this->save(row: $row, uuid: '');
-		$this->access->reconcileAfterCreate(caseId: $caseId, created: 1);
-
-		return $saved;
-	}//end store()
+		return $row;
+	}//end searchRow()
 
 	/**
 	 * Every stored query of the case.
@@ -149,6 +165,27 @@ class WooCollectionQueries {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-the-selecting-query-is-saved-and-can-be-re-run-req-wrc-004
 	 */
 	public function rerun(string $caseId, string $queryId, string $userId): array {
+		$query = $this->storedQuery(caseId: $caseId, queryId: $queryId);
+
+		$answer = $this->search(query: $query, userId: $userId);
+		if ($answer['refusal'] !== '') {
+			return $answer;
+		}
+
+		return $this->markNew(query: $query, found: ['queryId' => $queryId, 'rows' => $answer['rows'], 'caseId' => $caseId]);
+	}//end rerun()
+
+	/**
+	 * The stored query of this case with the given uuid.
+	 *
+	 * @param string $caseId  The case uuid.
+	 * @param string $queryId The stored query's uuid.
+	 *
+	 * @return array<string, mixed> The stored query.
+	 *
+	 * @throws WooCorpusRefused 404 when the query is not one of this case.
+	 */
+	private function storedQuery(string $caseId, string $queryId): array {
 		$query = null;
 		foreach ($this->forCase(caseId: $caseId) as $row) {
 			if ($this->idOf(row: $row) === $queryId) {
@@ -160,24 +197,33 @@ class WooCollectionQueries {
 			throw new WooCorpusRefused(reason: 'query_not_found', status: 404);
 		}
 
-		$answer = $this->search(query: $query, userId: $userId);
-		if ($answer['refusal'] !== '') {
-			return $answer;
-		}
+		return $query;
+	}//end storedQuery()
 
+	/**
+	 * Mark each row the query had not found before and the case does not hold, and remember the keys.
+	 *
+	 * @param array<string, mixed>                                                           $query The stored query.
+	 * @param array{queryId: string, rows: array<int, array<string, mixed>>, caseId: string} $found `queryId` the stored query's uuid; `rows` the
+	 *                                                                                              rows the search found; `caseId` the case uuid.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, refusal: string} Each row with `new`.
+	 */
+	private function markNew(array $query, array $found): array {
+		[$queryId, $rows, $caseId] = [$found['queryId'], $found['rows'], $found['caseId']];
 		$seen = array_flip($this->keys(values: (array)($query['resultKeys'] ?? [])));
 		$onCase = array_flip($this->caseDocuments->idsFor(caseId: $caseId));
-		$rows = [];
-		foreach ($answer['rows'] as $row) {
+		$marked = [];
+		foreach ($rows as $row) {
 			$row['new'] = (isset($seen[$row['key']]) === false && isset($onCase[$row['key']]) === false);
-			$rows[] = $row;
+			$marked[] = $row;
 		}
 
-		$query['resultKeys'] = $this->keys(values: array_merge(array_keys($seen), array_column($rows, 'key')));
+		$query['resultKeys'] = $this->keys(values: array_merge(array_keys($seen), array_column($marked, 'key')));
 		$this->save(row: $query, uuid: $queryId);
 
-		return ['rows' => $rows, 'refusal' => ''];
-	}//end rerun()
+		return ['rows' => $marked, 'refusal' => ''];
+	}//end markNew()
 
 	/**
 	 * Search the query's source again.
@@ -195,7 +241,7 @@ class WooCollectionQueries {
 		return match ((string)($query['source'] ?? '')) {
 			WooSources::SOURCE_FILES => ['rows' => $this->searchFiles(terms: $terms, userId: $userId), 'refusal' => ''],
 			WooSources::SOURCE_CASES => ['rows' => $this->searchCases(terms: $terms), 'refusal' => ''],
-			default => $this->searchMicrosoft365(terms: $terms, from: $from, until: $until, userId: $userId),
+			default => $this->searchMicrosoft365(terms: $terms, window: ['from' => $from, 'until' => $until, 'userId' => $userId]),
 		};
 	}//end search()
 
@@ -245,14 +291,13 @@ class WooCollectionQueries {
 	/**
 	 * integriq's Microsoft 365 search.
 	 *
-	 * @param string     $terms  The terms.
-	 * @param mixed      $from   Start of the period.
-	 * @param mixed      $until  End of the period.
-	 * @param string     $userId The caller.
+	 * @param string                                           $terms  The terms.
+	 * @param array{from: mixed, until: mixed, userId: string} $window `from` start of the period; `until` end of the period; `userId` the caller.
 	 *
 	 * @return array{rows: array<int, array<string, mixed>>, refusal: string}
 	 */
-	private function searchMicrosoft365(string $terms, mixed $from, mixed $until, string $userId): array {
+	private function searchMicrosoft365(string $terms, array $window): array {
+		[$from, $until, $userId] = [$window['from'], $window['until'], $window['userId']];
 		if (is_string($from) === false) {
 			$from = null;
 		}
@@ -288,20 +333,7 @@ class WooCollectionQueries {
 	 * @return array<string, mixed> The row as stored.
 	 */
 	private function save(array $row, string $uuid): array {
-		[$objectService, $register, $schema] = $this->target();
-		unset($row['id'], $row['uuid'], $row['@self']);
-		$existing = null;
-		if ($uuid !== '') {
-			$existing = $uuid;
-		}
-
-		$saved = $objectService->saveObject(object: $row, register: $register, schema: $schema, uuid: $existing);
-
-		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-			$saved = $saved->jsonSerialize();
-		}
-
-		return (array)$saved;
+		return $this->storeRow(target: $this->target(), row: $row, uuid: $uuid);
 	}//end save()
 
 	/**
@@ -321,16 +353,4 @@ class WooCollectionQueries {
 
 		return [$objectService, $register, $schema];
 	}//end target()
-
-	/**
-	 * A row's uuid.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or ''.
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? ($self['id'] ?? ''))));
-	}//end idOf()
 }//end class

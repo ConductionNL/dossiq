@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Zgw;
 
+use OCA\Dossiq\Kernel\Contracts\ZgwRuleResultsInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -39,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
-class ZgwRuleResults {
+class ZgwRuleResults implements ZgwRuleResultsInterface {
 	/**
 	 * The status of a refusal because the check could not run.
 	 *
@@ -197,4 +198,25 @@ class ZgwRuleResults {
 			]
 		);
 	}//end fieldImmutableError()
+
+	/**
+	 * A 400 refusing one field: the detail for the request and the code and reason for the field.
+	 *
+	 * @param string $fieldName The field refused.
+	 * @param string $code      The field's error code.
+	 * @param string $detail    The detail of the refusal.
+	 * @param string $reason    Why the field is refused.
+	 *
+	 * @return array{valid: bool, status: int, detail: string, invalidParams: array, enrichedBody: array}
+	 *
+	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function fieldRefusal(string $fieldName, string $code, string $detail, string $reason): array {
+		return $this->error(
+			status: 400,
+			detail: $detail,
+			invalidParams: [$this->fieldError(fieldName: $fieldName, code: $code, reason: $reason)]
+		);
+	}//end fieldRefusal()
 }//end class

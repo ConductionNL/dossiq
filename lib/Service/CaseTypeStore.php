@@ -36,16 +36,37 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Kernel\Contracts\CaseTypeStoreInterface;
+use OCA\Dossiq\Service\Support\SerialisedResult;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use Override;
 use Throwable;
 
 /**
  * OpenRegister reads for the case-type resolver.
  *
+ * A row or list read once is kept for the rest of the request: answering one
+ * case page asked for the same case type and its status types many times. Any
+ * object create, update or delete in the request drops what is kept
+ * ({@see \OCA\Dossiq\Listener\RequestReadsForgetListener}), and a failed read
+ * is not kept.
+ *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) Eleven: the reads the
+ * resolver uses plus forget(), which drops what those reads kept. The reads
+ * and the forget share the kept rows, so they stay one class.
  *
  * @spec openspec/specs/case-types/spec.md
  */
-class CaseTypeStore {
+class CaseTypeStore implements CaseTypeStoreInterface {
+	/**
+	 * The rows read in this request, by schema key and id or filter.
+	 *
+	 * @var array<string, array>
+	 */
+	private array $kept = [];
+
 	/**
 	 * Constructor.
 	 *
@@ -80,7 +101,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<string, mixed> The row, or an empty array.
 	 *
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function readRow(string $schemaKey, string $id): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -91,13 +112,19 @@ class CaseTypeStore {
 			return [];
 		}
 
+		$key = 'row|'.$schemaKey.'|'.$id;
+		if (array_key_exists($key, $this->kept) === true) {
+			return $this->kept[$key];
+		}
+
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema));
 		} catch (Throwable $e) {
 			return [];
 		}
 
-		return $this->asRow(value: $found);
+		$this->kept[$key] = $this->asRow(value: $found);
+		return $this->kept[$key];
 	}//end readRow()
 
 	/**
@@ -115,7 +142,7 @@ class CaseTypeStore {
 			return [];
 		}
 
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: $caseTypeId);
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => $caseTypeId]);
 	}//end rowsOfType()
 
 	/**
@@ -143,7 +170,7 @@ class CaseTypeStore {
 	 * @return array<string, mixed> The template, or an empty array when there is none.
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/seed-objects-and-packages-reach-upgraded-instances/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function activeTemplate(string $caseTypeId, string|array|null $named=null): array {
 		$namedId = $this->referenceId(value: $named);
@@ -188,7 +215,7 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The versions, unordered.
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function versionsWithIdentifier(string $identifier): array {
 		$identifier = trim($identifier);
@@ -198,8 +225,7 @@ class CaseTypeStore {
 
 		return $this->search(
 			schemaKey: 'case_type_schema',
-			filterKey: 'identifier',
-			filterValue: $identifier
+			filter: ['identifier' => $identifier]
 		);
 	}//end versionsWithIdentifier()
 
@@ -230,8 +256,8 @@ class CaseTypeStore {
 	 *
 	 * @return array<int, array<string, mixed>> The case types, unordered.
 	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 * @spec openspec/changes/case-access-by-handling-team/specs/case-access-control/spec.md
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/specs/case-access-control/spec.md
 	 */
 	public function everyCaseType(array $scope=[]): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -269,7 +295,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function sharedRows(string $schemaKey): array {
-		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: 'IS NULL');
+		return $this->search(schemaKey: $schemaKey, filter: ['caseType' => 'IS NULL']);
 	}//end sharedRows()
 
 	/**
@@ -329,13 +355,13 @@ class CaseTypeStore {
 	 * filter and would read `filter[identifier]` as the empty set, which
 	 * presents as a case type with no versions rather than as an error.
 	 *
-	 * @param string $schemaKey   The settings key naming the schema.
-	 * @param string $filterKey   The property to narrow on.
-	 * @param string $filterValue The value, or `IS NULL` for rows carrying none.
+	 * @param string                $schemaKey The settings key naming the schema.
+	 * @param array<string, string> $filter    The one property to narrow on, with its value
+	 *                                         or `IS NULL` for rows carrying none.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function search(string $schemaKey, string $filterKey, string $filterValue): array {
+	private function search(string $schemaKey, array $filter): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
@@ -344,20 +370,34 @@ class CaseTypeStore {
 			return [];
 		}
 
+		$key = 'search|'.$schemaKey.'|'.json_encode($filter);
+		if (array_key_exists($key, $this->kept) === true) {
+			return $this->kept[$key];
+		}
+
 		try {
 			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $schema],
-					$filterKey => $filterValue,
-					'_limit' => 200,
-				]
+				['@self' => ['register' => $register, 'schema' => $schema]] + $filter + ['_limit' => 200]
 			);
 		} catch (Throwable $e) {
 			return [];
 		}
 
-		return $this->asRows(value: $found);
+		$this->kept[$key] = $this->asRows(value: $found);
+		return $this->kept[$key];
 	}//end search()
+
+	/**
+	 * Forget the rows read earlier in this request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	#[Override]
+	public function forget(): void {
+		$this->kept = [];
+	}//end forget()
 
 	/**
 	 * Normalise one store answer into a plain row.
@@ -374,15 +414,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function asRow(mixed $value): array {
-		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-			$value = $value->jsonSerialize();
-		}
-
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
+		return SerialisedResult::arrayOf(value: $value);
 	}//end asRow()
 
 	/**

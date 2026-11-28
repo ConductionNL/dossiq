@@ -36,9 +36,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Kernel\Contracts\StatusTypeLookupInterface;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\LanguageMapText;
+use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use Override;
 use Throwable;
 
 /**
@@ -46,7 +50,31 @@ use Throwable;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class StatusTypeLookup {
+class StatusTypeLookup implements StatusTypeLookupInterface {
+	/**
+	 * The settings key naming the statusType schema.
+	 */
+	private const SCHEMA_KEY = 'status_type_schema';
+
+	/**
+	 * A read that resolves the translatable fields.
+	 */
+	private const VIEW_RENDERED = 'rendered';
+
+	/**
+	 * A read that keeps the translatable fields keyed by language.
+	 */
+	private const VIEW_STORED = 'stored';
+
+	/**
+	 * The status types read in this request, by view and id.
+	 *
+	 * Dropped on any object change ({@see \OCA\Dossiq\Listener\RequestReadsForgetListener}).
+	 *
+	 * @var array<string, array>
+	 */
+	private array $kept = [];
+
 	/**
 	 * Constructor.
 	 *
@@ -54,16 +82,18 @@ class StatusTypeLookup {
 	 * @param CaseTypeResolver $caseTypeResolver  The effective blueprint, so a child type's
 	 *                                            inherited statuses are found too.
 	 * @param LanguageMapText $text A translatable title or name as one string.
+	 * @param TranslatedText  $reader A translatable name in the reader's language.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly LanguageMapText $text = new LanguageMapText(),
+		private readonly TranslatedText $reader = new TranslatedText(),
 	) {
 	}//end __construct()
 
 	/**
-	 * A statusType's human-readable name.
+	 * A statusType's human-readable name, in the reader's language.
 	 *
 	 * @param string $statusTypeId StatusType UUID.
 	 *
@@ -72,10 +102,45 @@ class StatusTypeLookup {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function nameFor(string $statusTypeId): string {
-		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+		$statusType = $this->storedRowFor(statusTypeId: $statusTypeId);
 
-		return $this->text->textOf(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
+		return $this->reader->forReader(value: ($statusType['name'] ?? ($statusType['title'] ?? null)));
 	}//end nameFor()
+
+	/**
+	 * Whether a text is a statusType's name in any of its languages.
+	 *
+	 * A move's own label is often the name of the status it leads to, written
+	 * once in the source language; this tells such a label from one an
+	 * administrator wrote, whatever language the name is read in.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 * @param string $text         The text.
+	 *
+	 * @return bool True when the text is one of the status's names.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function isNameOf(string $statusTypeId, string $text): bool {
+		$wanted = trim($text);
+		if ($wanted === '') {
+			return false;
+		}
+
+		$statusType = $this->storedRowFor(statusTypeId: $statusTypeId);
+		$name = ($statusType['name'] ?? ($statusType['title'] ?? null));
+		if (is_array($name) === false) {
+			$name = [$name];
+		}
+
+		foreach ($name as $value) {
+			if (is_string($value) === true && trim($value) === $wanted) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isNameOf()
 
 	/**
 	 * The words a status is announced in, or '' when it is not announced.
@@ -92,12 +157,12 @@ class StatusTypeLookup {
 	 *
 	 * @return string The public label, or '' when the status is not announced.
 	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 * @spec openspec/specs/portal-contribution/spec.md
 	 */
 	public function announcedLabelOf(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
-		return trim((string)($statusType['publicLabel'] ?? ''));
+		return $this->text->textOf(value: ($statusType['publicLabel'] ?? ''));
 	}//end announcedLabelOf()
 
 	/**
@@ -113,13 +178,14 @@ class StatusTypeLookup {
 	 * @return array<string, mixed> The row, or an empty array when unresolvable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
 	public function rowFor(string $statusTypeId): array {
 		if ($statusTypeId === '') {
 			return [];
 		}
 
-		return $this->read(schemaKey: 'status_type_schema', id: $statusTypeId);
+		return $this->read(id: $statusTypeId, view: self::VIEW_RENDERED);
 	}//end rowFor()
 
 	/**
@@ -179,7 +245,7 @@ class StatusTypeLookup {
 	 *
 	 * @return string The statusType UUID, or '' when this case type models no such role.
 	 *
-	 * @spec openspec/changes/case-flow-status-roles/specs/status-transition-engine/spec.md
+	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function idForRole(string $caseTypeId, string $role): string {
 		$wanted = strtolower(trim($role));
@@ -288,7 +354,7 @@ class StatusTypeLookup {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, empty when unresolvable.
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
+	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function rowsOf(string $caseTypeId): array {
 		if (trim($caseTypeId) === '') {
@@ -300,29 +366,62 @@ class StatusTypeLookup {
 
 
 	/**
-	 * Read one object from a configured schema.
+	 * A statusType as stored, its translatable fields still keyed by language.
 	 *
-	 * @param string $schemaKey The settings key naming the schema.
-	 * @param string $id        The object's id.
+	 * A rendered read resolves those fields in the language of OpenRegister's
+	 * own request handling, which a dossiq request does not set, so the name
+	 * would read in the register's default language whatever the reader's.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return array<string, mixed> The stored row, or an empty array when unresolvable.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
+	 */
+	private function storedRowFor(string $statusTypeId): array {
+		if ($statusTypeId === '') {
+			return [];
+		}
+
+		return $this->read(id: $statusTypeId, view: self::VIEW_STORED);
+	}//end storedRowFor()
+
+	/**
+	 * Read one statusType in the view asked for.
+	 *
+	 * The view is a name, not a boolean flag: a rendered read resolves the
+	 * translatable fields, a stored read keeps them keyed by language, and each
+	 * view is kept apart for the rest of the request.
+	 *
+	 * @param string $id   The statusType's id.
+	 * @param string $view self::VIEW_RENDERED or self::VIEW_STORED.
 	 *
 	 * @return array<string, mixed> The object, or an empty array when unreadable.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/method-decomposition/specs/method-decomposition/spec.md
 	 */
-	private function read(string $schemaKey, string $id): array {
+	private function read(string $id, string $view): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
+		$schema = $this->settingsService->getConfigValue(key: self::SCHEMA_KEY);
 		if ($register === '' || $schema === '') {
 			return [];
 		}
 
+		$render = ($view === self::VIEW_RENDERED);
+		$key = $view.'|'.$id;
+		if (array_key_exists($key, $this->kept) === true) {
+			return $this->kept[$key];
+		}
+
 		try {
-			$found = $objectService->find($id, register: $register, schema: $schema);
+			$found = $objectService->find($id, new ObjectFindOptions(register: $register, schema: $schema, render: $render));
 		} catch (Throwable $e) {
 			return [];
 		}
@@ -335,6 +434,19 @@ class StatusTypeLookup {
 			return [];
 		}
 
+		$this->kept[$key] = $found;
 		return $found;
 	}//end read()
+
+	/**
+	 * Forget the status types read earlier in this request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-types/spec.md
+	 */
+	#[Override]
+	public function forget(): void {
+		$this->kept = [];
+	}//end forget()
 }//end class

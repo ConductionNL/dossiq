@@ -55,7 +55,7 @@ export default {
 	name: 'EndAssignmentDialog',
 	components: { NcButton, NcDialog },
 	props: {
-		// MandaatToewijzingenTable passes `:assignment="ending"`. The dialog acts
+		// RoleAssignmentsTable passes `:assignment="ending"`. The dialog acts
 		// on it through its own emit rather than rendering it, and the declaration
 		// is what keeps it a prop instead of a fallthrough attribute.
 		// eslint-disable-next-line vue/no-unused-properties
@@ -73,7 +73,9 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../styles/_editorForm.scss' as editor;
+
 .end-assignment {
 	min-width: 360px;
 	padding: 8px 4px;
@@ -83,21 +85,9 @@ export default {
 	margin-top: 12px;
 }
 
-.form-group label {
-	display: block;
-	margin-bottom: 4px;
-	font-weight: 500;
-}
-
-.form-group label.required::after {
-	content: ' *';
-	color: var(--color-error);
-}
+@include editor.required-labels;
 
 .end-assignment__date {
-	width: 100%;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
+	@include editor.bordered-input;
 }
 </style>

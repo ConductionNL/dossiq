@@ -1,0 +1,136 @@
+{
+	"$comment": "The case DqKlachten draws, beside the example cases other boards name. Status, title and the properties the case type's overviewSections read follow the board. The DqAanbesteding and DqSubsidie board cases ship with their on-request packages (examples/), so the set installs without either package.",
+	"objects": [
+		{
+			"key": "board-klacht-melding-openbare-ruimte",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "klacht-behandeling"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"bevestigd": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Bevestigd"
+					}
+				},
+				"hoorgesprek": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Hoorgesprek"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Hoorgesprek"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Klacht over de afhandeling van een melding openbare ruimte",
+				"description": "R. de Boer klaagt dat zijn melding over een losse stoeptegel na vier weken niet is opgepakt.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "website",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-24}}",
+				"receivedAt": "{{datetime:-24 09:00}}",
+				"lastActivityAt": "{{datetime:-1 09:00}}",
+				"currentStatusEnteredAt": "{{datetime:-1 09:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-24 09:00}}"
+					},
+					{
+						"status": "{{lookup:bevestigd}}",
+						"enteredAt": "{{datetime:-23 09:00}}"
+					},
+					{
+						"status": "{{lookup:hoorgesprek}}",
+						"enteredAt": "{{datetime:-1 09:00}}"
+					}
+				],
+				"deadline": "{{date:18}}",
+				"properties": [
+					{
+						"name": "klager",
+						"value": "R. de Boer, Lindelaan 12"
+					},
+					{
+						"name": "klachtOnderwerp",
+						"value": "Melding over een losse stoeptegel is na vier weken niet opgepakt"
+					},
+					{
+						"name": "afdeling",
+						"value": "Beheer openbare ruimte"
+					},
+					{
+						"name": "gaatOver",
+						"value": "Melding 2026-1187"
+					},
+					{
+						"name": "klachtCategorie",
+						"value": "Niet tijdig handelen"
+					},
+					{
+						"name": "hoorgesprekStatus",
+						"value": "Gepland"
+					},
+					{
+						"name": "hoorgesprekWanneer",
+						"value": "woensdag 5 nov 2026, 10:00"
+					},
+					{
+						"name": "hoorgesprekSoort",
+						"value": "Videogesprek"
+					},
+					{
+						"name": "hoorgesprekWaar",
+						"value": "Talk-gesprek Hoorgesprek"
+					},
+					{
+						"name": "hoorgesprekAanwezig",
+						"value": "R. de Boer, Sanne Mulder, Joris Vink"
+					},
+					{
+						"name": "hoorgesprekVerslag",
+						"value": "Nog niet vastgelegd"
+					}
+				]
+			}
+		},
+		{
+			"key": "termijn-board-klacht-melding-openbare-ruimte",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:board-klacht-melding-openbare-ruimte.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-1 09:00}}",
+				"endDateCalculated": "{{date:20}}",
+				"endDateCurrent": "{{date:20}}",
+				"status": "lopend"
+			}
+		}
+	]
+}

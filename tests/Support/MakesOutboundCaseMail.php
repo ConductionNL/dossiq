@@ -22,13 +22,14 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\Dossiq\Service\Email\OutboundMailPolicy;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
@@ -67,13 +68,20 @@ trait MakesOutboundCaseMail {
 		$store->method('referenceId')->willReturn('');
 
 		return new OutboundCaseMail(
-			$gateway,
-			new SenderIdentity($gateway, new IntakeAccount($appConfig), $this->createMock(CaseTypeResolver::class), $store),
-			new MailTransportPolicy($appConfig),
-			$optOut,
-			$mailer,
-			$appConfig,
-			new NullLogger()
+			gateway: $gateway,
+			transport: new OutboundMailPolicy(
+				identity: new SenderIdentity(
+					gateway: $gateway,
+					intakeAccount: new IntakeAccount(appConfig: $appConfig),
+					caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
+					store: $store
+				),
+				policy: new MailTransportPolicy(appConfig: $appConfig),
+				optOut: $optOut,
+			),
+			mailer: $mailer,
+			appConfig: $appConfig,
+			logger: new NullLogger()
 		);
 	}//end outboundCaseMail()
 }//end trait

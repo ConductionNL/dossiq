@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Advice\AdviceRequestFiling;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\Controller\TermijnController;
@@ -59,6 +60,8 @@ use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * A capture-only object store for the write paths that persist a payload.
@@ -73,7 +76,7 @@ interface RoundTripObjectStoreStub {
 	 *
 	 * @return mixed
 	 */
-	public function find(int|string $id, mixed $register = null, mixed $schema = null): mixed;
+	public function find(int|string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed;
 
 	/**
 	 * Persist an object and hand the payload back to the test.
@@ -85,7 +88,7 @@ interface RoundTripObjectStoreStub {
 	 *
 	 * @return array<string,mixed>
 	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -94,12 +97,14 @@ interface RoundTripObjectStoreStub {
  * @covers \OCA\Dossiq\Service\ComplaintService
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
  * @covers \OCA\Dossiq\Service\WOODeadlineService
+ * @uses \OCA\Dossiq\Service\Notification\DeadlineWarningNotice
  * @uses \OCA\Dossiq\Service\Advice\AdviceAuthorizationGuard
  * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Kcc\ContactMomentPayload
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class OneDateWritePathRoundTripTest extends TestCase {
 	use MakesCaseDateNormaliser;
@@ -356,8 +361,11 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('find')->willReturn(['id' => 'case-1']);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
-				if ($schema === 'adviceRequest') {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
+				if ($schema === 'adviesAanvraag') {
 					$captured = $object;
 				}
 
@@ -378,7 +386,11 @@ class OneDateWritePathRoundTripTest extends TestCase {
 			settingsService: $settings,
 			userSession: $session,
 			logger: $logger,
-			adviceDelegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+			filing: new AdviceRequestFiling(
+				delegation: $this->createMock(originalClassName: AdviceDelegationService::class),
+				settingsService: $settings,
+				logger: $logger,
+			),
 			repository: new AdviceRepository(settingsService: $settings, logger: $logger),
 			guard: new AdviceAuthorizationGuard(
 				settingsService: $settings,
@@ -439,7 +451,10 @@ class OneDateWritePathRoundTripTest extends TestCase {
 		$captured = [];
 		$store = $this->createMock(originalClassName: RoundTripObjectStoreStub::class);
 		$store->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, ?string $uuid = null) use (&$captured): array {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$captured = $object;
 				return $object;
 			}

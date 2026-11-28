@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pdok;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCA\Dossiq\Support\FleetAppId;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
@@ -72,26 +72,18 @@ class PdokLocatieserverService {
 	private const DEFAULT_SUGGEST_TTL = 300;
 
 	/**
-	 * Outage window — number of consecutive 5xx responses before degrading.
-	 */
-	private const OUTAGE_THRESHOLD = 3;
-
-	/**
-	 * Outage window length in seconds.
-	 */
-	private const OUTAGE_WINDOW = 60;
-
-	/**
-	 * How long the service stays degraded once tripped (5 min).
-	 */
-	private const DEGRADED_TTL = 300;
-
-	/**
 	 * Shared cache used for response caching AND outage tracking.
 	 *
 	 * @var ICache The distributed cache instance.
 	 */
 	private ICache $cache;
+
+	/**
+	 * Counts PDOK's 5xx answers and degrades the service when they pile up.
+	 *
+	 * @var OutageBreaker
+	 */
+	private readonly OutageBreaker $breaker;
 
 	/**
 	 * Constructor.
@@ -111,6 +103,7 @@ class PdokLocatieserverService {
 		private IClientService $clientService,
 	) {
 		$this->cache = $cacheFactory->createDistributed('dossiq_pdok_locatieserver');
+		$this->breaker = new OutageBreaker(cache: $this->cache, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -126,10 +119,10 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response or `[]` while degraded.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function suggest(string $query, array $filterQueries = [], int $rows = 10): array {
-		if ($this->isDegraded() === true) {
+		if ($this->breaker->isDegraded() === true) {
 			return [];
 		}
 
@@ -138,15 +131,7 @@ class PdokLocatieserverService {
 			$params['fq'] = $filterQueries;
 		}
 
-		return $this->call(
-			method: 'suggest',
-			params: $params,
-			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
-				'pdok_cache_suggest_ttl_seconds',
-				(string)self::DEFAULT_SUGGEST_TTL
-			),
-		);
+		return $this->call(method: 'suggest', params: $params);
 	}//end suggest()
 
 	/**
@@ -157,7 +142,7 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function free(string $query, array $filterQueries = []): array {
 		$params = ['q' => $query];
@@ -165,15 +150,7 @@ class PdokLocatieserverService {
 			$params['fq'] = $filterQueries;
 		}
 
-		return $this->call(
-			method: 'free',
-			params: $params,
-			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
-				'pdok_cache_lookup_ttl_seconds',
-				(string)self::DEFAULT_LOOKUP_TTL
-			),
-		);
+		return $this->call(method: 'free', params: $params);
 	}//end free()
 
 	/**
@@ -183,18 +160,10 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function lookup(string $id): array {
-		return $this->call(
-			method: 'lookup',
-			params: ['id' => $id],
-			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
-				'pdok_cache_lookup_ttl_seconds',
-				(string)self::DEFAULT_LOOKUP_TTL
-			),
-		);
+		return $this->call(method: 'lookup', params: ['id' => $id]);
 	}//end lookup()
 
 	/**
@@ -205,18 +174,10 @@ class PdokLocatieserverService {
 	 *
 	 * @return array Decoded JSON response.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function reverse(float $lat, float $lng): array {
-		return $this->call(
-			method: 'reverse',
-			params: ['lat' => $lat, 'lon' => $lng],
-			ttl: (int)$this->appConfig->getValueString(
-				Application::APP_ID,
-				'pdok_cache_lookup_ttl_seconds',
-				(string)self::DEFAULT_LOOKUP_TTL
-			),
-		);
+		return $this->call(method: 'reverse', params: ['lat' => $lat, 'lon' => $lng]);
 	}//end reverse()
 
 	/**
@@ -224,10 +185,10 @@ class PdokLocatieserverService {
 	 *
 	 * @return string `ok` when healthy, `degraded` during the cool-down.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function health(): string {
-		if ($this->isDegraded() === true) {
+		if ($this->breaker->isDegraded() === true) {
 			return 'degraded';
 		}
 
@@ -244,80 +205,166 @@ class PdokLocatieserverService {
 	 * @param string $method Endpoint suffix (`suggest`, `free`, `lookup`,
 	 *                       `reverse`).
 	 * @param array $params Query string parameters.
-	 * @param int $ttl Cache TTL in seconds.
 	 *
 	 * @return array Decoded JSON body or `['response' => ['docs' => []]]`
 	 *               when the call fails after exhausting retries.
 	 */
-	private function call(string $method, array $params, int $ttl): array {
-		$queryString = http_build_query(data: $params);
-		$cacheKey = $method . '_' . md5(string: $queryString);
+	private function call(string $method, array $params): array {
+		$read = $this->newCall(method: $method, params: $params);
 
-		$cached = $this->cache->get($cacheKey);
+		$cached = $this->cachedRead(read: $read);
 		if ($cached !== null) {
-			$this->logger->debug(
-				'Dossiq PDOK Locatieserver cache hit',
-				['method' => $method, 'key' => $cacheKey]
-			);
 			return $cached;
 		}
 
-		$started = microtime(as_float: true);
-		$source = $this->appConfig->getValueString(
-			Application::APP_ID,
-			'pdok_locatieserver_source',
-			''
-		);
+		$read->started = microtime(as_float: true);
+		$read->source = $this->appConfig->getValueString(AppIdentity::APP_ID, 'pdok_locatieserver_source', '');
 
+		try {
+			$body = $this->fetchBody(read: $read);
+		} catch (RuntimeException $e) {
+			return $this->failedRead(read: $read, exception: $e);
+		}
+
+		return $this->decodedAndCached(read: $read, body: $body);
+	}//end call()
+
+	/**
+	 * Describe one Locatieserver read with its query string and cache key.
+	 *
+	 * @param string               $method Endpoint suffix.
+	 * @param array<string, mixed> $params Query string parameters.
+	 *
+	 * @return LocatieserverCall
+	 */
+	private function newCall(string $method, array $params): LocatieserverCall {
+		$read = new LocatieserverCall();
+		$read->method = $method;
+		$read->params = $params;
+		$read->ttl = $this->ttlFor(method: $method);
+		$read->queryString = http_build_query(data: $params);
+		$read->cacheKey = $method . '_' . md5(string: $read->queryString);
+
+		return $read;
+	}//end newCall()
+
+	/**
+	 * The configured cache TTL of an endpoint: the suggest TTL for `suggest`, the lookup TTL otherwise.
+	 *
+	 * @param string $method Endpoint suffix.
+	 *
+	 * @return int Cache TTL in seconds.
+	 */
+	private function ttlFor(string $method): int {
+		if ($method === 'suggest') {
+			return (int)$this->appConfig->getValueString(
+				AppIdentity::APP_ID,
+				'pdok_cache_suggest_ttl_seconds',
+				(string)self::DEFAULT_SUGGEST_TTL
+			);
+		}
+
+		return (int)$this->appConfig->getValueString(
+			AppIdentity::APP_ID,
+			'pdok_cache_lookup_ttl_seconds',
+			(string)self::DEFAULT_LOOKUP_TTL
+		);
+	}//end ttlFor()
+
+	/**
+	 * The cached answer for the read, logged as a cache hit, or null.
+	 *
+	 * @param LocatieserverCall $read The read.
+	 *
+	 * @return mixed The cached answer, or null on a miss.
+	 */
+	private function cachedRead(LocatieserverCall $read): mixed {
+		$cached = $this->cache->get($read->cacheKey);
+		if ($cached !== null) {
+			$this->logger->debug(
+				'Dossiq PDOK Locatieserver cache hit',
+				['method' => $read->method, 'key' => $read->cacheKey]
+			);
+		}
+
+		return $cached;
+	}//end cachedRead()
+
+	/**
+	 * The raw body of the read: through the gateway when a source is set, otherwise from PDOK.
+	 *
+	 * @param LocatieserverCall $read The read.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the read failed.
+	 */
+	private function fetchBody(LocatieserverCall $read): string {
 		$endpoint = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'pdok_locatieserver_endpoint',
 			self::DEFAULT_ENDPOINT
 		);
 
-		$url = rtrim(string: $endpoint, characters: '/') . '/' . $method . '?' . $queryString;
+		$url = rtrim(string: $endpoint, characters: '/') . '/' . $read->method . '?' . $read->queryString;
 
-		try {
-			if (empty($source) === false) {
-				$body = $this->callViaOpenConnector(sourceSlug: $source, path: $method, params: $params);
-			}
+		if (empty($read->source) === false) {
+			return $this->callViaOpenConnector(read: $read);
+		}
 
-			if (empty($source) === true) {
-				$body = $this->callDirect(url: $url);
-			}
-		} catch (RuntimeException $e) {
-			$this->recordFailure(statusCode: $e->getCode());
-			$this->logger->warning(
-				'Dossiq PDOK Locatieserver call failed',
-				[
-					'method' => $method,
-					'error' => $e->getMessage(),
-					'status' => $e->getCode(),
-				]
-			);
-			return ['response' => ['docs' => []]];
-		}//end try
+		return $this->callDirect(url: $url);
+	}//end fetchBody()
 
+	/**
+	 * Record a failed read towards the outage budget, log it, and answer no documents.
+	 *
+	 * @param LocatieserverCall $read      The read.
+	 * @param RuntimeException  $exception Why it failed; its code is the HTTP status, or 0.
+	 *
+	 * @return array{response: array{docs: array}}
+	 */
+	private function failedRead(LocatieserverCall $read, RuntimeException $exception): array {
+		$this->breaker->recordFailure(statusCode: $exception->getCode());
+		$this->logger->warning(
+			'Dossiq PDOK Locatieserver call failed',
+			[
+				'method' => $read->method,
+				'error' => $exception->getMessage(),
+				'status' => $exception->getCode(),
+			]
+		);
+		return ['response' => ['docs' => []]];
+	}//end failedRead()
+
+	/**
+	 * The decoded body, cached; a body that is no JSON object reads as no documents.
+	 *
+	 * @param LocatieserverCall $read The read.
+	 * @param string            $body The raw body.
+	 *
+	 * @return array
+	 */
+	private function decodedAndCached(LocatieserverCall $read, string $body): array {
 		$decoded = json_decode(json: $body, associative: true);
 		if (is_array(value: $decoded) === false) {
 			$decoded = ['response' => ['docs' => []]];
 		}
 
-		$this->cache->set($cacheKey, $decoded, $ttl);
+		$this->cache->set($read->cacheKey, $decoded, $read->ttl);
 
-		$elapsedMs = (int)((microtime(as_float: true) - $started) * 1000);
+		$elapsedMs = (int)((microtime(as_float: true) - $read->started) * 1000);
 		$this->logger->info(
 			'Dossiq PDOK Locatieserver call',
 			[
-				'method' => $method,
+				'method' => $read->method,
 				'cache' => 'miss',
 				'elapsedMs' => $elapsedMs,
-				'viaSource' => (empty($source) === false),
+				'viaSource' => (empty($read->source) === false),
 			]
 		);
 
 		return $decoded;
-	}//end call()
+	}//end decodedAndCached()
 
 	/**
 	 * Direct HTTP GET to PDOK with a JSON Accept header.
@@ -339,34 +386,39 @@ class PdokLocatieserverService {
 		// (`proxy`, `proxyuserpwd`) and gives the status code directly instead
 		// of it having to be parsed back out of `wrapper_data`.
 		try {
-			$response = $this->clientService->newClient()->get(
-				$url,
-				[
-					'timeout' => 10,
-					'headers' => ['Accept' => 'application/json'],
-				]
-			);
+			$response = $this->clientService->newClient()->get($url, ['timeout' => 10, 'headers' => ['Accept' => 'application/json']]);
 		} catch (Throwable $e) {
-			$statusCode = $this->statusFromException(exception: $e);
-			if ($statusCode !== 0) {
-				throw new RuntimeException('PDOK Locatieserver HTTP ' . $statusCode, $statusCode);
-			}
-
-			$this->logger->warning(
-				'PDOK Locatieserver request failed',
-				['detail' => $e->getMessage()]
-			);
-			throw new RuntimeException('Network error contacting PDOK Locatieserver', 0);
-		}//end try
+			throw $this->requestFailure(exception: $e);
+		}
 
 		$statusCode = $response->getStatusCode();
 		if ($statusCode < 200 || $statusCode >= 300) {
 			throw new RuntimeException('PDOK Locatieserver HTTP ' . $statusCode, $statusCode);
 		}
 
-		$this->recordSuccess();
+		$this->breaker->recordSuccess();
 		return (string)$response->getBody();
 	}//end callDirect()
+
+	/**
+	 * The exception a failed request raises: the upstream status, or a network error (logged).
+	 *
+	 * @param Throwable $exception The exception raised by the HTTP client.
+	 *
+	 * @return RuntimeException
+	 */
+	private function requestFailure(Throwable $exception): RuntimeException {
+		$statusCode = $this->statusFromException(exception: $exception);
+		if ($statusCode !== 0) {
+			return new RuntimeException('PDOK Locatieserver HTTP ' . $statusCode, $statusCode);
+		}
+
+		$this->logger->warning(
+			'PDOK Locatieserver request failed',
+			['detail' => $exception->getMessage()]
+		);
+		return new RuntimeException('Network error contacting PDOK Locatieserver', 0);
+	}//end requestFailure()
 
 	/**
 	 * Recover the upstream HTTP status from a client exception.
@@ -407,15 +459,13 @@ class PdokLocatieserverService {
 	 * ever stored in Dossiq config. If OpenConnector is not installed the
 	 * call falls back to a direct HTTP call against the configured endpoint.
 	 *
-	 * @param string $sourceSlug OpenConnector source slug.
-	 * @param string $path Locatieserver endpoint suffix (`suggest` etc).
-	 * @param array $params Query parameters.
+	 * @param LocatieserverCall $read The read: its source slug, endpoint suffix and query parameters.
 	 *
 	 * @return string Raw response body.
 	 *
 	 * @throws \RuntimeException On upstream failure (code carries HTTP status).
 	 */
-	private function callViaOpenConnector(string $sourceSlug, string $path, array $params): string {
+	private function callViaOpenConnector(LocatieserverCall $read): string {
 		try {
 			// Resolved across every namespace integriq has shipped under. Pinned
 			// to 'OCA\OpenConnector\...' this threw on any current instance and
@@ -426,14 +476,9 @@ class PdokLocatieserverService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Dossiq PDOK Locatieserver: OpenConnector not available, falling back to direct HTTP',
-				['sourceSlug' => $sourceSlug, 'error' => $e->getMessage()]
+				['sourceSlug' => $read->source, 'error' => $e->getMessage()]
 			);
-			$endpoint = $this->appConfig->getValueString(
-				Application::APP_ID,
-				'pdok_locatieserver_endpoint',
-				self::DEFAULT_ENDPOINT
-			);
-			return $this->callDirect(url: rtrim(string: $endpoint, characters: '/') . '/' . $path . '?' . http_build_query(data: $params));
+			return $this->directFallback(path: $read->method, params: $read->params);
 		}
 
 		// We intentionally call CallService dynamically; the signature has
@@ -444,10 +489,10 @@ class PdokLocatieserverService {
 		// `['body']` or `['response']['body']`.
 		try {
 			$result = $callService->call(
-				$sourceSlug,
-				$path,
+				$read->source,
+				$read->method,
 				'GET',
-				['query' => $params, 'headers' => ['Accept' => 'application/json']]
+				['query' => $read->params, 'headers' => ['Accept' => 'application/json']]
 			);
 		} catch (Throwable $e) {
 			throw new RuntimeException(
@@ -456,94 +501,54 @@ class PdokLocatieserverService {
 			);
 		}
 
+		return $this->gatewayBody(result: $result);
+	}//end callViaOpenConnector()
+
+	/**
+	 * The body the gateway answered, as a string; an unknown shape is a refusal.
+	 *
+	 * The minimum contract is a body string under `['body']` or
+	 * `['response']['body']`; an array body is encoded.
+	 *
+	 * @param mixed $result What the gateway answered.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the shape is not recognised (502).
+	 */
+	private function gatewayBody(mixed $result): string {
 		if (is_array(value: $result) === true) {
 			$body = ($result['body'] ?? ($result['response']['body'] ?? null));
 			if (is_string(value: $body) === true) {
-				$this->recordSuccess();
+				$this->breaker->recordSuccess();
 				return $body;
 			}
 
 			if (is_array(value: $body) === true) {
-				$this->recordSuccess();
+				$this->breaker->recordSuccess();
 				return (string)json_encode(value: $body);
 			}
 		}
 
 		throw new RuntimeException('OpenConnector returned an unrecognised response shape', 502);
-	}//end callViaOpenConnector()
+	}//end gatewayBody()
 
 	/**
-	 * Record a successful call (clears the failure counter).
+	 * Call PDOK directly when the gateway is not there.
 	 *
-	 * @return void
+	 * @param string               $path   The endpoint suffix.
+	 * @param array<string, mixed> $params The query string parameters.
+	 *
+	 * @return string The raw body.
+	 *
+	 * @throws RuntimeException When the direct call fails.
 	 */
-	private function recordSuccess(): void {
-		$this->cache->remove('failures');
-		// Self-clear degraded state on first success after cool-down.
-		if ($this->cache->get('degraded_until') !== null) {
-			$this->cache->remove('degraded_until');
-		}
-	}//end recordSuccess()
-
-	/**
-	 * Record a failure and flip into degraded state if the threshold is hit
-	 * within the rolling window.
-	 *
-	 * @param int $statusCode HTTP status code from the failing call.
-	 *
-	 * @return void
-	 */
-	private function recordFailure(int $statusCode): void {
-		// Only 5xx (and network errors, coded 0) count toward the outage
-		// budget. 4xx responses indicate a client problem, not a PDOK outage.
-		if ($statusCode !== 0 && ($statusCode < 500 || $statusCode >= 600)) {
-			return;
-		}
-
-		$failures = $this->cache->get('failures');
-		if (is_array(value: $failures) === false) {
-			$failures = [];
-		}
-
-		$now = time();
-		$failures = array_filter(
-			array: $failures,
-			callback: static function (int $failedAt) use ($now): bool {
-				return ($now - $failedAt) <= self::OUTAGE_WINDOW;
-			}
+	private function directFallback(string $path, array $params): string {
+		$endpoint = $this->appConfig->getValueString(
+			AppIdentity::APP_ID,
+			'pdok_locatieserver_endpoint',
+			self::DEFAULT_ENDPOINT
 		);
-
-		$failures[] = $now;
-
-		if (count(value: $failures) >= self::OUTAGE_THRESHOLD) {
-			$this->cache->set('degraded_until', ($now + self::DEGRADED_TTL), self::DEGRADED_TTL);
-			$this->cache->remove('failures');
-			$this->logger->warning(
-				'Dossiq PDOK Locatieserver: degraded state engaged',
-				['failureCount' => count(value: $failures), 'cooldownSec' => self::DEGRADED_TTL]
-			);
-			return;
-		}
-
-		$this->cache->set('failures', array_values(array: $failures), self::OUTAGE_WINDOW);
-	}//end recordFailure()
-
-	/**
-	 * Whether the service is currently in degraded state.
-	 *
-	 * @return bool True while degraded.
-	 */
-	private function isDegraded(): bool {
-		$until = $this->cache->get('degraded_until');
-		if ($until === null) {
-			return false;
-		}
-
-		if ((int)$until <= time()) {
-			$this->cache->remove('degraded_until');
-			return false;
-		}
-
-		return true;
-	}//end isDegraded()
+		return $this->callDirect(url: rtrim(string: $endpoint, characters: '/') . '/' . $path . '?' . http_build_query(data: $params));
+	}//end directFallback()
 }//end class

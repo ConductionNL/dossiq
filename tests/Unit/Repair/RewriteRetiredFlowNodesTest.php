@@ -41,9 +41,14 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Flow\RetiredDocumentSteps
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeMap
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
+ * @uses \OCA\Dossiq\Service\Flow\EdgeEndpoints
+ * @uses \OCA\Dossiq\Service\External\RegisterValues
  * @uses \OCA\Dossiq\Service\Flow\RetiredNodeTranslator
  * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
  * @uses \OCA\Dossiq\Service\Flow\RetiredWebhookSteps
+ * @uses \OCA\Dossiq\Repair\FlowRewrite
+ * @uses \OCA\Dossiq\Repair\FlowRewriteRun
+ * @uses \OCA\Dossiq\Repair\RetiredActionReport
  */
 class RewriteRetiredFlowNodesTest extends TestCase {
 

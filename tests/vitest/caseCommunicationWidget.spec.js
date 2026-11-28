@@ -116,9 +116,9 @@ describe('the Communication widget', () => {
 			where,
 			'case-communication is not reachable from the strip',
 		).toBeTruthy()
-		expect(where.tab).toBe('Communication')
+		expect(where.tab).toBe('Contact')
 		expect(where.label).toBe('Communication')
-		expect(panels.caseTabOf('case-parties').tab).toBe('People')
+		expect(panels.caseTabOf('case-parties').tab).toBe('Parties')
 
 		// A widget rendered by the tabs widget AND placed in `layout` renders
 		// twice, which is why its siblings are absent from `layout` too.

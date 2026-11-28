@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Service\Email\OutboundMailPolicy;
+use OCA\Dossiq\Service\Email\OutboundMailRules;
 use OCA\Dossiq\Controller\EmailController;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -48,7 +50,7 @@ use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
 use OCA\Dossiq\Tests\Support\FakeMailGateway;
 use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCA\Dossiq\Tests\Support\PhpInputStream;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IL10N;
@@ -104,25 +106,47 @@ class EmailControllerTest extends TestCase {
 		$store->method('referenceId')->willReturn('');
 
 		$service = new CaseEmailService(
-			new NullLogger(),
-			$repository,
-			new CaseContactDirectory(),
-			new OutboundCaseMail(
-				$this->gateway,
-				new SenderIdentity($this->gateway, new IntakeAccount($appConfig), $caseTypes, $store),
-				new MailTransportPolicy($appConfig),
-				new CaseMailOptOut(new OptOutGate($this->dispatcher, $appConfig, new NullLogger(), $this->gateRelative), $l10n),
-				$this->createMock(IMailer::class),
-				$appConfig,
-				new NullLogger()
+			logger: new NullLogger(),
+			repository: $repository,
+			contactDirectory: new CaseContactDirectory(),
+			sending: new OutboundMailRules(
+				outbound: new OutboundCaseMail(
+					gateway: $this->gateway,
+					transport: new OutboundMailPolicy(
+						identity: new SenderIdentity(
+							gateway: $this->gateway,
+							intakeAccount: new IntakeAccount(appConfig: $appConfig),
+							caseTypes: $caseTypes,
+							store: $store
+						),
+						policy: new MailTransportPolicy(appConfig: $appConfig),
+						optOut: new CaseMailOptOut(
+							gate: new OptOutGate(
+								dispatcher: $this->dispatcher,
+								appConfig: $appConfig,
+								logger: new NullLogger(),
+								eventRelative: $this->gateRelative
+							),
+							l10n: $l10n
+						),
+					),
+					mailer: $this->createMock(originalClassName: IMailer::class),
+					appConfig: $appConfig,
+					logger: new NullLogger()
+				),
+				allowlist: new RecipientAllowlist(appConfig: $appConfig),
+				optOut: new CaseMailOptOut(
+					gate: new OptOutGate(
+						dispatcher: $this->dispatcher,
+						appConfig: $appConfig,
+						logger: new NullLogger(),
+						eventRelative: $this->gateRelative
+					),
+					l10n: $l10n,
+					unsubscribeHeaders: new UnsubscribeHeaders(new NullLogger())
+				),
 			),
-			new RecipientAllowlist($appConfig),
-			$this->createMock(CaseTimeline::class),
-			new CaseMailOptOut(
-				new OptOutGate($this->dispatcher, $appConfig, new NullLogger(), $this->gateRelative),
-				$l10n,
-				new UnsubscribeHeaders(new NullLogger())
-			),
+			timeline: $this->createMock(originalClassName: CaseTimeline::class),
 		);
 
 		$session = $this->createMock(IUserSession::class);
@@ -205,7 +229,7 @@ class EmailControllerTest extends TestCase {
 	/**
 	 * A message the Mail account took but could not send is a 503 that says it is queued.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function testAQueuedSendIsA503ThatSaysQueued(): void {
 		$this->gateway->sendState = OutboundState::QUEUED;
@@ -221,7 +245,7 @@ class EmailControllerTest extends TestCase {
 	/**
 	 * An account the mail app cannot reach takes nothing and answers 503.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function testAnUnreachableAccountIsA503(): void {
 		$this->gateway->sendState = OutboundState::UNAVAILABLE;

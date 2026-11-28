@@ -26,7 +26,13 @@ owns the `adviesAanvraag` model and the CROSS-CASE advice queue by design. dossi
 keeps the per-case view and the detail route. A dossiq-side list over a model
 dossiq no longer owns is the duplication that change set out to remove.
 
+#### Scenario: An advice link still opens, and there is no advice index
 @e2e exclude The per-case surface is covered by the besluitvorming leaf specs; the cross-case queue is decidesk's and is not a dossiq surface to test.
+
+- **GIVEN** a link to `/advice/:id` for an existing advice request
+- **WHEN** a user opens it
+- **THEN** the advice detail SHALL open
+- **AND** dossiq SHALL offer no `/advice` index page of its own
 
 **ADDED Requirements**
 
@@ -147,3 +153,45 @@ The system SHALL provide a form for creating advice requests from the case dashb
 - **THEN** the reminder SHALL be dispatched only once
 
 <!-- END retrofit-2026-05-24-advice-management -->
+
+### Requirement: An advice request keeps its kind, subject and outcome
+
+An advice request SHALL be stored in the advice request schema the list reads, with its kind (`intern`/`extern`),
+subject and question. An external advisor is an organisation and SHALL NOT be notified as a user. A received advice
+SHALL keep its conclusion, text and the conditions checked, and the notification SHALL carry the summary.
+
+#### Scenario: External advice
+
+- **WHEN** a handler asks the Veiligheidsregio for advice
+- **THEN** the request is stored with type `extern` and nobody is notified as its advisor
+
+#### Scenario: Received with conditions
+
+- **WHEN** the advice is received as positive with conditions
+- **THEN** the request keeps the conclusion, the text and the conditions
+
+### Requirement: A handler asks for advice from the case (REQ-ADV-CASE-01)
+
+The case page SHALL hold the card board DqZaakBesluiten draws on the Decisions tab: the internal and external advice requested on the case, each with its advisor, when it was asked, its deadline or the date the answer came in, and its state. Ask for advice in the card's title row SHALL record the advisor, internal or external, the subject, the questions and a deadline, linked to the case. An open request SHALL offer Remind. The per-case advice routes SHALL live under `/api/cases/{id}/advice-requests`, with the old `/api/vth/` address answering for one release. An advice request on the personal queue SHALL open its case on the tab with this card.
+
+#### Scenario: Asking for advice with a deadline
+
+- **GIVEN** a case in status "in behandeling"
+- **WHEN** the handler asks "Welstand" for advice with deadline 20 November
+- **THEN** an advice request SHALL be linked to the case with state "requested"
+- **AND** the case's advice card SHALL show it with "antwoord uiterlijk 20 nov" and the state "Open", as the board DqZaakBesluiten draws "antwoord uiterlijk 10 okt" with Open
+- @e2e tests/e2e/advice-on-the-case.spec.ts
+
+#### Scenario: The answer shows on the case
+
+- **GIVEN** an advice request on a case
+- **WHEN** the answer comes in
+- **THEN** the case's advice card SHALL show the request as received
+- @e2e tests/e2e/advice-on-the-case.spec.ts
+
+#### Scenario: An open request can be reminded
+
+- **GIVEN** an open advice request
+- **WHEN** the handler chooses Remind
+- **THEN** a reminder SHALL be sent to the advisor
+- @e2e tests/e2e/advice-on-the-case.spec.ts

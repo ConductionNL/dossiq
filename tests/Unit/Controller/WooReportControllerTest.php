@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\Support\RecordedReportRead;
 use OCA\Dossiq\Controller\WooReportController;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\EntityAnsweringRegister;
@@ -29,6 +30,7 @@ use OCA\Dossiq\Tests\Support\RecordingAuditTrailMapper;
 use OCA\Dossiq\Woo\WooReportReadLog;
 use OCA\Dossiq\Woo\WooReportSwitches;
 use OCA\Dossiq\Woo\WooThroughputReport;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
@@ -50,8 +52,11 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Woo\WooReportReadLog
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Csv\CsvWriter
+ * @uses \OCA\Dossiq\Service\Support\ObjectAuditEvents
+ * @uses \OCA\Dossiq\Woo\ReportPeriod
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  */
 class WooReportControllerTest extends TestCase {
 
@@ -183,11 +188,17 @@ class WooReportControllerTest extends TestCase {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
+		$report = new WooThroughputReport(settingsService: $settings, caseDates: $this->caseDates(), userManager: $users);
+
 		return new WooReportController(
 			request: $request,
 			switches: new WooReportSwitches(appConfig: $appConfig, groupManager: $groups),
-			throughputReport: new WooThroughputReport(settingsService: $settings, caseDates: $this->caseDates(), userManager: $users),
-			readLog: new WooReportReadLog(settingsService: $settings, logger: $this->createMock(LoggerInterface::class)),
+			throughputReport: $report,
+			reads: new RecordedReportRead(
+				report: $report,
+				readLog: new WooReportReadLog(settingsService: $settings, logger: $this->createMock(originalClassName: LoggerInterface::class)),
+				dates: $this->caseDates(),
+			),
 			userSession: $session,
 			l10n: $l10n,
 		);
@@ -314,6 +325,30 @@ class WooReportControllerTest extends TestCase {
 	}//end testAPeriodReadAndAMissingPeriod()
 
 	/**
+	 * A dashboard range sends moments; each is read as the tenant's day.
+	 *
+	 * @return void
+	 */
+	public function testMomentsReadAsTheTenantsDays(): void {
+		$ok = $this->controller(uid: 'lead', params: ['from' => '2026-10-31T23:00:00.000Z', 'to' => '2026-11-30T22:59:59.999Z'])->throughput();
+		$this->assertSame(200, $ok->getStatus());
+		$this->assertSame(['from' => '2026-11-01', 'to' => '2026-11-30'], $this->trail->rows[0]['context']['scope']);
+	}//end testMomentsReadAsTheTenantsDays()
+
+	/**
+	 * The offer answers what the menu reads, and nothing without a session.
+	 *
+	 * @return void
+	 */
+	public function testTheOffer(): void {
+		$this->assertSame(401, $this->controller(uid: null, params: [])->offered()->getStatus());
+
+		$offer = $this->controller(uid: 'lead', params: [])->offered();
+		$this->assertSame(200, $offer->getStatus());
+		$this->assertSame(['throughput', 'parties'], array_keys($offer->getData()));
+	}//end testTheOffer()
+
+	/**
 	 * The CSV holds the same rows as the JSON answer, and is recorded too.
 	 *
 	 * @return void
@@ -328,4 +363,20 @@ class WooReportControllerTest extends TestCase {
 		$this->assertCount(1 + count($json), $lines);
 		$this->assertCount(2, $this->trail->rows);
 	}//end testTheCsvHasTheSameRows()
+
+	/**
+	 * The page's Download CSV action is a plain link, which carries no CSRF token.
+	 *
+	 * @return void
+	 */
+	public function testTheCsvLinkNeedsNoCsrfToken(): void {
+		foreach (['throughput', 'throughputLegacyPath'] as $method) {
+			$attributes = (new \ReflectionMethod(WooReportController::class, $method))->getAttributes(NoCSRFRequired::class);
+			$this->assertCount(
+				expectedCount: 1,
+				haystack: $attributes,
+				message: $method.' answers 412 to the Download CSV link when it asks for a CSRF token'
+			);
+		}
+	}//end testTheCsvLinkNeedsNoCsrfToken()
 }//end class

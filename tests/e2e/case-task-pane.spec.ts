@@ -44,9 +44,10 @@
  * or on data this spec seeded.
  */
 
-import type { APIRequestContext, Page } from '@playwright/test'
+import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	adoptableCaseTypes,
 	getRequestToken,
@@ -66,31 +67,34 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 /**
  * The pane's verb buttons, addressed by `data-testid` and NOT by label.
  *
- * 🔴 THE OLD LABELS WERE THE REGISTER'S, AND THE PANE STOPPED ASKING FOR THEM.
- * They were the transition descriptions `caseTask`'s lifecycle declared, which
- * OpenRegister returned verbatim from `/api/objects/{uuid}/available-actions`
- * and `CnLifecycleActions` rendered as button text. An engine task is not an
- * object, so that endpoint answers 500 for one, and `CaseTaskPane` deliberately
- * does not use that component any more: see the 🔴 at
- * src/components/tasks/CaseTaskPane.vue:232. It renders its own pair of verbs
- * at :73 as `case-task-pane-verb-${verb.name}`.
- *
- * So `[data-testid="cn-lifecycle-actions"]` matches nothing here. That testid
- * appears zero times in dossiq's src/; it lives inside the nc-vue component the
- * pane no longer mounts.
- *
- * There are TWO verbs now, not three: `verbs()` returns complete and cancel and
- * lets the engine rule on each press, rather than pre-judging availability
- * client-side, which is the duplicated authorization this migration removes.
- * Their labels go through `t('dossiq', ...)`, and this spec's header explains
- * the instance locale is not forced, so a label match would be a locale
- * dependency. The testids are not.
+ * The case's Tasks section is the library CnTasksWidget in its focus variant:
+ * the first open task as a card with Claim (only where the engine can claim),
+ * Complete and Cancel task, rendered as `cn-tasks-widget-work-{verb}`. It
+ * does not use `CnLifecycleActions`, which asks for an OBJECT's transitions
+ * and answers 500 for an engine task. Complete and Cancel are offered on
+ * every open task and the engine rules on each press. The labels are
+ * translated and the instance locale is not forced, so the testids are what
+ * this spec addresses.
  */
-/** The task page's root, rendered by src/views/tasks/TaskDetailView.vue. */
-const TASK_PAGE = '[data-testid="task-detail-page"]'
+/** The task page's root: the TaskDetail manifest detail page. */
+const TASK_PAGE = '[data-testid="cn-detail-page"]'
 
-const COMPLETE_BUTTON = '[data-testid="case-task-pane-verb-complete"]'
-const CANCEL_BUTTON = '[data-testid="case-task-pane-verb-cancel"]'
+/**
+ * The task page's Case card: the side column's facts widget that reads the
+ * case (`side-case` in the TaskDetail manifest page), told apart from the
+ * Task card beside it by the case title it carries.
+ *
+ * @param page The page, on a task.
+ * @return The card.
+ */
+function caseCard(page: Page): Locator {
+	return page
+		.getByTestId('cn-facts-widget')
+		.filter({ has: page.getByTestId('cn-fact-case-title') })
+}
+
+const COMPLETE_BUTTON = '[data-testid="cn-tasks-widget-work-complete"]'
+const CANCEL_BUTTON = '[data-testid="cn-tasks-widget-work-cancel"]'
 
 /** The pane's own empty state, in either language the app ships. */
 const EMPTY_PANE = /No open tasks on this case|Geen open taken op deze zaak/
@@ -217,15 +221,14 @@ async function openTasksTab(page: Page, id: string) {
 
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	// Tasks is the first SECTION of the Work tab since the strip came down
-	// from fourteen tabs to six; Appointments is the second.
-	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
+	// Tasks is the first section of the Tasks tab; Appointments is the second.
+	await openCaseTab(page, /^(Tasks|Taken)\b/)
 
 	// See the header: the widget id is NOT on a tab child, so the open panel
 	// inside the strip is the handle.
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
 	await expect(panel).toBeVisible({ timeout: 20_000 })
-	await expect(panel.locator('[data-testid="case-task-pane"]')).toBeVisible({
+	await expect(panel.locator('.cn-tasks-widget')).toBeVisible({
 		timeout: 20_000,
 	})
 	return panel
@@ -236,9 +239,13 @@ test.describe('Case detail — the task pane', () => {
 
 	test.beforeAll(async ({ browser, playwright, baseURL }) => {
 		const context = await browser.newContext()
+		// The case type's title is translated ({nl, en}) and OpenRegister
+		// answers in the language asked for; ask in the browser's, so the
+		// title read here is the one the page shows.
 		api = await playwright.request.newContext({
 			baseURL,
 			storageState: await context.storageState(),
+			extraHTTPHeaders: { 'Accept-Language': 'en-US,en' },
 		})
 		await context.close()
 		token = await getRequestToken(api)
@@ -375,7 +382,7 @@ test.describe('Case detail — the task pane', () => {
 
 		// The EARLIEST due open task is the one in the pane.
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(readFirstTitle, { timeout: 20_000 })
 
 		// The buttons OpenRegister answers for an ACTIVE task. Their presence
@@ -388,7 +395,7 @@ test.describe('Case detail — the task pane', () => {
 
 		// The second open task is listed under the pane, and it is NOT the one
 		// carrying the buttons.
-		const remaining = panel.locator('[data-testid="case-task-pane-remaining"]')
+		const remaining = panel.locator('[data-testid="cn-tasks-widget-others"]')
 		await expect(remaining).toContainText(readSecondTitle, { timeout: 20_000 })
 		await expect(remaining).not.toContainText(readFirstTitle)
 	})
@@ -400,7 +407,7 @@ test.describe('Case detail — the task pane', () => {
 	}) => {
 		const panel = await openTasksTab(page, completeCaseId)
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(completeFirstTitle, { timeout: 20_000 })
 
 		const before = new URL(page.url()).pathname
@@ -421,18 +428,19 @@ test.describe('Case detail — the task pane', () => {
 		// 🔴 THE BUTTONS NO LONGER FOLLOW THE TASK'S STATE, and this used to
 		// assert that they did: a Pick up button on a task never claimed, and
 		// no Complete beside it. The pane reads the engine now (dossiq#2408)
-		// and offers Complete and Cancel unconditionally, on purpose — the
+		// and offers Complete and Cancel task unconditionally, on purpose — the
 		// engine decides whether a verb is legal and whether the caller may
 		// invoke it, and refuses visibly with a message naming both, so
 		// pre-judging availability client-side would be exactly the
 		// duplicated authorization this migration removes. There is no
-		// "Pick up the task" button on this surface at all, which is why the
-		// old assertion could not pass and could not be repaired in place.
+		// claim button on this surface unless the engine can claim (Claim,
+		// gated on dossiq's capability probe), which is why the old assertion
+		// could not pass and could not be repaired in place.
 		//
 		// The succession is the claim that survives: a DIFFERENT task, named,
 		// with the pane's verbs on it.
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(completeSecondTitle, { timeout: 30_000 })
 		await expect(panel.locator(COMPLETE_BUTTON)).toBeVisible({
 			timeout: 20_000,
@@ -465,7 +473,7 @@ test.describe('Case detail — the task pane', () => {
 	}) => {
 		const panel = await openTasksTab(page, lastCaseId)
 		await expect(
-			panel.locator('[data-testid="case-task-pane-title"]'),
+			panel.locator('[data-testid="cn-tasks-widget-work-title"]'),
 		).toHaveText(lastTaskTitle, { timeout: 20_000 })
 
 		await panel.locator(COMPLETE_BUTTON).click()
@@ -476,12 +484,12 @@ test.describe('Case detail — the task pane', () => {
 		// A case with nothing open says so, rather than showing the task it
 		// just finished or an empty box with no explanation.
 		await expect(
-			panel.locator('[data-testid="case-task-pane-empty"]'),
+			panel.locator('[data-testid="cn-tasks-widget-empty"]'),
 		).toHaveText(EMPTY_PANE, { timeout: 30_000 })
 
 		// View all still leads to the Tasks list scoped to THIS case, which is
 		// where a finished task remains readable.
-		await panel.locator('[data-testid="case-task-pane-view-all"]').click()
+		await panel.locator('[data-testid="cn-tasks-widget-view-all"]').click()
 		await expect
 			.poll(() => new URL(page.url()).pathname, { timeout: 30_000 })
 			.toMatch(/\/tasks$/)
@@ -510,14 +518,17 @@ test.describe('Case detail — the task pane', () => {
 			timeout: 30_000,
 		})
 
-		// The case's TITLE, not its uuid: `caseTask.case` is a $ref and the
-		// platform renders a $ref raw, which is why a data widget over the
-		// field could not answer this.
-		const link = page.locator('[data-testid="task-case-link-link"]')
-		await expect(link).toBeVisible({ timeout: 20_000 })
-		await expect(link).toHaveText(linkCaseTitle)
+		// The case's TITLE, not its uuid. The TaskDetail page names its case in
+		// the side column's Case card (manifest `sideColumn` `side-case`, a
+		// facts widget reading the case by the task's objectUuid), with its
+		// title on top and the "To the case" link below.
+		const card = caseCard(page)
+		await expect(card.getByTestId('cn-fact-case-title')).toHaveText(
+			linkCaseTitle,
+			{ timeout: 20_000 },
+		)
 
-		await link.click()
+		await card.getByTestId('cn-facts-link').click()
 		await expect
 			.poll(() => new URL(page.url()).pathname, { timeout: 30_000 })
 			.toContain(`/cases/${linkCaseId}`)
@@ -550,25 +561,28 @@ test.describe('Case detail — the task pane', () => {
 			timeout: 30_000,
 		})
 
-		const card = page.locator('[data-testid="task-case-card"]')
+		const card = caseCard(page)
 		await expect(card).toBeVisible({ timeout: 20_000 })
 
 		// The case's own reference, and its handler, both read off the CASE
 		// rather than the task: the two have separate owners and separate
 		// clocks, which is the whole reason for carrying them here.
-		await expect(
-			card.locator('[data-testid="task-case-card-identifier"]'),
-		).toContainText(RUN_PREFIX)
-		await expect(
-			card.locator('[data-testid="task-case-card-handler"]'),
-		).toHaveText(LINK_CASE_HANDLER)
+		// The card's meta line reads the case number and its type; the owner
+		// line reads the handler and the case's term.
+		await expect(card.getByTestId('cn-fact-case-meta')).toContainText(
+			RUN_PREFIX,
+			{ timeout: 20_000 },
+		)
+		await expect(card.getByTestId('cn-fact-case-owner')).toContainText(
+			`Case handler ${LINK_CASE_HANDLER}`,
+		)
 
 		// `case.caseType` is a $ref. A uuid here is the defect the card
 		// exists to prevent, so assert the resolved TITLE.
 		if (linkCaseTypeTitle !== '') {
-			await expect(
-				card.locator('[data-testid="task-case-card-type"]'),
-			).toHaveText(linkCaseTypeTitle)
+			await expect(card.getByTestId('cn-fact-case-meta')).toContainText(
+				linkCaseTypeTitle,
+			)
 		}
 
 		// The deadline is the CASE's, formatted by the browser's locale, and
@@ -580,9 +594,12 @@ test.describe('Case detail — the task pane', () => {
 		const seenCase = await showObject(api, 'case', linkCaseId)
 		const actualDeadline = String(seenCase?.deadline ?? '').trim()
 		if (actualDeadline !== '') {
-			await expect(
-				card.locator('[data-testid="task-case-card-deadline"]'),
-			).toHaveText(new Date(actualDeadline).toLocaleDateString())
+			// The facts widget's `date` format: the medium date style.
+			await expect(card.getByTestId('cn-fact-case-owner')).toContainText(
+				new Date(actualDeadline).toLocaleDateString('en-US', {
+					dateStyle: 'medium',
+				}),
+			)
 		}
 
 		// And the fact list below must NOT restate it. One relationship shown
@@ -593,10 +610,10 @@ test.describe('Case detail — the task pane', () => {
 		// fail. What CAN still go wrong is the fact list growing a case row,
 		// so that is what is asserted: the case uuid appears nowhere in the
 		// body, and the card is the only place the case is named.
-		const facts = page.locator('[data-testid="task-detail-body"]')
+		const facts = page.locator(TASK_PAGE)
 		await expect(facts).toBeVisible({ timeout: 20_000 })
 		await expect(facts).not.toContainText(linkCaseId)
-		await expect(page.locator('[data-testid="task-case-card"]')).toHaveCount(1)
+		await expect(caseCard(page)).toHaveCount(1)
 	})
 
 	// No citation, on purpose. This test used to carry

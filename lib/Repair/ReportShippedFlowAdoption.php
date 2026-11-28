@@ -44,8 +44,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Flow\ShippedFlowAdoption;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ShippedFlowAdoptionInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -61,11 +61,11 @@ class ReportShippedFlowAdoption implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param ShippedFlowAdoption $adoption Reads what the shipped flows look like.
+	 * @param ShippedFlowAdoptionInterface $adoption Reads what the shipped flows look like.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly ShippedFlowAdoption $adoption,
+		private readonly ShippedFlowAdoptionInterface $adoption,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -91,27 +91,12 @@ class ReportShippedFlowAdoption implements IRepairStep {
 	 * @spec openspec/specs/case-management/spec.md
 	 */
 	public function run(IOutput $output): void {
-		try {
-			$census = $this->adoption->census();
-		} catch (Throwable $e) {
-			// A report that cannot be produced must not fail an install.
-			$this->logger->warning('Dossiq: could not census the shipped flows: ' . $e->getMessage());
+		$census = $this->readCensus();
+		if ($census === null) {
 			return;
 		}
 
-		if ($census['available'] === false) {
-			$output->info('Dossiq: ' . $census['note']);
-			return;
-		}
-
-		if ($census['flows'] === []) {
-			// Distinct from "all adopted": no flows stored at all means the
-			// register import has not run or did not carry them, which is a
-			// different problem with a different fix.
-			$output->warning(
-				'Dossiq: no shipped flows are stored. They are imported when the register is; '
-				. 're-run `occ maintenance:repair` and check the log for [SchemaFlowImport].'
-			);
+		if ($this->censusHasFlows(output: $output, census: $census) === false) {
 			return;
 		}
 
@@ -123,6 +108,64 @@ class ReportShippedFlowAdoption implements IRepairStep {
 			return;
 		}
 
+		$this->reportPending(output: $output, pending: $pending);
+		$this->logPending(pending: count($pending), total: count($census['flows']));
+	}//end run()
+
+	/**
+	 * Census the shipped flows.
+	 *
+	 * @return array<string, mixed>|null The census, or null when it could not be produced.
+	 */
+	private function readCensus(): ?array {
+		try {
+			$census = $this->adoption->census();
+		} catch (Throwable $e) {
+			// A report that cannot be produced must not fail an install.
+			$this->logger->warning('Dossiq: could not census the shipped flows: ' . $e->getMessage());
+			return null;
+		}
+
+		return $census;
+	}//end readCensus()
+
+	/**
+	 * Whether the census is available and holds flows; reports when it does not.
+	 *
+	 * @param IOutput              $output Output sink.
+	 * @param array<string, mixed> $census The census.
+	 *
+	 * @return bool
+	 */
+	private function censusHasFlows(IOutput $output, array $census): bool {
+		if ($census['available'] === false) {
+			$output->info('Dossiq: ' . $census['note']);
+			return false;
+		}
+
+		if ($census['flows'] === []) {
+			// Distinct from "all adopted": no flows stored at all means the
+			// register import has not run or did not carry them, which is a
+			// different problem with a different fix.
+			$output->warning(
+				'Dossiq: no shipped flows are stored. They are imported when the register is; '
+				. 're-run `occ maintenance:repair` and check the log for [SchemaFlowImport].'
+			);
+			return false;
+		}
+
+		return true;
+	}//end censusHasFlows()
+
+	/**
+	 * Report each flow that still awaits adoption, and how to adopt them.
+	 *
+	 * @param IOutput                          $output  Output sink.
+	 * @param array<int, array<string, mixed>> $pending The flows still to adopt.
+	 *
+	 * @return void
+	 */
+	private function reportPending(IOutput $output, array $pending): void {
 		foreach ($pending as $flow) {
 			$output->warning(
 				'Dossiq: shipped flow "' . $flow['name'] . '" ' . $this->reasonFor(flow: $flow)
@@ -135,7 +178,17 @@ class ReportShippedFlowAdoption implements IRepairStep {
 			. '(flows arrive ownerless and disabled by OpenRegister\'s design; adopting one is a '
 			. 'deliberate act, because its runs then execute as that user).'
 		);
+	}//end reportPending()
 
+	/**
+	 * Log that shipped flows await adoption, with the command that adopts them.
+	 *
+	 * @param int $pending The number of flows still to adopt.
+	 * @param int $total   The number of shipped flows.
+	 *
+	 * @return void
+	 */
+	private function logPending(int $pending, int $total): void {
 		// 🔴 THE LOG LINE CARRIES THE COMMAND, BECAUSE ON ONE PATH IT IS THE
 		// ONLY WITNESS. Everything above goes to `IOutput`, and `IOutput` for a
 		// repair step is a set of dispatched events. Only `occ
@@ -148,13 +201,13 @@ class ReportShippedFlowAdoption implements IRepairStep {
 		$this->logger->warning(
 			'Dossiq: shipped flows await adoption',
 			[
-				'app' => Application::APP_ID,
-				'pending' => count($pending),
-				'total' => count($census['flows']),
+				'app' => AppIdentity::APP_ID,
+				'pending' => $pending,
+				'total' => $total,
 				'command' => 'occ dossiq:flows:adopt --user <admin> --enable',
 			]
 		);
-	}//end run()
+	}//end logPending()
 
 	/**
 	 * Say which of the two things is missing, rather than that something is.

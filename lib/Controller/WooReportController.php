@@ -12,7 +12,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -22,18 +22,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Woo\WooReportReadLog;
+use OCA\Dossiq\Controller\Support\RecordedReportRead;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WooThroughputReportInterface;
 use OCA\Dossiq\Woo\WooReportSwitches;
-use OCA\Dossiq\Woo\WooThroughputReport;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -45,7 +46,7 @@ use OCP\IUserSession;
  * outside it is refused like anyone else (REQ-WRR-002). While a switch is off
  * its report answers 403 with the not-switched-on sentence (REQ-WRR-001).
  *
- * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md
+ * @spec openspec/specs/woo-review-reports/spec.md
  */
 class WooReportController extends Controller {
 
@@ -54,47 +55,89 @@ class WooReportController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param WooReportSwitches $switches The organisation switches.
-	 * @param WooThroughputReport $throughputReport The throughput report.
-	 * @param WooReportReadLog $readLog The read log on the audit trail.
+	 * @param WooThroughputReportInterface $throughputReport The throughput report.
+	 * @param RecordedReportRead $reads Reads the report and records the read.
 	 * @param IUserSession $userSession The user session.
 	 * @param IL10N $l10n The translations.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly WooReportSwitches $switches,
-		private readonly WooThroughputReport $throughputReport,
-		private readonly WooReportReadLog $readLog,
+		private readonly WooThroughputReportInterface $throughputReport,
+		private readonly RecordedReportRead $reads,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * Which reports this user is offered: `{throughput, parties}`, the same
+	 * answer the menu reads from the initial state. The reports page shows a
+	 * widget only when its report is offered; the report endpoints still
+	 * refuse anyone else on every read.
+	 *
+	 * @return JSONResponse The offer, or 401 without a session.
+	 *
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 */
+	#[NoAdminRequired]
+	public function offered(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		return new JSONResponse($this->switches->offeredToCurrentUser());
+	}//end offered()
 
 	/**
 	 * Throughput per reviewer per day, for one case (`?case=`) or a period (`?from=&to=`).
 	 *
-	 * `?format=csv` answers the same rows as a CSV download. Every read that
+	 * `?format=csv` answers the same rows as a CSV download. The page offers the
+	 * CSV as a plain link, which carries no CSRF token. Every read that
 	 * counted a case is recorded on that case's audit trail before it is
 	 * answered; a read that cannot be recorded is refused.
 	 *
 	 * @return JSONResponse|DataDownloadResponse The rows, or the refusal.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
 	 */
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	public function throughput(): JSONResponse|DataDownloadResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not-authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		$refusal = $this->throughputRefusal(user: $user);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->recordedThroughput(user: $user);
+	}//end throughput()
+
+	/**
+	 * Refuse a throughput read while the report is off, or by anyone outside the reader group.
+	 *
+	 * The group is the only way in: no admin bypass (REQ-WRR-002).
+	 *
+	 * @param IUser $user The caller.
+	 *
+	 * @return JSONResponse|null The 403, or null when the caller may read the report.
+	 *
+	 * @spec openspec/specs/woo-review-reports/spec.md
+	 */
+	private function throughputRefusal(IUser $user): ?JSONResponse {
 		if ($this->switches->isOn(switch: WooReportSwitches::THROUGHPUT) === false) {
 			return $this->notSwitchedOn();
 		}
 
-		// The group is the only way in: no admin bypass (REQ-WRR-002).
 		if ($this->switches->maySeeThroughput(userId: $user->getUID()) === false) {
 			return new JSONResponse(
 				[
@@ -105,24 +148,48 @@ class WooReportController extends Controller {
 			);
 		}
 
-		$caseId = trim((string)$this->request->getParam('case', ''));
-		$from = trim((string)$this->request->getParam('from', ''));
-		$to = trim((string)$this->request->getParam('to', ''));
-		$scope = ['from' => $from, 'to' => $to];
-		if ($caseId !== '') {
-			$scope = ['case' => $caseId];
+		return null;
+	}//end throughputRefusal()
+
+	/**
+	 * Read the report for the requested case or period, record the read, and answer it.
+	 *
+	 * A read that cannot be recorded is not answered.
+	 *
+	 * @param IUser $user The reader.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/specs/woo-review-reports/spec.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function recordedThroughput(IUser $user): JSONResponse|DataDownloadResponse {
+		$scope = $this->reads->scope(
+			caseId: trim((string)$this->request->getParam('case', '')),
+			from: trim((string)$this->request->getParam('from', '')),
+			to: trim((string)$this->request->getParam('to', ''))
+		);
+
+		$outcome = $this->reads->read(readerId: $user->getUID(), scope: $scope);
+		if ($outcome['refusal'] !== null) {
+			$rule = $outcome['refusal']['rule'];
+			return new JSONResponse(['error' => $rule, 'message' => $this->sentence(rule: $rule)], $outcome['refusal']['status']);
 		}
 
-		try {
-			$report = $this->read(caseId: $caseId, from: $from, to: $to);
-			$this->readLog->recordThroughputRead(readerId: $user->getUID(), scope: $scope, caseIds: $report['cases']);
-		} catch (RefusedException $e) {
-			return new JSONResponse(
-				['error' => $e->getRule(), 'message' => $this->sentence(rule: $e->getRule())],
-				$e->getStatus()
-			);
-		}
+		return $this->throughputAnswer(scope: $scope, report: $outcome['report']);
+	}//end recordedThroughput()
 
+	/**
+	 * The report as the CSV download the request asks for, or as JSON with its scope.
+	 *
+	 * @param array<string, string> $scope  The case or the period.
+	 * @param array<string, mixed>  $report The report.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/specs/woo-review-reports/spec.md
+	 */
+	private function throughputAnswer(array $scope, array $report): JSONResponse|DataDownloadResponse {
 		if ($this->request->getParam('format', '') === 'csv') {
 			return new DataDownloadResponse(
 				$this->throughputReport->toCsv(rows: $report['rows']),
@@ -132,33 +199,16 @@ class WooReportController extends Controller {
 		}
 
 		return new JSONResponse(['scope' => $scope] + $report);
-	}//end throughput()
+	}//end throughputAnswer()
 
-	/**
-	 * Read one case, or a period when no case is named.
-	 *
-	 * @param string $caseId The case, or ''.
-	 * @param string $from The first day of the period.
-	 * @param string $to The last day of the period.
-	 *
-	 * @return array{rows: list<array<string, int|string>>, cases: list<string>, truncated: bool} The report.
-	 *
-	 * @throws RefusedException When the report cannot be made.
-	 */
-	private function read(string $caseId, string $from, string $to): array {
-		if ($caseId !== '') {
-			return $this->throughputReport->forCase(caseId: $caseId);
-		}
 
-		return $this->throughputReport->forPeriod(from: $from, to: $to);
-	}//end read()
 
 	/**
 	 * The 403 of a report the organisation has not switched on.
 	 *
 	 * @return JSONResponse The refusal.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-both-reports-are-opt-in-per-organisation-off-by-default-req-wrr-001
 	 */
 	private function notSwitchedOn(): JSONResponse {
 		return new JSONResponse(
@@ -181,4 +231,21 @@ class WooReportController extends Controller {
 			default => $this->l10n->t('The Woo assessments cannot be read, so the report cannot be made.'),
 		};
 	}//end sentence()
+
+	/**
+	 * throughput() on its old address.
+	 *
+	 * Deprecated alias of /api/document-review/reports/throughput; remove after the next major.
+	 *
+	 * @return JSONResponse|DataDownloadResponse
+	 *
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-throughput-per-reviewer-per-day-read-by-the-named-group-only-req-wrr-002
+	 *
+	 * @contract exclude Deprecated path alias for throughput(); behaviour covered by the throughput() tests.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function throughputLegacyPath(): JSONResponse|DataDownloadResponse {
+		return $this->throughput();
+	}//end throughputLegacyPath()
 }//end class

@@ -30,14 +30,15 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\IntakeAccountInterface;
 use OCP\IAppConfig;
 
 /**
@@ -45,9 +46,9 @@ use OCP\IAppConfig;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+ * @spec openspec/specs/inbound-mail-filters/spec.md
  */
-class IntakeAccount {
+class IntakeAccount implements IntakeAccountInterface {
 
 	/**
 	 * The app-config key holding the picked account id.
@@ -83,10 +84,10 @@ class IntakeAccount {
 	 *
 	 * @return integer The account id, or 0 when none is picked.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function accountId(): int {
-		return (int)$this->appConfig->getValueString(Application::APP_ID, self::ACCOUNT_KEY, '0');
+		return (int)$this->appConfig->getValueString(AppIdentity::APP_ID, self::ACCOUNT_KEY, '0');
 	}//end accountId()
 
 	/**
@@ -94,11 +95,11 @@ class IntakeAccount {
 	 *
 	 * @return string The folder name.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function folder(): string {
 		$folder = trim(
-			$this->appConfig->getValueString(Application::APP_ID, self::FOLDER_KEY, self::DEFAULT_FOLDER)
+			$this->appConfig->getValueString(AppIdentity::APP_ID, self::FOLDER_KEY, self::DEFAULT_FOLDER)
 		);
 		if ($folder === '') {
 			return self::DEFAULT_FOLDER;
@@ -112,7 +113,7 @@ class IntakeAccount {
 	 *
 	 * @return boolean True when an account is picked.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function isConfigured(): bool {
 		return ($this->accountId() > 0);
@@ -126,7 +127,7 @@ class IntakeAccount {
 	 *
 	 * @return boolean True when both match.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 * @spec openspec/specs/inbound-mail-filters/spec.md
 	 */
 	public function matches(int $accountId, string $mailbox): bool {
 		if ($accountId <= 0 || $accountId !== $this->accountId()) {

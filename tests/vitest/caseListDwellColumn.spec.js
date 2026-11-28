@@ -13,9 +13,9 @@
  *    would have no column to order by, and a sortable header would send an
  *    `_order` the mapper answers by ignoring — which reads as a broken sort
  *    rather than as an absent one;
- *  - the widget name has to resolve in `src/services/cellWidgets.js`. A name
- *    that does not renders the raw value, so the breached chip would simply
- *    never appear and nothing would fail;
+ *  - the column declares the library `number` cell with its unit and the
+ *    breached flag. Without `flagWhen` the stuck chip would simply never
+ *    appear and nothing would fail;
  *  - the Stuck lens narrows on `statusDwellBreached` and NOT on the deadline.
  *    Folding it into Overdue would bury exactly the case it exists to find:
  *    stuck for nine weeks inside a term that runs for six months;
@@ -30,15 +30,11 @@ import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import DwellDaysCell from '../../src/components/cells/DwellDaysCell.vue'
+import CnCellRenderer from '@conduction/nextcloud-vue/src/components/CnCellRenderer/CnCellRenderer.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
-)
-const cellWidgetsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
-	'utf8',
 )
 
 /**
@@ -77,11 +73,19 @@ describe('the Days in status column', () => {
 		expect(dwellColumn().sortable).not.toBe(false)
 	})
 
-	it('renders through a cell widget that is actually registered', () => {
-		const widget = dwellColumn().widget
-		expect(widget).toBe('dwellDays')
-		expect(cellWidgetsSource).toContain(`${widget}: DwellDaysCell`)
-		expect(cellWidgetsSource).toContain('DwellDaysCell.vue')
+	it('renders through the library number cell with its unit and the breached flag', () => {
+		const column = dwellColumn()
+		expect(column.widget).toBe('number')
+		expect(column.widgetProps.unit).toEqual({
+			one: '{count} working day',
+			other: '{count} working days',
+		})
+		expect(column.widgetProps.flagWhen).toEqual({
+			field: 'statusDwellBreached',
+			equals: true,
+			text: 'stuck',
+			variant: 'warning',
+		})
 	})
 })
 
@@ -109,41 +113,49 @@ describe('the Stuck lens', () => {
 	})
 })
 
+/**
+ * Mount the library cell the way the Cases index declares it.
+ *
+ * @param {number|null} value The row's dwell days.
+ * @param {object} row The row.
+ * @return {object} The wrapper.
+ */
+function cell(value, row) {
+	const column = dwellColumn()
+	return mount(CnCellRenderer, {
+		props: { value, row, widget: column.widget, widgetProps: column.widgetProps },
+	})
+}
+
 describe('the Days in status cell', () => {
 	it('renders the number in working days', () => {
-		const wrapper = mount(DwellDaysCell, { props: { value: 12, row: {} } })
+		const wrapper = cell(12, {})
 
 		expect(wrapper.text()).toContain('12')
 		expect(wrapper.text()).toContain('working days')
 	})
 
 	it('carries the breached state in words as well as in colour', () => {
-		const wrapper = mount(DwellDaysCell, {
-			props: { value: 25, row: { statusDwellBreached: true } },
-		})
+		const wrapper = cell(25, { statusDwellBreached: true })
 
-		expect(wrapper.find('[data-testid="dwell-days"]').classes()).toContain(
-			'is-breached',
+		expect(wrapper.find('[data-testid="cn-cell-number"]').classes()).toContain(
+			'cn-cell-renderer__number--warning',
 		)
 		// WCAG 2.2 SC 1.4.1: colour is not the only carrier of the state.
 		expect(wrapper.text()).toContain('stuck')
 	})
 
 	it('says nothing about a case that is inside its maximum', () => {
-		const wrapper = mount(DwellDaysCell, {
-			props: { value: 3, row: { statusDwellBreached: false } },
-		})
+		const wrapper = cell(3, { statusDwellBreached: false })
 
-		expect(wrapper.find('[data-testid="dwell-days"]').classes()).not.toContain(
-			'is-breached',
-		)
+		expect(wrapper.find('[data-testid="cn-cell-number-flag"]').exists()).toBe(false)
 		expect(wrapper.text()).not.toContain('stuck')
 	})
 
 	it('renders an empty cell rather than a zero for a case that holds no number', () => {
-		const wrapper = mount(DwellDaysCell, { props: { value: null, row: {} } })
+		const wrapper = cell(null, {})
 
-		expect(wrapper.find('[data-testid="dwell-days"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="cn-cell-number"]').exists()).toBe(false)
 		expect(wrapper.text()).toBe('')
 	})
 })

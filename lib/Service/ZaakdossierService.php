@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -31,16 +31,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DomainException;
-use InvalidArgumentException;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\ZaakdossierServiceInterface;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
-use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DossierRecords;
+use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
+use OCA\Dossiq\Service\Zaakdossier\UploadedDocumentWriter;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Service orchestrating the ZGW DRC zaakdossier.
@@ -49,10 +48,9 @@ use RuntimeException;
  * {@see InformatieobjectStatusLifecycle}; this service orchestrates the
  * dossier around it.
  *
- * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+ * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
  */
-class ZaakdossierService {
-	use SearchesObjects;
+class ZaakdossierService implements ZaakdossierServiceInterface {
 
 	/**
 	 * Valid informatieobject statuses.
@@ -100,6 +98,20 @@ class ZaakdossierService {
 	public const KEYWORD_MAX_LENGTH = InformatieobjectMetadataNormaliser::KEYWORD_MAX_LENGTH;
 
 	/**
+	 * The joins and informatieobject records of the dossier in the register.
+	 *
+	 * @var DossierRecords
+	 */
+	private readonly DossierRecords $records;
+
+	/**
+	 * Writes an uploaded document and its record onto the case.
+	 *
+	 * @var UploadedDocumentWriter
+	 */
+	private readonly UploadedDocumentWriter $uploads;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
@@ -112,16 +124,25 @@ class ZaakdossierService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param DocumentRecordStore $recordStore Records and joins, and the file on the case.
 	 * @param CorrespondentWriter $correspondents Who a document came from and went to.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly InformatieobjectAccessGuard $accessGuard,
+		SettingsService $settingsService,
+		InformatieobjectAccessGuard $accessGuard,
 		private readonly InformatieobjectStatusLifecycle $statusLifecycle,
 		private readonly InformatieobjectMetadataNormaliser $normaliser,
 		private readonly LoggerInterface $logger,
-		private readonly DocumentRecordStore $recordStore,
+		DocumentRecordStore $recordStore,
 		private readonly CorrespondentWriter $correspondents,
 	) {
+		$this->records = new DossierRecords(settingsService: $settingsService, accessGuard: $accessGuard);
+		$this->uploads = new UploadedDocumentWriter(
+			normaliser: $normaliser,
+			correspondents: $correspondents,
+			recordStore: $recordStore,
+			records: $this->records
+		);
 	}//end __construct()
 
 	/**
@@ -137,80 +158,29 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or required fields/config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function uploadDocument(string $caseId, string $fileName, string $content, array $metadata): array {
-		[$objectService, $register] = $this->requireRegister();
+		$written = $this->uploads->write(caseId: $caseId, fileName: $fileName, content: $content, metadata: $metadata);
 
-		if (trim($caseId) === '') {
-			throw new RuntimeException('caseId is required');
-		}
+		$this->linkAndRecordDispatches(caseId: $caseId, infoId: $written['id'], correspondents: $written['correspondents']);
 
-		if (trim($fileName) === '') {
-			throw new RuntimeException('bestandsnaam is required');
-		}
+		return $written['summary'];
+	}//end uploadDocument()
 
-		$type = (string)($metadata['informatieobjecttype'] ?? '');
-		if ($type === '') {
-			throw new RuntimeException('informatieobjecttype is required');
-		}
-
-		$defaultClass = $this->resolveDefaultClassification(type: $type);
-		$classification = (string)($metadata['vertrouwelijkheidaanduiding'] ?? '');
-		if ($classification === '') {
-			$classification = $defaultClass;
-		} elseif ($this->accessGuard->isClassificationAllowed($defaultClass, $classification) === false) {
-			// REQ-ZAK-003d: a user may only override to a MORE restrictive level.
-			throw new InvalidArgumentException(
-				'Classification may not be less restrictive than the document type default'
-			);
-		}
-
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-
-		// Who the document came from and who it went to, resolved against the
-		// parties this case has. See CorrespondentWriter::resolveFor().
-		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
-		$correspondents = $this->correspondents->resolveFor(
-			caseId: $caseId,
-			sender: ($metadata['sender'] ?? null),
-			recipients: ($metadata['recipients'] ?? null),
-			direction: $direction,
-		);
-
-		$informatieobject = $this->uploadedRecord(
-			fileName: $fileName,
-			content: $content,
-			metadata: $metadata,
-			type: $type,
-			classification: $classification,
-			direction: $direction,
-			correspondents: $correspondents,
-		);
-
-		// Documents live on the case: the file is stored on the CASE first, so
-		// the node listener may already have projected a record for it by the
-		// time this runs; that record gets the metadata, and only when there is
-		// none is one created here.
-		$fileId = $this->recordStore->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
-		$existing = [];
-		if ($fileId > 0) {
-			$existing = ($this->recordStore->findRecord(fileId: $fileId) ?? []);
-			$informatieobject['fileId'] = $fileId;
-		}
-
-		$infoId = (string)($existing['id'] ?? '');
-		unset($existing['id'], $existing['@self']);
-		$record = array_merge($existing, $informatieobject);
-		if ($infoId !== '') {
-			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
-		}
-
-		if ($infoId === '') {
-			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
-			$infoId = $this->resolveSavedUuid(saved: $saved);
-		}
-
+	/**
+	 * Join the uploaded document to its case and record one dispatch per correspondent.
+	 *
+	 * @param string               $caseId         The case (zaak) UUID.
+	 * @param string               $infoId         The stored informatieobject id.
+	 * @param array<string, mixed> $correspondents The resolved sender and recipients.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function linkAndRecordDispatches(string $caseId, string $infoId, array $correspondents): void {
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 
@@ -219,79 +189,9 @@ class ZaakdossierService {
 
 		$this->logger->info(
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
-			['app' => Application::APP_ID],
+			['app' => AppIdentity::APP_ID],
 		);
-
-		return [
-			'id' => $infoId,
-			'title' => $informatieobject['title'],
-			'fileName' => $fileName,
-			'status' => 'draft',
-			'vertrouwelijkheidaanduiding' => $classification,
-			'informatieobjecttype' => $type,
-			'direction' => $informatieobject['direction'],
-			'sender' => $informatieobject['sender'],
-			'recipients' => $informatieobject['recipients'],
-			'keywords' => $informatieobject['keywords'],
-			'integrity' => $informatieobject['integrity'],
-		];
-	}//end uploadDocument()
-
-	/**
-	 * The record an uploaded document gets.
-	 *
-	 * The counterpart of {@see DocumentDefaults::forNewFile()}, which says the
-	 * same thing for a file somebody dropped in the case folder. Split out so
-	 * `uploadDocument()` reads as the steps of an upload rather than as one
-	 * long literal in the middle of them.
-	 *
-	 * @param string $fileName The file name.
-	 * @param string $content The bytes, for the size and the hash.
-	 * @param array<string, mixed> $metadata The submitted metadata.
-	 * @param string $type The document type uuid.
-	 * @param string $classification The confidentiality, already checked.
-	 * @param string $direction The direction, already coerced onto the enum.
-	 * @param array{sender: string, recipients: array<int, string>} $correspondents Who it is from and to.
-	 *
-	 * @return array<string, mixed> The record to store.
-	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
-	 */
-	private function uploadedRecord(
-		string $fileName,
-		string $content,
-		array $metadata,
-		string $type,
-		string $classification,
-		string $direction,
-		array $correspondents,
-	): array {
-		$now = date('Y-m-d\TH:i:s');
-
-		return [
-			'title' => (string)($metadata['title'] ?? $fileName),
-			'fileName' => $fileName,
-			'bestandsomvang' => strlen($content),
-			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
-			'vertrouwelijkheidaanduiding' => $classification,
-			'auteur' => (string)($metadata['auteur'] ?? ''),
-			'status' => 'draft',
-			'informatieobjecttype' => $type,
-			'direction' => $direction,
-			'sender' => $correspondents['sender'],
-			'recipients' => $correspondents['recipients'],
-			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
-			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
-			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
-			'taal' => (string)($metadata['taal'] ?? 'nld'),
-			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
-			'integrity' => [
-				'algorithm' => 'sha256',
-				'value' => hash('sha256', $content),
-				'date' => $now,
-			],
-		];
-	}//end uploadedRecord()
+	}//end linkAndRecordDispatches()
 
 	/**
 	 * Link an existing informatieobject to a case without duplicating the document.
@@ -305,28 +205,11 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function linkExistingInformatieobject(string $caseId, string $infoObjectId): array {
-		[$objectService, $register] = $this->requireRegister();
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $joinSchema,
-			filters: ['case' => $caseId, 'informatieobject' => $infoObjectId, '_limit' => 1],
-		);
-
-		if (empty($existing) === false) {
-			return [
-				'id' => ($existing[0]['id'] ?? ''),
-				'case' => $caseId,
-				'duplicated' => false,
-			];
-		}
-
-		return $this->createJoin(caseId: $caseId, infoObjectId: $infoObjectId);
+		return $this->records->link(caseId: $caseId, infoObjectId: $infoObjectId);
 	}//end linkExistingInformatieobject()
 
 	/**
@@ -342,31 +225,11 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function unlinkInformatieobject(string $caseId, string $infoObjectId): bool {
-		[$objectService, $register] = $this->requireRegister();
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-
-		$joins = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $joinSchema,
-			filters: ['case' => $caseId, 'informatieobject' => $infoObjectId, '_limit' => 100],
-		);
-
-		$removed = false;
-		foreach ($joins as $join) {
-			$joinId = (string)($join['id'] ?? ($join['uuid'] ?? ''));
-			if ($joinId === '') {
-				continue;
-			}
-
-			$objectService->deleteObject(uuid: $joinId, register: $register, schema: $joinSchema);
-			$removed = true;
-		}
-
-		return $removed;
+		return $this->records->unlink(caseId: $caseId, infoObjectId: $infoObjectId);
 	}//end unlinkInformatieobject()
 
 	/**
@@ -380,7 +243,7 @@ class ZaakdossierService {
 	 * @throws \RuntimeException When OpenRegister/config is unavailable or status invalid.
 	 * @throws \InvalidArgumentException When the transition is not permitted (caller maps to HTTP 400).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function transitionStatus(string $infoObjectId, string $newStatus): array {
 		return $this->statusLifecycle->transition(infoObjectId: $infoObjectId, newStatus: $newStatus);
@@ -394,7 +257,7 @@ class ZaakdossierService {
 	 *
 	 * @return bool True when allowed.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function isTransitionAllowed(string $from, string $to): bool {
 		return $this->statusLifecycle->isTransitionAllowed(from: $from, to: $to);
@@ -414,51 +277,20 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function getDossierForCase(string $caseId, string $correspondent = ''): array {
-		[$objectService, $register] = $this->requireRegister();
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-
-		$joins = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $joinSchema,
-			filters: ['case' => $caseId, '_limit' => 500],
-		);
-
-		$documents = [];
-		foreach ($joins as $join) {
-			$infoId = (string)($join['informatieobject'] ?? '');
-			if ($infoId === '') {
-				continue;
-			}
-
-			$doc = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $infoSchema,
-				id: $infoId,
-			);
-
-			if ($doc !== null) {
-				$documents[] = $doc;
-			}
-		}
+		$documents = $this->records->documentsOf(caseId: $caseId);
 
 		// Every row carries who the document was from and to, named. The
 		// parties are read once for the whole listing rather than once per
 		// document, which is the difference between one OpenRegister read and
 		// forty to draw one column.
-		return $this->groupByType(
-			documents: $this->correspondents->describeAll(
-				caseId: $caseId,
-				documents: $documents,
-				correspondent: $correspondent,
-			)
-		);
+		$described = $this->correspondents->describeAll(caseId: $caseId, documents: $documents, correspondent: $correspondent);
+
+		return $this->groupByType(documents: $described);
 	}//end getDossierForCase()
 
 	/**
@@ -468,7 +300,7 @@ class ZaakdossierService {
 	 *
 	 * @return array<string, mixed> Grouped structure.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function groupByType(array $documents): array {
 		$groups = [];
@@ -505,7 +337,7 @@ class ZaakdossierService {
 	 *
 	 * @return array<int, array<string, mixed>> Per-id results with `id`, `success`, optional `error`.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
 	 */
 	public function bulkTransitionStatus(array $infoObjectIds, string $newStatus): array {
 		return $this->statusLifecycle->transitionMany(infoObjectIds: $infoObjectIds, newStatus: $newStatus);
@@ -524,57 +356,17 @@ class ZaakdossierService {
 	 * @throws \RuntimeException When OpenRegister/config unavailable or document missing.
 	 * @throws \DomainException When the document is definitief and therefore immutable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function updateMetadata(string $infoObjectId, array $metadata): array {
-		[$objectService, $register] = $this->requireRegister();
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
+		$current = $this->records->find(infoObjectId: $infoObjectId);
 
-		$current = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $infoSchema,
-			id: $infoObjectId,
-		);
+		$current = $this->statusLifecycle->requireEditable(current: $current, infoObjectId: $infoObjectId);
 
-		if ($current === null) {
-			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
-		}
-
-		if ((string)($current['status'] ?? '') === 'final') {
-			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
-		}
-
-		$allowed = [
-			'title',
-			'description',
-			'informatieobjecttype',
-			'vertrouwelijkheidaanduiding',
-			'direction',
-			'keywords',
-		];
-		$updateData = [];
-		foreach ($allowed as $field) {
-			if (array_key_exists($field, $metadata) === false) {
-				continue;
-			}
-
-			$updateData[$field] = match ($field) {
-				'direction' => $this->normaliser->direction(value: $metadata[$field]),
-				'keywords' => $this->normaliser->keywords(value: $metadata[$field]),
-				default => $metadata[$field],
-			};
-		}
-
-		$updateData = array_merge(
-			$updateData,
-			$this->correspondents->applyEdit(
-				documentId: $infoObjectId,
-				current: $current,
-				metadata: $metadata,
-				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
-			)
-		);
+		$updateData = $this->normaliser->editableFields(metadata: $metadata);
+		$updateData = $this->withCorrespondentEdit(infoObjectId: $infoObjectId, current: $current, metadata: $metadata, updateData: $updateData);
 
 		if (empty($updateData) === true) {
 			return ['id' => $infoObjectId, 'updated' => false];
@@ -583,17 +375,34 @@ class ZaakdossierService {
 		// Only the edited fields, applied to the stored document: a bare
 		// saveObject() with the uuid replaces the document with $updateData,
 		// which the schema refuses for the required properties it drops.
-		$this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $infoSchema,
-			id: $infoObjectId,
-			changes: $updateData,
-		);
+		$this->records->patch(infoObjectId: $infoObjectId, changes: $updateData);
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
 
+	/**
+	 * The update data with the correspondent edit merged in.
+	 *
+	 * @param string $infoObjectId The informatieobject UUID.
+	 * @param array<string, mixed> $current The stored document.
+	 * @param array<string, mixed> $metadata Editable fields as submitted.
+	 * @param array<string, mixed> $updateData The editable fields picked so far.
+	 *
+	 * @return array<string, mixed> The update data.
+	 *
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 */
+	private function withCorrespondentEdit(string $infoObjectId, array $current, array $metadata, array $updateData): array {
+		return array_merge(
+			$updateData,
+			$this->correspondents->applyEdit(
+				documentId: $infoObjectId,
+				current: $current,
+				metadata: $metadata,
+				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
+			)
+		);
+	}//end withCorrespondentEdit()
 
 	/**
 	 * Fetch a single informatieobject as an array.
@@ -604,18 +413,11 @@ class ZaakdossierService {
 	 *
 	 * @throws \RuntimeException When OpenRegister/config unavailable.
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function getInformatieobject(string $infoObjectId): ?array {
-		[$objectService, $register] = $this->requireRegister();
-		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-
-		return $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $infoSchema,
-			id: $infoObjectId,
-		);
+		return $this->records->find(infoObjectId: $infoObjectId);
 	}//end getInformatieobject()
 
 	/**
@@ -625,110 +427,11 @@ class ZaakdossierService {
 	 *
 	 * @return string The default vertrouwelijkheidaanduiding ('intern' fallback).
 	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-06-13-document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function resolveDefaultClassification(string $type): string {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue('register');
-		$typeSchema = $this->settingsService->getConfigValue('dossier_informatieobjecttype_schema');
-
-		if ($objectService === null || $register === '' || $typeSchema === '') {
-			return 'intern';
-		}
-
-		$record = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $typeSchema,
-			id: $type,
-		);
-
-		$level = (string)($record['vertrouwelijkheidaanduiding'] ?? '');
-		if (in_array($level, InformatieobjectAccessGuard::HIERARCHY, true) === true) {
-			return $level;
-		}
-
-		return 'intern';
+		return $this->records->defaultClassification(type: $type);
 	}//end resolveDefaultClassification()
 
-	/**
-	 * Create a zaakinformatieobject join object.
-	 *
-	 * @param string $caseId The case UUID.
-	 * @param string $infoObjectId The informatieobject UUID.
-	 *
-	 * @return array<string, mixed> The join summary.
-	 */
-	private function createJoin(string $caseId, string $infoObjectId): array {
-		[$objectService, $register] = $this->requireRegister();
-		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
-
-		$join = [
-			'case' => $caseId,
-			'informatieobject' => $infoObjectId,
-			'natureRelationshipDisplay' => 'Hoort at omgekeerd',
-			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
-		];
-
-		$saved = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
-		$joinId = $this->resolveSavedUuid(saved: $saved);
-
-		return [
-			'id' => $joinId,
-			'case' => $caseId,
-			'informatieobject' => $infoObjectId,
-			'duplicated' => true,
-		];
-	}//end createJoin()
-
-	/**
-	 * Resolve the ObjectService and register, throwing when unavailable.
-	 *
-	 * @return array{0: object, 1: string} The object service and register slug.
-	 *
-	 * @throws \RuntimeException When OpenRegister or the register config is unavailable.
-	 */
-	private function requireRegister(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end requireRegister()
-
-	/**
-	 * Read the UUID out of whatever `ObjectService::saveObject()` returned.
-	 *
-	 * OpenRegister returns an ObjectEntity when the register is live and a
-	 * plain array in the array-mode/test paths, so both shapes are handled.
-	 * The UUID MUST come from the SAVED result — the input payload never
-	 * carries an `id`, so reading it back from the payload always yielded ''.
-	 *
-	 * `is_callable()` rather than `method_exists()`: ObjectEntity declares
-	 * `uuid` as a protected property and exposes `getUuid()` only through
-	 * `OCP\AppFramework\Db\Entity::__call()`. `method_exists()` does not see
-	 * magic methods and would report false for every live object, silently
-	 * dropping this to the array branch and returning ''. `is_callable()`
-	 * accounts for `__call()`, and `call_user_func()` keeps the invocation
-	 * resolvable for static analysis.
-	 *
-	 * @param mixed $saved The saveObject() return value.
-	 *
-	 * @return string The saved object UUID, or '' when it cannot be resolved.
-	 */
-	private function resolveSavedUuid(mixed $saved): string {
-		if (is_object($saved) === true && is_callable([$saved, 'getUuid']) === true) {
-			return (string)call_user_func([$saved, 'getUuid']);
-		}
-
-		$row = (array)$saved;
-		$self = (array)($row['@self'] ?? []);
-		return (string)($row['id'] ?? ($self['id'] ?? ''));
-	}//end resolveSavedUuid()
 }//end class

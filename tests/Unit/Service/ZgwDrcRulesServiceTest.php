@@ -31,12 +31,13 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwDrcRulesService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * The ObjectService shape the DRC rules call with named arguments.
  */
 interface DrcObjectServiceStub {
-	public function find(string $id, string $register, string $schema): ?array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array;
 
 	public function buildSearchQuery(array $requestParams, string $register, string $schema): array;
 
@@ -49,11 +50,14 @@ interface DrcObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ZgwDrcRulesService
  * @covers \OCA\Dossiq\Service\Zgw\DrcObjectLinkRules
  * @covers \OCA\Dossiq\Service\Zgw\DrcDocumentRelations
+ * @covers \OCA\Dossiq\Service\Zgw\DrcLockRule
  * @covers \OCA\Dossiq\Service\ZgwRulesBase
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleLookups
  * @uses \OCA\Dossiq\Service\Zgw\ZgwRuleResults
  *
  * @uses \OCA\Dossiq\Service\FieldValidator
+ * @uses \OCA\Dossiq\Service\Zgw\DocumentLink
+ * @uses \OCA\Dossiq\Service\Zgw\RelationSearch
  */
 class ZgwDrcRulesServiceTest extends TestCase {
 
@@ -106,7 +110,9 @@ class ZgwDrcRulesServiceTest extends TestCase {
 		if ($objects !== null) {
 			$objectService = $this->createMock(DrcObjectServiceStub::class);
 			$objectService->method('find')->willReturnCallback(
-				static function (string $id, string $register, string $schema) use ($objects): ?array {
+				static function (string $id, ?ObjectFindOptions $options = null) use ($objects): ?array {
+					$register = $options?->register;
+					$schema = $options?->schema;
 					return $objects[$id] ?? null;
 				}
 			);

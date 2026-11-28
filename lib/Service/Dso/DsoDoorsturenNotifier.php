@@ -23,22 +23,23 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Dso;
 
+use OCA\Dossiq\Kernel\Contracts\DsoDoorsturenNotifierInterface;
 use OCP\EventDispatcher\GenericEvent;
 use OCP\EventDispatcher\IEventDispatcher;
 
 /**
  * Emits the VergunningDoorgestuurd event for downstream listeners.
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+ * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
  */
-class DsoDoorsturenNotifier {
+class DsoDoorsturenNotifier implements DsoDoorsturenNotifierInterface {
 	/**
 	 * The event name downstream listeners bind to.
 	 *
@@ -69,7 +70,7 @@ class DsoDoorsturenNotifier {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-06-13-dso-omgevingsloket/tasks.md#T07
 	 */
 	public function dispatchDoorgestuurd(
 		array $case,
@@ -78,19 +79,26 @@ class DsoDoorsturenNotifier {
 		string $reason,
 		string $userId,
 	): void {
-		$event = new GenericEvent(
-			subject: $case,
-			arguments: [
-				'caseId' => $caseId,
-				'targetBevoegdGezag' => $targetBevoegdGezag,
-				'reason' => $reason,
-				'userId' => $userId,
-			]
+		$this->dispatchOn(
+			case: $case,
+			arguments: ['caseId' => $caseId, 'targetBevoegdGezag' => $targetBevoegdGezag, 'reason' => $reason, 'userId' => $userId]
 		);
+	}//end dispatchDoorgestuurd()
+
+	/**
+	 * Dispatch the doorgestuurd event with the case as its subject.
+	 *
+	 * @param array<string, mixed>  $case      The case.
+	 * @param array<string, string> $arguments The case id, the receiving bevoegd gezag, the reason and the user.
+	 *
+	 * @return void
+	 */
+	private function dispatchOn(array $case, array $arguments): void {
+		$event = new GenericEvent(subject: $case, arguments: $arguments);
 
 		$this->eventDispatcher->dispatch(
 			eventName: self::EVENT_NAME,
 			event: $event
 		);
-	}//end dispatchDoorgestuurd()
+	}//end dispatchOn()
 }//end class

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-a-requester-notice-goes-out-through-a-real-channel-or-is-recorded-as-not-sent-req-wrn-001
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Dossiq\Tests\Support;
 use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
+use OCA\OpenRegister\Notifications\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Mail\IMailer;

@@ -1,6 +1,6 @@
 <?php
 /**
- * The case page carries Nextcloud's own Viewer.
+ * Every page carries Nextcloud's Viewer; the files browser's actions come from their own bare page.
  *
  * @category  Test
  * @package   OCA\Dossiq\Tests\Unit\Controller
@@ -16,6 +16,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Controller\Support\SurfaceLoadEvents;
+use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -34,46 +36,67 @@ class DashboardControllerFilesSurfacesTest extends TestCase
 {
 
     /**
-     * Rendering the page dispatches the load event of every surface whose app is installed.
+     * Build the controller around a dispatcher that expects exactly these events.
      *
-     * @return void
+     * @param list<string> $expected The event classes that must be dispatched, once each.
+     *
+     * @return DashboardController The controller.
      */
-    public function testRenderingThePageDispatchesEveryLoadEventThatExists(): void
+    private function controllerExpecting(array $expected): DashboardController
     {
-        $present = array_values(array: array_filter(array: DashboardController::FILES_SURFACE_EVENTS, callback: 'class_exists'));
+        $present = array_values(array: array_filter(array: $expected, callback: 'class_exists'));
 
         $dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
         $dispatcher->expects($this->exactly(count: count(value: $present)))
             ->method('dispatchTyped')
             ->with($this->callback(callback: static fn (Event $event): bool => in_array(needle: $event::class, haystack: $present, strict: true)));
 
-        $controller = new DashboardController(
+        return new DashboardController(
             request: $this->createMock(originalClassName: IRequest::class),
             initialState: $this->createMock(originalClassName: IInitialState::class),
             appConfig: $this->createMock(originalClassName: IAppConfig::class),
-            eventDispatcher: $dispatcher,
+            surfaces: new SurfaceLoadEvents(eventDispatcher: $dispatcher),
         );
-
-        $controller->page();
-    }//end testRenderingThePageDispatchesEveryLoadEventThatExists()
+    }//end controllerExpecting()
 
 
     /**
-     * The events are the Viewer's and the Files app's additional scripts, by
-     * name, and the Files sidebar's is not.
-     *
-     * Named rather than imported, because the Viewer app is not a dependency;
-     * a typo in the name would silently dispatch nothing, so the name is
-     * pinned. The sidebar's event stays out on purpose: on Nextcloud 34 the
-     * sidebar cannot be opened from another app's page.
+     * Every page dispatches the Viewer's load event, and not the Files app's.
      *
      * @return void
      */
-    public function testTheEventsAreTheViewersAndTheAdditionalScriptsAndNotTheSidebars(): void
+    public function testThePageDispatchesOnlyTheViewersLoadEvent(): void
     {
-        $this->assertSame(
-            expected: ['OCA\\Viewer\\Event\\LoadViewer', 'OCA\\Files\\Event\\LoadAdditionalScriptsEvent'],
-            actual: DashboardController::FILES_SURFACE_EVENTS
-        );
-    }//end testTheEventsAreTheViewersAndTheAdditionalScriptsAndNotTheSidebars()
+        $this->controllerExpecting(expected: DashboardController::PAGE_SURFACE_EVENTS)->page();
+    }//end testThePageDispatchesOnlyTheViewersLoadEvent()
+
+
+    /**
+     * The files surfaces page dispatches the Files app's additional-scripts event as a bare page.
+     *
+     * @return void
+     */
+    public function testTheFilesSurfacesPageDispatchesTheAdditionalScriptsAsABarePage(): void
+    {
+        $response = $this->controllerExpecting(expected: DashboardController::FILES_SURFACE_EVENTS)->filesSurfaces();
+
+        $this->assertSame(expected: 'surfaces', actual: $response->getTemplateName());
+        $this->assertSame(expected: TemplateResponse::RENDER_AS_BASE, actual: $response->getRenderAs());
+    }//end testTheFilesSurfacesPageDispatchesTheAdditionalScriptsAsABarePage()
+
+
+    /**
+     * The events are named, so a typo cannot silently dispatch nothing.
+     *
+     * Named rather than imported, because neither the Viewer nor the Files app
+     * is a dependency. The Files sidebar's event stays out on purpose: on
+     * Nextcloud 34 the sidebar cannot be opened from another app's page.
+     *
+     * @return void
+     */
+    public function testTheEventsAreTheViewersOnThePageAndTheAdditionalScriptsOnTheFilesPage(): void
+    {
+        $this->assertSame(expected: ['OCA\\Viewer\\Event\\LoadViewer'], actual: DashboardController::PAGE_SURFACE_EVENTS);
+        $this->assertSame(expected: ['OCA\\Files\\Event\\LoadAdditionalScriptsEvent'], actual: DashboardController::FILES_SURFACE_EVENTS);
+    }//end testTheEventsAreTheViewersOnThePageAndTheAdditionalScriptsOnTheFilesPage()
 }//end class

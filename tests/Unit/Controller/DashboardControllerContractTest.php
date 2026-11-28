@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DashboardController;
+use OCA\Dossiq\Controller\Support\SurfaceLoadEvents;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -85,7 +86,7 @@ class DashboardControllerContractTest extends TestCase {
 			request: $this->request,
 			initialState: $this->createMock(originalClassName: IInitialState::class),
 			appConfig: $this->createMock(originalClassName: IAppConfig::class),
-			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+			surfaces: new SurfaceLoadEvents(eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class)),
 		);
 	}//end setUp()
 
@@ -146,7 +147,7 @@ class DashboardControllerContractTest extends TestCase {
 			request: $this->request,
 			initialState: $initialState,
 			appConfig: $this->createMock(originalClassName: IAppConfig::class),
-			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+			surfaces: new SurfaceLoadEvents(eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class)),
 		);
 
 		$controller->page();
@@ -160,7 +161,10 @@ class DashboardControllerContractTest extends TestCase {
 			$this->assertArrayHasKey('slug', $feature);
 			$this->assertArrayHasKey('title', $feature);
 			$this->assertArrayHasKey('status', $feature);
+			$this->assertContains($feature['category'] ?? null, ['cases', 'decisions', 'roadmap'], $feature['slug']);
 		}
+
+		$this->assertArrayHasKey('features_roadmap_app_version', $provided, 'the board header names the installed version');
 	}//end testPageProvidesTheRoadmapFeaturesFromDocsFeaturesJson()
 
 	/**

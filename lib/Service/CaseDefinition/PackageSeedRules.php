@@ -49,7 +49,7 @@ final class PackageSeedRules {
 		$errors = $this->schemaErrors(schema: ($seed['schema'] ?? null), path: $path);
 		$rows = ($seed['rows'] ?? null);
 		if (array_key_exists('match', $seed) === true && is_array($rows) === true) {
-			array_push($errors, ...$this->matchErrors(match: $seed['match'], rows: $rows, path: $path));
+			array_push($errors, ...$this->matchErrors(seed: $seed, path: $path));
 		}
 
 		return $errors;
@@ -130,21 +130,20 @@ final class PackageSeedRules {
 	/**
 	 * Check the properties a seed file recognises an existing row by.
 	 *
-	 * @param mixed             $match The `match` value.
-	 * @param array<int, mixed> $rows  The rows.
-	 * @param string            $path  The seed file, for the message.
+	 * @param array{match: mixed, rows: array<int, mixed>} $seed The decoded seed file, with its `match` and its rows.
+	 * @param string                                       $path The seed file, for the message.
 	 *
 	 * @return array<int, string> The errors.
 	 */
-	private function matchErrors(mixed $match, array $rows, string $path): array {
-		$properties = $this->matchProperties(match: $match);
+	private function matchErrors(array $seed, string $path): array {
+		$properties = $this->matchProperties(match: $seed['match']);
 		if ($properties === []) {
 			return ["{$path}: match must name one property of the rows, or a list of them."];
 		}
 
 		$errors = [];
 
-		foreach ($rows as $index => $row) {
+		foreach ($seed['rows'] as $index => $row) {
 			foreach ($properties as $property) {
 				$value = null;
 				if (is_array($row) === true) {

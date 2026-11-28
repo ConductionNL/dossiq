@@ -29,17 +29,23 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
+use OCA\Dossiq\Service\Zaakdossier\DocumentAccessExceptionRule;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
+use OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCA\Dossiq\Service\ZgwDocumentService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectDeletion;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCP\Files\File;
 
 /**
  * ObjectService stub matching the named-arg signatures used by ZaakdossierService.
@@ -75,7 +81,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return array
 	 */
-	public function find(string $id, string $register, string $schema): array;
+	public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array;
 
 	/**
 	 * Save an object.
@@ -87,7 +93,7 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return object
 	 */
-	public function saveObject(array $object, string $register, string $schema, string $uuid = ''): object;
+	public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): object;
 
 	/**
 	 * Delete an object.
@@ -98,20 +104,26 @@ interface DossierObjectServiceStub {
 	 *
 	 * @return void
 	 */
-	public function deleteObject(string $uuid, string $register, string $schema): void;
+	public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true, bool $_retentionSweep = false): void;
 }//end interface
 
 /**
  * Unit tests for ZaakdossierService.
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
+ * @uses \OCA\Dossiq\Service\DocumentUpload
  *
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentListingLabels
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CasePartyIndex
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentStatusMove
+ * @uses \OCA\Dossiq\Service\Zaakdossier\StoredDocument
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class ZaakdossierServiceTest extends TestCase {
 
@@ -162,6 +174,9 @@ class ZaakdossierServiceTest extends TestCase {
 			/** @var int The file id the next addFile answers. */
 			public int $fileId = 4711;
 
+			/** @var \Closure(int): File Builds the stored file openregister answers. */
+			public \Closure $fileWithId;
+
 			/** @var array<int, array<string, mixed>> Every addFile asked. */
 			public array $added = [];
 
@@ -175,7 +190,7 @@ class ZaakdossierServiceTest extends TestCase {
 			 * @param mixed $_register Unused.
 			 * @param mixed $registerId The register.
 			 *
-			 * @return object A file with getFileId().
+			 * @return object The stored file, as openregister's FileService answers.
 			 */
 			public function addFile(
 				mixed $objectEntity,
@@ -188,23 +203,14 @@ class ZaakdossierServiceTest extends TestCase {
 				mixed $registerId = null,
 			): object {
 				$this->added[] = ['object' => $objectEntity, 'fileName' => $fileName, 'content' => $content, 'register' => $registerId];
-				$fileId = $this->fileId;
-				return new class ($fileId) {
-					/**
-					 * @param int $fileId The file id.
-					 */
-					public function __construct(private readonly int $fileId) {
-					}
-
-					/**
-					 * @return int The file id.
-					 */
-					public function getFileId(): int {
-						return $this->fileId;
-					}
-				};
+				return ($this->fileWithId)($this->fileId);
 			}
+		};		$this->files->fileWithId = function (int $id): File {
+			$file = $this->createMock(originalClassName: File::class);
+			$file->method('getId')->willReturn($id);
+			return $file;
 		};
+
 		$this->settings->method('getFileService')->willReturn($this->files);
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = '') {
@@ -222,6 +228,7 @@ class ZaakdossierServiceTest extends TestCase {
 			settingsService: $this->settings,
 			groupManager: $this->createMock(\OCP\IGroupManager::class),
 			logger: $this->createMock(LoggerInterface::class),
+			exceptions: $this->createConfiguredMock(DocumentAccessExceptionRule::class, ['admits' => true]),
 		);
 		// A REAL lifecycle collaborator over the same mocked settings, so the
 		// status-transition tests below still exercise the production state
@@ -242,6 +249,7 @@ class ZaakdossierServiceTest extends TestCase {
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $this->settings,
 				store: new DocumentRecordStore(settingsService: $this->settings),
+				labels: new DocumentListingLabels(settingsService: $this->settings),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
@@ -321,13 +329,16 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$captured[$schema] = $object;
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
 			}
 		);
 
-		$this->documents->expects($this->never())->method('storeRaw');
+		$this->documents->expects($this->never())->method('storeBase64');
 
 		$result = $this->service->uploadDocument(
 			caseId: 'case-1',
@@ -595,7 +606,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$captured[$schema] = $object;
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
@@ -697,7 +711,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$captured = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$captured) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$captured) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$captured = $object;
 
 				return $this->savedObject('inf-1');
@@ -729,7 +746,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$writes = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$writes) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$writes) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$writes[] = ['schema' => $schema, 'uuid' => $uuid, 'object' => $object];
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');
@@ -774,7 +794,10 @@ class ZaakdossierServiceTest extends TestCase {
 
 		$schemas = [];
 		$os->method('saveObject')->willReturnCallback(
-			function (array $object, string $register, string $schema, string $uuid = '') use (&$schemas) {
+			function (array $object, ObjectSaveOptions $options = new ObjectSaveOptions()) use (&$schemas) {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid ?? '';
 				$schemas[] = $schema;
 
 				return $this->savedObject($schema === 'informatieobject' ? 'inf-1' : 'zio-1');

@@ -155,13 +155,13 @@ Every federated-sharing, federated-activity and federated-transfer action that c
 
 ### Requirement: The Case-Detail Sharing Surface Is Wired, Not Orphaned
 
-The case-detail sidebar SHALL expose a "Sharing" tab that mounts the partner-share, federated-share, transfer, and collaboration-activity UI, reachable from the real case detail page — not merely present as unreferenced component files.
+The case detail page SHALL offer sharing with another organisation as the dialog "Zaak delen met een andere organisatie", as board DqZaakSamenwerken draws it, not as a sidebar tab. The dialog SHALL offer the choice Delen ("U blijft eigenaar; zij werken mee") or Overdragen ("Zij worden eigenaar; u kunt nog meelezen"), the organisation, what they may do, an optional message and "Alleen een deel van de zaakvelden delen", and SHALL be reachable from the real case detail page, not merely present as unreferenced component files. After sharing, the case SHALL show what the other organisation does (opened, document added, handed back).
 
-#### Scenario: The Sharing tab is reachable from a case detail page
+#### Scenario: The sharing dialog is reachable from a case detail page
 
 - **GIVEN** a user viewing a case's detail page
-- **WHEN** they open the case-detail sidebar
-- **THEN** a "Sharing" tab SHALL be present
-- **AND** selecting it SHALL render the partner/federated share list and the transfer/activity actions
+- **WHEN** they choose to share the case with another organisation
+- **THEN** the dialog "Zaak delen met een andere organisatie" SHALL open with Delen and Overdragen
+- **AND** no "Sharing" sidebar tab SHALL be present
 
-@e2e exclude Verifying the tab renders end-to-end requires a running Nextcloud UI session; this change verifies the wiring statically (registry.js/manifest.json entries + Vitest coverage of the container component's API calls), consistent with how other sidebar-tab leaves in this codebase are verified (see `case-share-via-shares-leaf` spec precedent).
+@e2e exclude Verifying the dialog renders end-to-end requires a running Nextcloud UI session; this change verifies the wiring statically (registry.js/manifest.json entries + Vitest coverage of the container component's API calls), consistent with how other sidebar-tab leaves in this codebase are verified (see `case-share-via-shares-leaf` spec precedent).

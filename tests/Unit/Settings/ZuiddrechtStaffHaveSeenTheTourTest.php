@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/zuiddrecht-staff-have-seen-the-tour/specs/getting-started-tour/spec.md
+ * @spec openspec/changes/archive/2026-11-25-zuiddrecht-staff-have-seen-the-tour/specs/getting-started-tour/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The fragment's tour preferences match the manifest.
  *
- * @spec openspec/changes/zuiddrecht-staff-have-seen-the-tour/specs/getting-started-tour/spec.md
+ * @spec openspec/changes/archive/2026-11-25-zuiddrecht-staff-have-seen-the-tour/specs/getting-started-tour/spec.md
  */
 class ZuiddrechtStaffHaveSeenTheTourTest extends TestCase {
 
@@ -56,7 +56,7 @@ class ZuiddrechtStaffHaveSeenTheTourTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/zuiddrecht-staff-have-seen-the-tour/specs/getting-started-tour/spec.md
+	 * @spec openspec/changes/archive/2026-11-25-zuiddrecht-staff-have-seen-the-tour/specs/getting-started-tour/spec.md
 	 */
 	public function testEveryStaffMemberHasSeenTheTourAtTheManifestVersion(): void {
 		$manifest = $this->json(path: 'src/manifest.json');
@@ -68,7 +68,11 @@ class ZuiddrechtStaffHaveSeenTheTourTest extends TestCase {
 		$users = [];
 		foreach ($fragment['userPreferences'] as $entry) {
 			$this->assertArrayNotHasKey('app', $entry, 'the loader writes the fragment\'s own app');
-			$this->assertSame($key, $entry['key']);
+			if ($entry['key'] !== $key) {
+				// Other preferences, such as a menu of saved views, are not the tour's.
+				continue;
+			}
+
 			$this->assertSame($manifest['version'], $entry['value'], 'the tour compares the seen version against the manifest version');
 			$users[] = $entry['user'];
 		}

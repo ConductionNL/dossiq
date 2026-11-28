@@ -28,33 +28,29 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Beschikking;
 
+use OCA\Dossiq\Kernel\Contracts\BezwaarArchiveTriggerInterface;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
  * Archives a beschikking whose objection term ran out, and switches the trigger off.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
-class BezwaarArchiveTrigger {
+class BezwaarArchiveTrigger implements BezwaarArchiveTriggerInterface {
 	use SearchesObjects;
-
-	/**
-	 * The config key naming the bezwaarTrigger schema.
-	 *
-	 * @var string
-	 */
-	public const SCHEMA_CONFIG_KEY = 'bezwaar_trigger_schema';
 
 	/**
 	 * Outcome: the beschikking was archived and the trigger switched off.
@@ -105,7 +101,7 @@ class BezwaarArchiveTrigger {
 	 *
 	 * @return array<string, mixed>|null The trigger, or null when it does not exist or nothing is configured.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function find(string $triggerId): ?array {
 		$objectService = $this->settingsService->getObjectService();
@@ -127,7 +123,7 @@ class BezwaarArchiveTrigger {
 	 *
 	 * @return string One of the outcome constants.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function process(array $trigger): string {
 		$decisionId = (string) ($trigger['decisionId'] ?? '');
@@ -172,7 +168,10 @@ class BezwaarArchiveTrigger {
 		$trigger['archiveTriggerActive'] = false;
 
 		try {
-			$objectService->saveObject(register: $register, schema: $schema, object: $trigger);
+			$objectService->saveObject(
+				object: $trigger,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
+			);
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq bezwaar: switching the trigger off failed', ['error' => $e->getMessage()]);
 		}

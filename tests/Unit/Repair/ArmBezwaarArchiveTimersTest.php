@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
@@ -35,6 +35,8 @@ use OCA\Dossiq\Tests\Unit\Service\FakeObjectService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 require_once __DIR__.'/../Service/BeschikkingServiceTest.php';
 
@@ -72,9 +74,9 @@ class ArmBezwaarArchiveTimersTest extends TestCase {
 	 */
 	public function testActiveTriggersAreSyncedAndDueOnesHandled(): void {
 		$objects = new FakeObjectService();
-		$objects->saveObject('dossiq', 'bezwaarTrigger', ['id' => 'trig-1', 'archiveTriggerActive' => true]);
-		$objects->saveObject('dossiq', 'bezwaarTrigger', ['id' => 'trig-2', 'archiveTriggerActive' => true]);
-		$objects->saveObject('dossiq', 'bezwaarTrigger', ['id' => 'trig-3', 'archiveTriggerActive' => false]);
+		$objects->saveObject(['id' => 'trig-1', 'archiveTriggerActive' => true], new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger')));
+		$objects->saveObject(['id' => 'trig-2', 'archiveTriggerActive' => true], new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger')));
+		$objects->saveObject(['id' => 'trig-3', 'archiveTriggerActive' => false], new ObjectSaveOptions(target: new ObjectFindTarget(register: 'dossiq', schema: 'bezwaarTrigger')));
 
 		$timer = $this->createMock(BezwaarArchiveTimer::class);
 		$timer->expects($this->exactly(2))->method('sync')->willReturnCallback(

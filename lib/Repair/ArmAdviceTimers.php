@@ -24,17 +24,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
-use OCA\Dossiq\Service\Advice\AdviceTimer;
-use OCA\Dossiq\Service\AdviceService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Syncs the timer of every open advice request once.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  */
 class ArmAdviceTimers implements IRepairStep {
 	use RunsUnderSystemIdentity;
@@ -50,15 +50,15 @@ class ArmAdviceTimers implements IRepairStep {
 	/**
 	 * Build the step.
 	 *
-	 * @param SettingsService $settingsService Reports OpenRegister and its object service.
-	 * @param AdviceService   $adviceService   Lists the open requests and expires overdue ones.
-	 * @param AdviceTimer     $timer           Arms each request's timer.
+	 * @param SettingsServiceInterface $settingsService Reports OpenRegister and its object service.
+	 * @param AdviceServiceInterface   $adviceService   Lists the open requests and expires overdue ones.
+	 * @param AdviceTimerInterface     $timer           Arms each request's timer.
 	 * @param LoggerInterface $logger          Logs the counts.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly AdviceService $adviceService,
-		private readonly AdviceTimer $timer,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly AdviceServiceInterface $adviceService,
+		private readonly AdviceTimerInterface $timer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -68,7 +68,7 @@ class ArmAdviceTimers implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function getName(): string {
 		return 'Arm OpenRegister engine timers for open Dossiq advice requests';
@@ -81,7 +81,7 @@ class ArmAdviceTimers implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function run(IOutput $output): void {
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
@@ -123,18 +123,18 @@ class ArmAdviceTimers implements IRepairStep {
 	 */
 	private function syncOne(array $advice, array &$counts): void {
 		$outcome = $this->timer->sync(advice: $advice);
-		if ($outcome === AdviceTimer::ARMED) {
+		if ($outcome === AdviceTimerInterface::ARMED) {
 			$counts['armed']++;
 			return;
 		}
 
-		if ($outcome === AdviceTimer::OVERDUE) {
+		if ($outcome === AdviceTimerInterface::OVERDUE) {
 			$this->adviceService->expireAdvice((string) ($advice['id'] ?? ($advice['uuid'] ?? '')));
 			$counts['expired']++;
 			return;
 		}
 
-		if ($outcome === AdviceTimer::UNAVAILABLE) {
+		if ($outcome === AdviceTimerInterface::UNAVAILABLE) {
 			$counts['failed']++;
 		}
 	}//end syncOne()

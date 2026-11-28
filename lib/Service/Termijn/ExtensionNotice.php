@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
  */
 
 declare(strict_types=1);
@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use OCA\Dossiq\Exception\NoticeNotSentException;
+use OCA\Dossiq\Kernel\Contracts\ExtensionNoticeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnNotificationService;
@@ -44,9 +45,9 @@ use Throwable;
 /**
  * Sends the extension notice and answers whether it went out.
  *
- * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+ * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
  */
-class ExtensionNotice {
+class ExtensionNotice implements ExtensionNoticeInterface {
 
 	use SearchesObjects;
 
@@ -74,10 +75,27 @@ class ExtensionNotice {
 	 *
 	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
 	 *
-	 * @spec openspec/changes/woo-requester-notices-really-go-out/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
+	 * @spec openspec/specs/burger-notifications/spec.md#requirement-an-extension-reaches-the-requester-with-its-reason-req-wrn-005
 	 */
 	public function tell(string $caseId, string $instanceId, string $reason, string $newEnd): array {
-		$case = $this->caseRow(caseId: $caseId);
+		return $this->tellOn(
+			case: $this->caseRow(caseId: $caseId),
+			extension: ['caseId' => $caseId, 'instanceId' => $instanceId, 'reason' => $reason, 'newEnd' => $newEnd]
+		);
+	}//end tell()
+
+	/**
+	 * Send the extension notice on the case row and answer what became of it.
+	 *
+	 * @param array<string, mixed>  $case      The case row.
+	 * @param array<string, string> $extension The `caseId`, the extended `instanceId`, the `reason` and the `newEnd` date.
+	 *
+	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
+	 */
+	private function tellOn(array $case, array $extension): array {
+		$caseId = $extension['caseId'];
+		$instanceId = $extension['instanceId'];
+		$newEnd = $extension['newEnd'];
 
 		try {
 			$payload = $this->notifications->sendTermijnNotification(
@@ -86,21 +104,21 @@ class ExtensionNotice {
 				'',
 				[
 					'case' => (string)($case['identifier'] ?? $caseId),
-					'reason' => $reason,
+					'reason' => $extension['reason'],
 					'newEinddatum' => $newEnd,
 					'dedupeKey' => 'extension|' . $instanceId . '|' . $newEnd,
 				],
 				$case,
 			);
 		} catch (NoticeNotSentException $e) {
-			return $this->answer(status: 'not-sent', channel: '', code: $e->getReasonCode(), reason: $e->getMessage());
+			return $this->notSent(code: $e->getReasonCode(), reason: $e->getMessage());
 		} catch (Throwable $e) {
 			$this->logger->error('Dossiq: the extension notice could not be sent', ['case' => $caseId, 'exception' => $e]);
-			return $this->answer(status: 'not-sent', channel: '', code: 'send-failed', reason: 'The extension notice could not be sent.');
+			return $this->notSent(code: 'send-failed', reason: 'The extension notice could not be sent.');
 		}
 
-		return $this->answer(status: 'sent', channel: (string)($payload['dispatch']['channel'] ?? ''), code: '', reason: '');
-	}//end tell()
+		return $this->sent(channel: (string)($payload['dispatch']['channel'] ?? ''));
+	}//end tellOn()
 
 	/**
 	 * The case row, read as the system; just its id when it cannot be read.
@@ -136,21 +154,35 @@ class ExtensionNotice {
 	}//end caseRow()
 
 	/**
-	 * The notice part of the extension answer.
+	 * The notice part of the extension answer for a notice that went out.
 	 *
-	 * @param string $status  `sent` or `not-sent`.
 	 * @param string $channel The channel it went through, or ''.
-	 * @param string $code    Why not, or ''.
-	 * @param string $reason  The sentence, or ''.
 	 *
 	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
 	 */
-	private function answer(string $status, string $channel, string $code, string $reason): array {
+	private function sent(string $channel): array {
 		return [
-			'noticeStatus' => $status,
+			'noticeStatus' => 'sent',
 			'noticeChannel' => $channel,
+			'noticeReasonCode' => '',
+			'noticeReason' => '',
+		];
+	}//end sent()
+
+	/**
+	 * The notice part of the extension answer for a notice that did not go out.
+	 *
+	 * @param string $code   Why not.
+	 * @param string $reason The sentence.
+	 *
+	 * @return array{noticeStatus: string, noticeChannel: string, noticeReasonCode: string, noticeReason: string}
+	 */
+	private function notSent(string $code, string $reason): array {
+		return [
+			'noticeStatus' => 'not-sent',
+			'noticeChannel' => '',
 			'noticeReasonCode' => $code,
 			'noticeReason' => $reason,
 		];
-	}//end answer()
+	}//end notSent()
 }//end class

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+ * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -32,7 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Publication;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\WithheldListRecorderInterface;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -41,9 +42,9 @@ use Throwable;
 /**
  * Records a publication's withheld list in opencatalogi.
  *
- * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+ * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
  */
-class WithheldListRecorder {
+class WithheldListRecorder implements WithheldListRecorderInterface {
 
 	/**
 	 * Opencatalogi's record door. Named as a string: the class is absent on an
@@ -55,11 +56,6 @@ class WithheldListRecorder {
 	 * The source dossiq records under.
 	 */
 	public const SOURCE = 'dossiq';
-
-	/**
-	 * Opencatalogi is installed but has no record door.
-	 */
-	public const REASON_TOO_OLD = 'opencatalogi-too-old';
 
 	/**
 	 * The record door threw.
@@ -90,7 +86,7 @@ class WithheldListRecorder {
 	 *
 	 * @return array<string, mixed> `{status: 'recorded', recorded, refused}` or `{status: 'not-recorded', reason}`.
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
+	 * @spec openspec/specs/publication-withheld-list/spec.md#requirement-a-publication-records-what-it-withheld-req-pwl-001
 	 */
 	public function record(string $publicationId, array $entries): array {
 		if (class_exists($this->recordClass) === false) {
@@ -109,13 +105,39 @@ class WithheldListRecorder {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'The withheld list could not be recorded in opencatalogi; the publication stands',
-				['app' => Application::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()],
+				['app' => AppIdentity::APP_ID, 'publicationId' => $publicationId, 'error' => $e->getMessage()],
 			);
 			return ['status' => 'not-recorded', 'reason' => self::REASON_FAILED];
 		}
 
+		return self::recorded(answer: $answer);
+	}//end record()
+
+	/**
+	 * What opencatalogi recorded: how many entries, and each refused one with why.
+	 *
+	 * @param mixed $answer What opencatalogi's record() answered.
+	 *
+	 * @return array{status: string, recorded: int, refused: array<int, array{position: int, code: string, reason: string}>} The outcome.
+	 */
+	private static function recorded(mixed $answer): array {
+		return [
+			'status' => 'recorded',
+			'recorded' => (int)($answer['recorded'] ?? 0),
+			'refused' => self::refusedRows(rows: (array)($answer['refused'] ?? [])),
+		];
+	}//end recorded()
+
+	/**
+	 * The refused entries, in the shape the case shows them.
+	 *
+	 * @param array<int|string, mixed> $rows What opencatalogi refused.
+	 *
+	 * @return array<int, array{position: int, code: string, reason: string}> The refused entries.
+	 */
+	private static function refusedRows(array $rows): array {
 		$refused = [];
-		foreach ((array)($answer['refused'] ?? []) as $row) {
+		foreach ($rows as $row) {
 			if (is_array($row) === true) {
 				$refused[] = [
 					'position' => (int)($row['position'] ?? 0),
@@ -125,12 +147,8 @@ class WithheldListRecorder {
 			}
 		}
 
-		return [
-			'status' => 'recorded',
-			'recorded' => (int)($answer['recorded'] ?? 0),
-			'refused' => $refused,
-		];
-	}//end record()
+		return $refused;
+	}//end refusedRows()
 
 	/**
 	 * The one sentence the case shows about its withheld list, '' when all went in.
@@ -139,7 +157,7 @@ class WithheldListRecorder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/woo-decision-records-what-was-withheld/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md#requirement-without-opencatalogis-receiving-side-nothing-is-recorded-req-wrw-002
 	 */
 	public function describe(array $answer): string {
 		if (($answer['status'] ?? '') !== 'recorded') {

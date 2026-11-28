@@ -124,8 +124,21 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import { modalForm } from '../mixins/modalForm.js'
 import { createSubstitution } from '../services/substitutionApi.js'
-import { useObjectStore } from '../store/modules/object.js'
+
+/**
+ * Why a registration failed: the server's reason, the error's own message, or
+ * a plain sentence.
+ *
+ * @param {object} err The failure.
+ * @return {string} The sentence to show.
+ */
+function registrationFailure(err) {
+	return err?.response?.data?.error
+		|| err?.message
+		|| t('dossiq', 'Failed to register substitution.')
+}
 
 export default {
 	name: 'SubstitutionFormModal',
@@ -136,6 +149,8 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
+	mixins: [modalForm],
 
 	props: {
 		/** When true the absentee field is shown (coordinator acts for others). */
@@ -167,11 +182,6 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
-		objectStore() {
-			return useObjectStore()
-		},
-
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		reasonOptions() {
 			return [
@@ -225,78 +235,69 @@ export default {
 			}
 			this.saving = true
 			try {
-				const scope = this.selectedScope ? this.selectedScope.value : 'all'
-				const payload = {
-					substitute: this.form.substitute.trim(),
-					startDate: this.form.startDate,
-					endDate: this.form.endDate,
-					reason: this.selectedReason
-						? this.selectedReason.value
-						: 'verlof',
-
-					scope,
-					scopeRefs:
-						scope === 'caseTypes'
-							? this.selectedCaseTypes.map((ct) => ct.id)
-							: [],
-
-					comment: this.form.comment,
-				}
-				if (this.allowCoordinator && this.form.absentee.trim()) {
-					payload.absentee = this.form.absentee.trim()
-				}
-				const created = await createSubstitution(payload)
+				const created = await createSubstitution(this.substitutionPayload())
 				this.$emit('created', created)
 			} catch (err) {
-				this.serverError =
-					err?.response?.data?.error
-					|| err?.message
-					|| t('dossiq', 'Failed to register substitution.')
+				this.serverError = registrationFailure(err)
 			} finally {
 				this.saving = false
 			}
 		},
 
 		/**
-		 * @param {boolean} open Whether the open is set.
+		 * The substitution to register, from the form. The absentee is sent
+		 * only when a coordinator named one.
+		 *
+		 * @return {object} The payload.
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
 		 */
-		onDialogClose(open) {
-			if (!open) {
-				this.$emit('close')
+		substitutionPayload() {
+			const payload = {
+				substitute: this.form.substitute.trim(),
+				startDate: this.form.startDate,
+				endDate: this.form.endDate,
+				reason: this.selectedReason ? this.selectedReason.value : 'verlof',
+				...this.scopeFields(),
+				comment: this.form.comment,
+			}
+			if (this.allowCoordinator && this.form.absentee.trim()) {
+				payload.absentee = this.form.absentee.trim()
+			}
+			return payload
+		},
+
+		/**
+		 * The scope and, for a case-type scope, the chosen case types.
+		 *
+		 * @return {{scope: string, scopeRefs: Array<string>}} The scope fields.
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
+		scopeFields() {
+			const scope = this.selectedScope ? this.selectedScope.value : 'all'
+			return {
+				scope,
+				scopeRefs:
+					scope === 'caseTypes'
+						? this.selectedCaseTypes.map((ct) => ct.id)
+						: [],
 			}
 		},
 	},
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use './_modalForm.scss' as form;
+
 .substitution-form {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	padding: 8px 4px;
+	@include form.form-stack;
 }
 
-.form-row {
-	display: flex;
-	gap: 12px;
-}
+@include form.form-rows;
 
-.form-row .form-group {
-	flex: 1;
-}
+@include form.form-group;
 
-.form-group {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.form-group label {
-	font-weight: 500;
-	color: var(--color-main-text);
-}
+@include form.form-group-label;
 
 .substitution-form__date {
 	padding: 8px;
@@ -307,25 +308,8 @@ export default {
 }
 
 .substitution-form__textarea {
-	width: 100%;
-	resize: vertical;
-	padding: 8px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius);
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-	font-family: inherit;
+	@include form.form-textarea;
 }
 
-.form-error {
-	color: var(--color-error);
-	font-size: 0.85rem;
-	margin: 0;
-}
-
-.form-error--server {
-	padding: 8px;
-	background: var(--color-error-hover);
-	border-radius: var(--border-radius);
-}
+@include form.form-errors;
 </style>

@@ -33,6 +33,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 
 /**
  * @covers \OCA\Dossiq\Listener\CaseCompletedSatisfactionListener
@@ -40,6 +41,9 @@ use RuntimeException;
  * @uses   \OCA\Dossiq\Service\Pipelinq\PipelinqGateway
  * @uses   \OCA\Dossiq\Service\Pipelinq\ProgrammeConsumer
  * @uses   \OCA\Dossiq\Service\Transitions\CaseTypeReader
+ * @uses \OCA\Dossiq\Listener\BezwaarDecisionListener
+ * @uses \OCA\Dossiq\Service\Support\ReferenceId
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CaseCompletedSatisfactionListenerTest extends TestCase {
 
@@ -113,7 +117,9 @@ class CaseCompletedSatisfactionListenerTest extends TestCase {
 			 *
 			 * @return array<string, mixed> The row.
 			 */
-			public function find(string $id, string $register, string $schema): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options?->register;
+				$schema = $options?->schema;
 				return match ($id) {
 					'st-afgehandeld' => ['id' => $id, 'name' => 'Afgehandeld', 'isFinal' => true],
 					'st-in-behandeling' => ['id' => $id, 'name' => 'In behandeling', 'isFinal' => false],

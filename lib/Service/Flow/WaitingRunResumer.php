@@ -85,6 +85,28 @@ class WaitingRunResumer {
 			return;
 		}
 
+		$this->resumeOnCase(
+			payload: [
+				// Without a `decision` key the resume is a nudge and the
+				// node suspends again — so the outcome is what makes
+				// this an answer, and it is decidiq's word, not ours.
+				'decision' => $status,
+				'decisionRef' => $decisionRef,
+				'caseId' => $caseId,
+			]
+		);
+	}//end resumeWaitingRun()
+
+	/**
+	 * Look up the runs suspended on the case and signal the one waiting on the decision.
+	 *
+	 * @param array{decision: string, decisionRef: string, caseId: string} $payload The terminal status decidiq reported,
+	 *                                                                              the concluded decision's id and the case.
+	 *
+	 * @return void
+	 */
+	private function resumeOnCase(array $payload): void {
+		$caseId = $payload['caseId'];
 		try {
 			$suspended = $this->runs->findSuspendedBySubject(subjectUuid: $caseId);
 		} catch (Throwable $e) {
@@ -94,37 +116,67 @@ class WaitingRunResumer {
 			return;
 		}
 
-		foreach ($suspended as $run) {
-			if ($this->awaitsDecision(run: $run, decisionRef: $decisionRef) === false) {
-				continue;
-			}
+		$this->signalAwaiting(suspended: $suspended, payload: $payload);
+	}//end resumeOnCase()
 
-			try {
-				$this->runner->signal(
-					run: $run,
-					payload: [
-						// Without a `decision` key the resume is a nudge and the
-						// node suspends again — so the outcome is what makes
-						// this an answer, and it is decidiq's word, not ours.
-						'decision' => $status,
-						'decisionRef' => $decisionRef,
-						'caseId' => $caseId,
-					]
-				);
-
-				$this->logger->info(
-					'Dossiq: resumed flow run ' . (string)$run->getUuid() . ' on decision ' . $decisionRef
-				);
-			} catch (Throwable $e) {
-				$this->logger->error(
-					'Dossiq: could not resume flow run on a concluded decision: ' . $e->getMessage(),
-					['run' => $run->getUuid(), 'decisionRef' => $decisionRef]
-				);
-			}//end try
-
+	/**
+	 * Signal the first suspended run waiting on this decision with its outcome.
+	 *
+	 * @param iterable<object>                                              $suspended The runs suspended on the case.
+	 * @param array{decision: string, decisionRef: string, caseId: string} $payload   The terminal status decidiq reported,
+	 *                                                                                the concluded decision's id and the case.
+	 *
+	 * @return void
+	 */
+	private function signalAwaiting(iterable $suspended, array $payload): void {
+		$run = $this->firstAwaiting(suspended: $suspended, decisionRef: $payload['decisionRef']);
+		if ($run === null) {
 			return;
-		}//end foreach
-	}//end resumeWaitingRun()
+		}
+
+		$this->signalRun(run: $run, payload: $payload);
+	}//end signalAwaiting()
+
+	/**
+	 * The first suspended run waiting on this decision, or null.
+	 *
+	 * @param iterable<object> $suspended   The runs suspended on the case.
+	 * @param string           $decisionRef The concluded decision's id.
+	 *
+	 * @return object|null The run.
+	 */
+	private function firstAwaiting(iterable $suspended, string $decisionRef): ?object {
+		foreach ($suspended as $run) {
+			if ($this->awaitsDecision(run: $run, decisionRef: $decisionRef) === true) {
+				return $run;
+			}
+		}
+
+		return null;
+	}//end firstAwaiting()
+
+	/**
+	 * Signal a run with the decision's outcome; a failure is logged, never thrown.
+	 *
+	 * @param object               $run     The waiting run.
+	 * @param array<string, mixed> $payload The decision, its ref and the case.
+	 *
+	 * @return void
+	 */
+	private function signalRun(object $run, array $payload): void {
+		try {
+			$this->runner->signal(run: $run, payload: $payload);
+
+			$this->logger->info(
+				'Dossiq: resumed flow run ' . (string)$run->getUuid() . ' on decision ' . $payload['decisionRef']
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: could not resume flow run on a concluded decision: ' . $e->getMessage(),
+				['run' => $run->getUuid(), 'decisionRef' => $payload['decisionRef']]
+			);
+		}//end try
+	}//end signalRun()
 
 	/**
 	 * Whether a suspended run is waiting on this particular decision.

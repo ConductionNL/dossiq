@@ -14,7 +14,7 @@
  * the bare package name to a stub, and a stub cannot answer what the
  * installed library renders.
  *
- * @spec openspec/changes/recent-tile-shows-when-you-opened/specs/case-management/spec.md
+ * @spec openspec/changes/archive/2026-11-25-recent-tile-shows-when-you-opened/specs/case-management/spec.md
  */
 
 import fs from 'fs'
@@ -172,6 +172,10 @@ describe('the Recently opened tile', () => {
 			translateLabel: (label) => label,
 		}
 		table.secondaryFieldText = CnDataTable.methods.secondaryFieldText.bind(table)
+		// Since 2.129.0 `secondaryValue` reads the line through `cellLineValue`.
+		if (CnDataTable.methods.cellLineValue) {
+			table.cellLineValue = CnDataTable.methods.cellLineValue.bind(table)
+		}
 		expect(
 			CnDataTable.methods.secondaryValue.call(
 				table,

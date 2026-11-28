@@ -28,17 +28,17 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Kernel\Contracts\AdviceServiceInterface;
+use OCA\Dossiq\Kernel\Contracts\AdviceTimerInterface;
+use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Listener\Support\SavedObjectPayload;
-use OCA\Dossiq\Service\Advice\AdviceTimer;
-use OCA\Dossiq\Service\AdviceService;
-use OCA\Dossiq\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Syncs the advice timer on every save that moved its status or deadline.
  *
- * @spec openspec/changes/termijnbewaking-op-engine-timers/specs/termijnbewaking-op-engine-timers/spec.md
+ * @spec openspec/specs/termijnbewaking-op-engine-timers/spec.md
  *
  * @template-implements IEventListener<Event>
  */
@@ -64,15 +64,15 @@ class AdviceTimerListener implements IEventListener {
 	/**
 	 * Build the listener.
 	 *
-	 * @param SettingsService $settingsService Names the watched schema.
-	 * @param AdviceTimer     $timer           Arms and cancels the timer.
-	 * @param AdviceService   $adviceService   Expires a request already overdue.
+	 * @param SettingsServiceInterface $settingsService Names the watched schema.
+	 * @param AdviceTimerInterface     $timer           Arms and cancels the timer.
+	 * @param AdviceServiceInterface   $adviceService   Expires a request already overdue.
 	 * @param LoggerInterface $logger          Logs a failed sync.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
-		private readonly AdviceTimer $timer,
-		private readonly AdviceService $adviceService,
+		private readonly SettingsServiceInterface $settingsService,
+		private readonly AdviceTimerInterface $timer,
+		private readonly AdviceServiceInterface $adviceService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -84,7 +84,7 @@ class AdviceTimerListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/archive/2026-11-21-termijnbewaking-op-engine-timers/tasks.md
 	 */
 	public function handle(Event $event): void {
 		try {
@@ -96,7 +96,7 @@ class AdviceTimerListener implements IEventListener {
 				return;
 			}
 
-			if ($this->timer->sync(advice: $advice) === AdviceTimer::OVERDUE) {
+			if ($this->timer->sync(advice: $advice) === AdviceTimerInterface::OVERDUE) {
 				$this->adviceService->expireAdvice((string) $advice['id']);
 			}
 		} catch (Throwable $e) {

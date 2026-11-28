@@ -47,6 +47,7 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { openCaseTab } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -335,16 +336,15 @@ function stageReason(page: Page, statusId: string) {
 }
 
 /**
- * The clickable element of one stage. CnTimelineStages puts the role and the
- * handler on the list item; the testid is on the label inside it.
+ * The clickable element of one stage. The case page draws its stages as bars
+ * (CnStagesWidget `bars`): a stage the case can move to is a `<button>` label
+ * carrying the stage testid and, when refused, `aria-disabled="true"`.
  *
  * @param page     The Playwright page.
  * @param statusId The statusType uuid the move leads to.
  */
 function stageControl(page: Page, statusId: string) {
-	return page.locator('.cn-timeline-stages__stage').filter({
-		has: page.getByTestId(`cn-stages-widget-stage-${statusId}`),
-	})
+	return page.getByTestId(`cn-stages-widget-stage-${statusId}`)
 }
 
 /**
@@ -364,12 +364,11 @@ async function openTasksTab(page: Page, id: string) {
 
 	const strip = page.locator('.cn-tabs-widget')
 	await expect(strip).toBeVisible({ timeout: 30_000 })
-	// Tasks is the first SECTION of the Work tab since the strip came down
-	// from fourteen tabs to six; Appointments is the second.
-	await strip.getByRole('tab', { name: 'Work', exact: true }).click()
+	// Tasks is the first section of the Tasks tab; Appointments is the second.
+	await openCaseTab(page, /^(Tasks|Taken)\b/)
 
 	const panel = strip.locator('[role="tabpanel"]:not([hidden])')
-	await expect(panel.locator('[data-testid="case-task-pane"]')).toBeVisible({
+	await expect(panel.locator('.cn-tasks-widget')).toBeVisible({
 		timeout: 20_000,
 	})
 	return panel

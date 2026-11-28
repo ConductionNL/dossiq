@@ -94,13 +94,18 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		// P28D and P13W (ASV art. 3), numbers no generic rule gives.
 		'subsidieaanvraag' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'zaaktype-innovatiefonds-2026' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		// Ruben, 23 Oct: eight weeks for a benefit application; the
+		// Participatiewet sets no decision term of its own, so Awb 4:13 lid 2.
+		'bijstandsaanvraag' => ['statutory', 56, 0, 0, 'Awb 4:13'],
+		// Ruben, 23 Oct: a Jeugdwet report on the same fallback.
+		'melding-jeugdwet' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'melding-openbare-ruimte' => ['planned', 14, 0, 0, 'Servicenorm'],
 		'parkeervergunning-bewoners' => ['statutory', 56, 0, 0, 'Awb 4:13'],
 		'kenteken-wijzigen-parkeervergunning' => ['planned', 14, 0, 0, 'Servicenorm'],
-		'building-permit' => ['planned', 56, 0, 0, 'Service norm'],
-		'grant-application' => ['planned', 42, 0, 0, 'Service norm'],
-		'citizen-complaint' => ['planned', 42, 0, 0, 'Service norm'],
-		'foi-request' => ['planned', 30, 0, 0, 'Service norm'],
+		'building-permit' => ['planned', 56, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
+		'grant-application' => ['planned', 42, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
+		'citizen-complaint' => ['planned', 42, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
+		'foi-request' => ['planned', 30, 0, 0, 'Servicenorm, geen wettelijke termijn (demo)'],
 	];
 
 	/**
@@ -198,7 +203,8 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 		$definitions = [];
 		foreach (($this->readJson('/../../../lib/Settings/termijnbewaking_seed_data.json')['termijnDefinities'] ?? []) as $definition) {
 			$slug = trim((string)($definition['caseType'] ?? ''));
-			if ($slug === '') {
+			// A term a case type has to pick is not its default term.
+			if ($slug === '' || ($definition['pickedByCaseType'] ?? false) === true) {
 				continue;
 			}
 
@@ -336,7 +342,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/omgevingsvergunning-starts-its-term/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testTheRegistersOmgevingsvergunningHasATermijnDefinitie(): void {
 		$caseType = null;
@@ -359,7 +365,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testEachDecidedCaseTypeCarriesItsDecidedTerm(): void {
 		$caseTypes = $this->shippedCaseTypes();
@@ -388,7 +394,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testEveryShippedCitationNamesAnArticleAndAnOfficialSource(): void {
 		$definitions = $this->shippedDefinitions();
@@ -419,7 +425,7 @@ class ShippedDeadlineDefinitionCoverageTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/seeded-case-types-start-their-terms/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function testTheOpenQuestionsAreStillOpen(): void {
 		$caseTypes = $this->shippedCaseTypes();

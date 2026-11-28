@@ -16,6 +16,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
  * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md
  */
 import { expect, test } from '@playwright/test'
+import { openCaseSidebar } from './helpers/case-panels.ts'
 import {
 	cleanupRunObjects,
 	ensureCaseType,
@@ -87,7 +88,8 @@ async function fakeHermiq(page: Page, group: object): Promise<void> {
 async function openAssistant(page: Page): Promise<void> {
 	await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 	await dismissSupportDialog(page)
-	await page.getByRole('tab', { name: 'Assistant' }).click()
+	const sidebar = await openCaseSidebar(page)
+	await sidebar.getByRole('tab', { name: 'Assistant' }).click()
 	await expect(page.getByTestId('case-ai-features')).toBeVisible()
 }
 

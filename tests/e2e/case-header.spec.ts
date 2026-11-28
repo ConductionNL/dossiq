@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case identity card, the absent breadcrumb and the tab order (A01, A33).
+ * The case identity card, the trail and the tab order (REQ-CDV-15, REQ-CDV-16).
  *
  * Everything here is a seam a unit test cannot reach. The manifest spec
  * already pins the declarations; this spec asks whether the page built from
@@ -10,10 +10,8 @@
  *
  *  - the row turns a stored uuid into a status NAME and a stored date into a
  *    number of days, both of which need a live register;
- *  - the breadcrumb is GONE, and only a rendered page can show that the title
- *    is now stated once rather than twice;
- *  - the tab strip's geometry at 1024 is the whole point of row A33, and
- *    geometry only exists in a browser.
+ *  - the trail ends on the case number, never on the title above it;
+ *  - the tab strip's geometry at 1024, which only exists in a browser.
  *
  * Assert ids and testids, not labels, wherever a label would do. The instance
  * may run in Dutch: five of seven specs went red once on a correct navigation
@@ -39,35 +37,16 @@ import {
 import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 
 /**
- * The tab order placement row A33 asks for, which is now the WHOLE strip.
- *
- * These are exact strings rather than locale alternatives because a tab label
- * is not translated: `CnTabsWidget` reads `content.tabs[].label` out of the
- * manifest verbatim, with no `t()` on the path.
- *
- * Row A33 asked for six tabs and the strip carried fourteen. The five "work
- * tabs" and the "conditional four" that used to be tracked separately here are
- * one list now: there is nothing left after the work tabs to close the strip
- * with. Sub-cases, Locations, Appointments and Decisions are not gone from the
- * page. Decisions moved to the sidebar tab that already carried it; the other
- * three became sections of Related and Work. Objects and locations is itself
- * retired since: its objects are a section of Related, and its locations are
- * the map on the Data tab.
+ * The five tabs boards DqZaak and DqZaakMeer draw (REQ-CDV-16), English or
+ * Dutch by the test user's language; a tab may carry its count ("Bestanden 7").
+ * Every other panel is listed under More.
  */
 const WORK_TABS = [
-	'Data',
-	'Files',
-	'Notes',
-	'Timeline',
-	'People',
-	'Communication',
-	'Email',
-	'Work',
-	'Decisions',
-	'Related',
-	'Custody',
-	'Archiving',
-	'Knowledge',
+	/^(Overview|Overzicht)\b/,
+	/^(Files|Bestanden)\b/,
+	/^Contact\b/,
+	/^(Tasks|Taken)\b/,
+	/^(Case history|Historie)\b/,
 ]
 
 /**
@@ -116,7 +95,7 @@ function tileValue(page: Page, index: number) {
 	return tile(page, index).locator('.cn-kpi-card__value')
 }
 
-test.describe('Case header — identity, no breadcrumb, and tab order', () => {
+test.describe('Case header — identity, trail and tab order', () => {
 	test.setTimeout(180_000)
 
 	/** The case with a status, an assignee and a deadline behind it. */
@@ -355,38 +334,20 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		await expect(countdown).not.toHaveClass(/cn-countdown-widget--warning/)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#no-trail-is-rendered
-	test('renders no breadcrumb trail above the case title', async ({ page }) => {
-		// The trail's LAST crumb was the case title, one line under the page
-		// header that already printed it: `Cases > Dakkapel Kerkstraat 12`
-		// directly below `Dakkapel Kerkstraat 12`. A repeat, not a location, and
-		// it cost the top of the page a row.
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-trail-ends-on-the-case-number
+	test('the trail under the title ends on the case number', async ({ page }) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(tile(page, TILE.number)).toBeVisible({ timeout: 30_000 })
+		const trail = page.locator('.cn-detail-page__breadcrumbs')
+		await expect(trail).toBeVisible({ timeout: 30_000 })
 
-		// 🔑 THE TRAIL'S SIGNATURE, NOT A GLOBAL COUNT OF THE TITLE.
-		//
-		// This asserted `getByText(caseTitle, { exact: true })` had count 1, on
-		// the reasoning that the title should now be stated once. That is a
-		// claim about the WHOLE PAGE, and the whole page is not this test's
-		// business: `CnObjectSidebar` renders `:name="sidebarTitle"`, so an open
-		// sidebar prints the case title a second time and the count is 2 with
-		// the breadcrumb correctly absent. The assertion would have failed for a
-		// reason that has nothing to do with the breadcrumb.
-		//
-		// What the removed trail actually contributed was a node carrying BOTH
-		// the title and `aria-current="page"` — CnBreadcrumbs marks its last
-		// crumb that way. Nothing else on the page does. Asserting that exact
-		// pair is gone is the regression, and it cannot be confounded by a
-		// sidebar, a tab panel or the browser tab title.
-		await expect(
-			page.locator('[aria-current="page"]').filter({ hasText: caseTitle }),
-		).toHaveCount(0)
+		await expect(trail.getByRole('link', { name: /^(All cases|Alle zaken)$/ })).toBeVisible()
+		await expect(trail.locator('[aria-current="page"]')).toHaveText(caseIdentifier)
+		await expect(trail).not.toContainText(caseTitle)
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-thirteen-tabs-and-no-more
-	test('the work tabs ARE the strip, in order, with nothing after them', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
+	test('the strip shows five tabs, in order, and the rest under More', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`, PAGE_LOAD)
@@ -398,14 +359,12 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 			l.trim(),
 		)
 
-		// An exact list, not a prefix. The old shape of this test asserted the
-		// work tabs came FIRST and the conditional four came after them, which
-		// said nothing at all about the eight tabs that could sit between them,
-		// and eight is roughly what accumulated.
-		expect(labels).toEqual(WORK_TABS)
+		expect(labels).toHaveLength(WORK_TABS.length)
+		labels.forEach((label, index) => expect(label).toMatch(WORK_TABS[index]))
+		await expect(strip.locator('.cn-tabs__more')).toBeVisible()
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-thirteen-tabs-fit-a-laptop-screen
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-five-tabs-and-meer
 	test('every work tab is reachable at 1024, with the strip above the fold', async ({
 		page,
 	}) => {
@@ -451,7 +410,7 @@ test.describe('Case header — identity, no breadcrumb, and tab order', () => {
 		)
 
 		boxes.forEach((box, index) => {
-			const tab = WORK_TABS[index]
+			const tab = String(WORK_TABS[index])
 			expect(box.width, `${tab} has no width`).toBeGreaterThan(0)
 			expect(box.height, `${tab} has no height`).toBeGreaterThan(0)
 			expect(

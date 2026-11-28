@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);
@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Cases;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Settings\SchemaSlugMap;
+use OCA\Dossiq\Service\Support\ReferencedUuid;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,7 +45,7 @@ use Throwable;
 /**
  * Where a case merge reads and writes.
  *
- * @spec openspec/changes/case-merge/specs/case-management/spec.md
+ * @spec openspec/specs/case-management/spec.md
  */
 class CaseMergeStore {
 
@@ -128,6 +129,19 @@ class CaseMergeStore {
 			return false;
 		}
 
+		return $this->patched(row: [$objectService, $register, $schemaId, $id], changes: $changes);
+	}//end patchRow()
+
+	/**
+	 * Write the fields onto the row, logging a refused write.
+	 *
+	 * @param array{0: object, 1: string, 2: string, 3: string} $row     The object service, the register id, the schema id and the row uuid.
+	 * @param array<string, mixed>                               $changes The fields to write.
+	 *
+	 * @return bool True when the write landed.
+	 */
+	private function patched(array $row, array $changes): bool {
+		[$objectService, $register, $schemaId, $id] = $row;
 		try {
 			return $this->patchObjectAsArray(
 				objectService: $objectService,
@@ -142,7 +156,7 @@ class CaseMergeStore {
 			);
 			return false;
 		}
-	}//end patchRow()
+	}//end patched()
 
 	/**
 	 * Every row of a schema that points at one case.
@@ -197,15 +211,7 @@ class CaseMergeStore {
 	 * @return string The uuid, empty when there is none.
 	 */
 	public function referencedId(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		return '';
+		return ReferencedUuid::inReference(value: $value);
 	}//end referencedId()
 
 	/**

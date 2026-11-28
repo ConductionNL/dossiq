@@ -28,7 +28,6 @@ use OCA\Dossiq\Service\Stuf\StufRegisterAccess;
 use OCA\Dossiq\Tests\Unit\Fixtures\SchemaAwareStufRegister;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Pins the StUF services to the shipped schema.
@@ -58,24 +57,6 @@ class StufRegisterContractTest extends TestCase {
 
 
 	/**
-	 * An inbound envelope resolves its endpoint from the zender.
-	 *
-	 * A real zaaksysteem sends no `X-Dossiq-Endpoint-Id` header, so the zender
-	 * lookup is the ONLY route it has. A filter that matches nothing makes every
-	 * unsolicited inbound message unroutable.
-	 *
-	 * @return void
-	 */
-	public function testAnInboundEnvelopeResolvesItsEndpointFromTheZender(): void {
-		$this->register->seed(
-			StufRegisterAccess::SCHEMA_ENDPOINT,
-			['id' => 'ep-1', 'recipientApplication' => 'Key2Zaken', 'integriqSource' => 'src-9']
-		);
-
-		$this->assertSame('src-9', $this->forwardedSource(), 'The zender application must resolve its endpoint, and through it the integriq source.');
-	}//end testAnInboundEnvelopeResolvesItsEndpointFromTheZender()
-
-	/**
 	 * THE CLASS-CATCHING SWEEP.
 	 *
 	 * The tests above name the fields that are known to have drifted. This one
@@ -96,7 +77,7 @@ class StufRegisterContractTest extends TestCase {
 		$this->driveEveryRegisterPath();
 
 		// No StUF service in dossiq saves any more (the outbound audit moved to
-		// integriq, decision 193); the lookups the provider side makes remain.
+		// integriq, decision 193); the admin REST lookups remain.
 		$this->assertNotSame([], $this->register->filterKeys, 'The sweep must observe at least one lookup.');
 
 		// Collected rather than asserted one at a time, so a run reports EVERY
@@ -127,46 +108,38 @@ class StufRegisterContractTest extends TestCase {
 	}//end testEveryFieldTheStufServicesTouchIsDeclared()
 
 	/**
-	 * Exercise every register-facing path the StUF services own.
+	 * Exercise every register-facing path the StUF controller owns.
+	 *
+	 * Integriq owns the wire (decisions 193 and 199), so what is left reading
+	 * the register is the admin REST surface: the endpoint list with each
+	 * endpoint's recent messages, and the audit-log query with every filter.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
 	 */
 	private function driveEveryRegisterPath(): void {
-		$this->forwardedSource();
-	}//end driveEveryRegisterPath()
-
-	/**
-	 * Post a provider envelope to the old cases URL and return the integriq source it was forwarded with.
-	 *
-	 * The zender lookup moved from the retired StufEnvelopeInspector into
-	 * StufController's forwarder (decision 199); it is the same register read.
-	 *
-	 * @return string The source id handed to integriq.
-	 */
-	private function forwardedSource(): string {
-		$seen = null;
-		$bridge = $this->createMock(\OCA\Dossiq\Service\Stuf\StufIntegriqBridge::class);
-		$bridge->method('forwardProviderRequest')->willReturnCallback(
-			static function (string $rawXml, string $sourceId, string $service) use (&$seen): array {
-				$seen = $sourceId;
-				return ['statusCode' => 200, 'body' => '<ok/>'];
-			}
+		$this->register->seed(
+			StufRegisterAccess::SCHEMA_ENDPOINT,
+			['id' => 'ep-1', 'recipientApplication' => 'Key2Zaken', 'integriqSource' => 'src-9']
 		);
 
-		$controller = new class('dossiq', $this->createMock(\OCP\IRequest::class), $this->register, $bridge, $this->createMock(\OCP\IL10N::class), $this->createMock(\Psr\Log\LoggerInterface::class), $this->createMock(\OCA\Dossiq\Service\IntegrationStatusService::class)) extends \OCA\Dossiq\Controller\StufController {
-			/**
-			 * Serve a fixed body instead of php://input.
-			 *
-			 * @return string
-			 */
-			protected function readRawBody(): string {
-				return '<stuf:zender><stuf:applicatie>Key2Zaken</stuf:applicatie></stuf:zender>';
-			}//end readRawBody()
-		};
-		$controller->cases();
+		$params  = ['endpointId' => 'ep-1', 'messageKind' => 'vrijBericht', 'status' => 'sent', 'limit' => 10];
+		$request = $this->createMock(originalClassName: \OCP\IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => ($params[$key] ?? $default)
+		);
 
-		return (string)$seen;
-	}//end forwardedSource()
+		$controller = new \OCA\Dossiq\Controller\StufController(
+			request: $request,
+			register: $this->register,
+			bridge: $this->createMock(originalClassName: \OCA\Dossiq\Kernel\Contracts\StufIntegriqBridgeInterface::class),
+			l10n: $this->createMock(originalClassName: \OCP\IL10N::class),
+			integrationStatus: $this->createMock(originalClassName: \OCA\Dossiq\Kernel\Contracts\IntegrationStatusServiceInterface::class),
+		);
+		$controller->endpoints();
+		$controller->messages();
+	}//end driveEveryRegisterPath()
 
 	/**
 	 * The status-transition extras and the audit-log filter are declared too.

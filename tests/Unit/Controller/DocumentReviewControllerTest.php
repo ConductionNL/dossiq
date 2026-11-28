@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\DocumentReviewController;
+use OCA\Dossiq\Controller\Support\ReviewCaseCaller;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
@@ -44,9 +45,11 @@ use Psr\Log\LoggerInterface;
  * Relevance and the summary through the real reviews, summary and assessment service.
  *
  * @covers \OCA\Dossiq\Controller\DocumentReviewController
+ * @uses \OCA\Dossiq\Controller\Support\ReviewCaseCaller
  * @covers \OCA\Dossiq\Review\ReviewSummary
  * @covers \OCA\Dossiq\Review\DocumentRelevance
  * @covers \OCA\Dossiq\Review\ReviewBatches
+ * @uses \OCA\Dossiq\Review\ReviewBatchStore
  * @covers \OCA\Dossiq\Review\PagesSeen
  * @covers \OCA\Dossiq\Review\ReviewConfiguration
  *
@@ -56,12 +59,16 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Review\ReviewDepth
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Review\BatchSelection
  * @uses \OCA\Dossiq\Review\ReviewWrites
  * @uses \OCA\Dossiq\Service\Zaakdossier\CaseDocumentProvenance
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
+ * @uses \OCA\Dossiq\Review\CaseAssessmentRows
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class DocumentReviewControllerTest extends TestCase {
 
@@ -166,8 +173,7 @@ class DocumentReviewControllerTest extends TestCase {
 					caseDocuments: $caseDocuments,
 				),
 			),
-			caseAccessGuard: $guard,
-			userSession: $session,
+			caller: new ReviewCaseCaller(userSession: $session, accessGuard: $guard, l10n: $l10n),
 			l10n: $l10n,
 		);
 	}//end controller()

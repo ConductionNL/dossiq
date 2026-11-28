@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-dossier-shared-with-the-requester/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
+ * @spec openspec/specs/portal-contribution/spec.md#requirement-a-clarification-asks-one-question-in-plain-words-req-wds-004
  */
 
 declare(strict_types=1);
@@ -38,11 +38,15 @@ use Psr\Log\NullLogger;
  * REQ-WDS-004 through AanvullingsverzoekService::ask() and recordAnswer(), over a real store.
  *
  * @covers \OCA\Dossiq\Service\AanvullingsverzoekService
+ * @uses \OCA\Dossiq\Service\Support\AskedItems
  *
  * @uses \OCA\Dossiq\Service\AanvullingsverzoekResolutionService
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\RequestWrite
+ * @uses \OCA\Dossiq\Service\AanvullingAnswerRun
+ * @uses \OCA\Dossiq\Service\ItemArrivalMarker
  */
 class WooClarificationTest extends TestCase {
 

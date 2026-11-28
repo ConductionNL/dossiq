@@ -29,7 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Kernel\Contracts\ZgwServiceInterface;
+use OCA\Dossiq\Support\MapsZgwRows;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -43,6 +47,8 @@ use OCP\IRequest;
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZtcPublishController extends ZgwController {
+	use MapsZgwRows;
+
 	/**
 	 * The ZGW API identifier for the Catalogi register.
 	 *
@@ -55,12 +61,12 @@ class ZtcPublishController extends ZgwController {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The incoming request.
-	 * @param ZgwService $zgwService The shared ZGW service.
+	 * @param ZgwServiceInterface $zgwService The shared ZGW service.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZgwService $zgwService,
+		private readonly ZgwServiceInterface $zgwService,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -68,8 +74,9 @@ class ZtcPublishController extends ZgwController {
 	/**
 	 * Publish a ZTC resource by setting isDraft to false.
 	 *
-	 * Loads the existing object, sets isDraft=false, saves it back,
-	 * and returns the outbound-mapped result.
+	 * Requires the catalogi write scope. A zaaktype passes the CT-02b publish
+	 * guard first (REQ-ZBR-024). Loads the existing object, sets isDraft=false,
+	 * saves it back, and returns the outbound-mapped result.
 	 *
 	 * @param string $resource The ZGW resource name (zaaktypen, besluittypen, informatieobjecttypen).
 	 * @param string $uuid The resource UUID.
@@ -77,13 +84,9 @@ class ZtcPublishController extends ZgwController {
 	 * @return JSONResponse
 	 */
 	private function handlePublish(string $resource, string $uuid): JSONResponse {
-		$authError = $this->zgwService->validateJwtAuth($this->request);
-		if ($authError !== null) {
-			return $authError;
-		}
-
-		if ($this->zgwService->getObjectService() === null) {
-			return $this->zgwService->unavailableResponse();
+		$refusal = $this->publishRefusal();
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
@@ -92,40 +95,118 @@ class ZtcPublishController extends ZgwController {
 		}
 
 		try {
-			$existing = $this->zgwService->getObjectService()->find(
-				$uuid,
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema']
-			);
-			$existingData = $this->publishedCopy(existingData: $this->objectToArray(row: $existing));
+			$published = $this->published(resource: $resource, uuid: $uuid, mappingConfig: $mappingConfig);
+			if ($published instanceof JSONResponse) {
+				return $published;
+			}
 
-			$object = $this->zgwService->getObjectService()->saveObject(
-				register: $mappingConfig['sourceRegister'],
-				schema: $mappingConfig['sourceSchema'],
-				object: $existingData,
-				uuid: $uuid
-			);
-			$objectData = $this->objectToArray(row: $object);
-
-			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
-			$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
-			$mapped = $this->zgwService->applyOutboundMapping(
-				objectData: $objectData,
-				mapping: $outboundMapping,
-				mappingConfig: $mappingConfig,
-				baseUrl: $baseUrl
-			);
-
-			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
+			return new JSONResponse(data: $published, statusCode: Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
-			$this->zgwService->getLogger()->error(
-				'ZTC publish error: ' . $e->getMessage(),
-				['exception' => $e]
-			);
-
-			return new JSONResponse(data: ['detail' => $e->getMessage()], statusCode: Http::STATUS_BAD_REQUEST);
+			return $this->publishFailure(e: $e);
 		}//end try
 	}//end handlePublish()
+
+	/**
+	 * Refuse a publish without valid JWT auth or without OpenRegister.
+	 *
+	 * @return JSONResponse|null The refusal, or null when the publish may go ahead.
+	 */
+	private function publishRefusal(): ?JSONResponse {
+		$authError = $this->zgwService->validateJwtAuth($this->request);
+		if ($authError !== null) {
+			return $authError;
+		}
+
+		if ($this->zgwService->consumerHasScope($this->request, 'ztc', 'catalogi.schrijven') === false) {
+			return $this->scopeDeniedResponse(scope: 'catalogi.schrijven');
+		}
+
+		if ($this->zgwService->getObjectService() === null) {
+			return $this->zgwService->unavailableResponse();
+		}
+
+		return null;
+	}//end publishRefusal()
+
+	/**
+	 * Save the stored type as published and map the result outbound.
+	 *
+	 * @param string $resource      The ZGW resource name.
+	 * @param string $uuid          The resource UUID.
+	 * @param array  $mappingConfig The resource mapping configuration.
+	 *
+	 * @return array|JSONResponse The outbound-mapped type, or the publish-guard refusal.
+	 *
+	 * @throws \Throwable When the type cannot be read or saved.
+	 */
+	private function published(string $resource, string $uuid, array $mappingConfig): array|JSONResponse {
+		$existing = $this->zgwService->getObjectService()->find(
+			$uuid,
+			new ObjectFindOptions(
+				register: $mappingConfig['sourceRegister'],
+				schema: $mappingConfig['sourceSchema']
+			)
+		);
+		$storedData = $this->objectToArray(row: $existing);
+
+		$refusal = $this->zgwService->getBusinessRulesService()->guardPublishEndpoint(
+			resource: $resource,
+			existingObject: $storedData,
+			objectService: $this->zgwService->getObjectService(),
+			mappingConfig: $mappingConfig
+		);
+		if ($refusal !== null) {
+			return new JSONResponse(
+				data: $this->zgwService->buildValidationError(ruleResult: $refusal),
+				statusCode: $refusal['status']
+			);
+		}
+
+		$existingData = $this->publishedCopy(existingData: $storedData);
+
+		$object = $this->zgwService->getObjectService()->saveObject(
+			object: $existingData,
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(
+						register: $mappingConfig['sourceRegister'],
+						schema: $mappingConfig['sourceSchema']
+					),
+				uuid: $uuid
+			)
+		);
+		return $this->mapPublished(resource: $resource, mappingConfig: $mappingConfig, objectData: $this->objectToArray(row: $object));
+	}//end published()
+
+	/**
+	 * Apply the outbound mapping to the published type.
+	 *
+	 * @param string $resource      The ZGW resource name.
+	 * @param array  $mappingConfig The resource mapping configuration.
+	 * @param array  $objectData    The saved type.
+	 *
+	 * @return array The outbound-mapped type.
+	 */
+	private function mapPublished(string $resource, array $mappingConfig, array $objectData): array {
+		$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
+		$outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
+		return $this->zgwService->applyOutboundMapping(
+			objectData: $objectData,
+			mapping: $outboundMapping,
+			mappingConfig: $mappingConfig,
+			baseUrl: $baseUrl
+		);
+	}//end mapPublished()
+
+	/**
+	 * Log a publish failure and build the 400 response.
+	 *
+	 * @param \Throwable $e The caught failure.
+	 *
+	 * @return JSONResponse
+	 */
+	private function publishFailure(\Throwable $e): JSONResponse {
+		return $this->loggedFailure(logPrefix: 'ZTC publish error: ', e: $e);
+	}//end publishFailure()
 
 	/**
 	 * The stored type as it is saved on publish: concept off, bookkeeping keys gone.
@@ -166,9 +247,9 @@ class ZtcPublishController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function publishZaaktype(string $uuid): JSONResponse {
 		return $this->handlePublish(resource: 'zaaktypen', uuid: $uuid);
 	}//end publishZaaktype()
@@ -184,9 +265,9 @@ class ZtcPublishController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function publishBesluittype(string $uuid): JSONResponse {
 		return $this->handlePublish(resource: 'besluittypen', uuid: $uuid);
 	}//end publishBesluittype()
@@ -202,9 +283,9 @@ class ZtcPublishController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
+	#[AnonRateLimit(limit: ZgwServiceInterface::RATE_LIMIT_WRITE, period: 60)]
 	public function publishInformatieobjecttype(string $uuid): JSONResponse {
 		return $this->handlePublish(resource: 'informatieobjecttypen', uuid: $uuid);
 	}//end publishInformatieobjecttype()

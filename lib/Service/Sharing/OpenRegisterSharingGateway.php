@@ -125,7 +125,7 @@ class OpenRegisterSharingGateway {
 	 */
 	public function accessLinkReader(): ?object {
 		return $this->resolve(
-			className: 'OCA\OpenRegister\Service\Sharing\AccessLinkReader',
+			className: 'OCA\OpenRegister\Files\Service\Sharing\AccessLinkReader',
 			methods: ['read']
 		);
 	}//end accessLinkReader()
@@ -143,8 +143,8 @@ class OpenRegisterSharingGateway {
 	 */
 	public function noteService(): ?object {
 		return $this->resolve(
-			className: 'OCA\OpenRegister\Service\NoteService',
-			methods: ['getNotesForObject']
+			className: 'OCA\OpenRegister\Files\Service\NoteService',
+			methods: ['listNotes']
 		);
 	}//end noteService()
 
@@ -174,18 +174,35 @@ class OpenRegisterSharingGateway {
 			return null;
 		}
 
-		foreach ($methods as $method) {
-			if (method_exists($service, $method) === false) {
-				$this->logger->warning(
-					'CaseSharingService: OpenRegister service is an older shape than this code calls',
-					['class' => $className, 'missing' => $method]
-				);
-				return null;
-			}
+		$missing = self::missingMethod(service: $service, methods: $methods);
+		if ($missing !== null) {
+			$this->logger->warning(
+				'CaseSharingService: OpenRegister service is an older shape than this code calls',
+				['class' => $className, 'missing' => $missing]
+			);
+			return null;
 		}
 
 		return $service;
 	}//end resolve()
+
+	/**
+	 * The first method the caller will invoke that the service does not carry, or null when it carries them all.
+	 *
+	 * @param mixed              $service The resolved service.
+	 * @param array<int, string> $methods The methods the caller will invoke.
+	 *
+	 * @return string|null The missing method, or null.
+	 */
+	private static function missingMethod(mixed $service, array $methods): ?string {
+		foreach ($methods as $method) {
+			if (method_exists($service, $method) === false) {
+				return $method;
+			}
+		}
+
+		return null;
+	}//end missingMethod()
 
 	/**
 	 * Resolve OpenRegister's FederationShareService — the leaf that owns

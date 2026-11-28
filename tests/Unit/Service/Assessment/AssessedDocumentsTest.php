@@ -42,12 +42,15 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\Assessment\OutstandingDocuments
  * @uses \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Review\DisclosureAssessmentValidator
  * @uses \OCA\Dossiq\Review\OutstandingDocuments
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
  */
 class AssessedDocumentsTest extends TestCase {
 

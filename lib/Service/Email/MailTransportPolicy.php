@@ -29,20 +29,20 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
-use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
  * Reads the kind-to-transport map, with decision 165's defaults.
  *
- * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+ * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
  */
 class MailTransportPolicy {
 
@@ -107,11 +107,11 @@ class MailTransportPolicy {
 	 *
 	 * @return string TRANSPORT_MAIL_ACCOUNT or TRANSPORT_IMAILER.
 	 *
-	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
+	 * @spec openspec/specs/inbound-mail-filters/spec.md#requirement-outbound-mail-leaves-through-the-same-account-with-no-dossiq-credential-req-imf-11
 	 */
 	public function transportFor(string $kind): string {
 		$configured = json_decode(
-			$this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, ''),
+			$this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, ''),
 			true
 		);
 		if (is_array($configured) === true) {

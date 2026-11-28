@@ -48,6 +48,9 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\Transitions\CaseTypeReader
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\Transitions\GuardResult
+ * @uses \OCA\Dossiq\Service\Transitions\StatusCapacity
+ * @uses \OCA\Dossiq\Service\Queue\QueueCaseFacts
+ * @uses \OCA\Dossiq\Service\Support\SerialisedResult
  */
 class CapacityGuardTest extends TestCase {
 
@@ -61,7 +64,7 @@ class CapacityGuardTest extends TestCase {
 	/**
 	 * Build the guard over an in-memory store.
 	 *
-	 * @param int                              $capacity The limit on the target status.
+	 * @param int|string                       $capacity The limit on the target status, as stored.
 	 * @param array<int, array<string, mixed>> $cases    The cases the store holds in it.
 	 * @param bool                             $isFinal  Whether the target closes the case.
 	 * @param bool                             $readable Whether the store answers at all.
@@ -69,7 +72,7 @@ class CapacityGuardTest extends TestCase {
 	 * @return CapacityGuard The guard under test.
 	 */
 	private function makeGuard(
-		int $capacity,
+		int|string $capacity,
 		array $cases,
 		bool $isFinal = false,
 		bool $readable = true,
@@ -204,6 +207,21 @@ class CapacityGuardTest extends TestCase {
 
 		$this->assertTrue($result->passed, 'zero means no limit, which is every status today');
 	}//end testAStatusWithoutACapacityIsUnchanged()
+
+	/**
+	 * A capacity that is not a number is no limit at all: a leading-digit
+	 * string is not read as that many seats, so a full status still takes the case.
+	 *
+	 * @return void
+	 */
+	public function testANonNumericCapacityIsNoLimit(): void {
+		$guard = $this->makeGuard(capacity: '5 cases', cases: $this->sitting(howMany: 5));
+
+		$this->assertSame(expected: 0, actual: $guard->capacityOf(self::TARGET));
+
+		$result = $guard->evaluate($this->config(), ['id' => 'case-new'], 'behandelaar');
+		$this->assertTrue(condition: $result->passed, message: 'an unreadable capacity must not cap the status');
+	}//end testANonNumericCapacityIsNoLimit()
 
 	/**
 	 * A final status is never capped.

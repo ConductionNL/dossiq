@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
  *
  * Simulates message sending and read status without external API calls.
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
  */
 class MockAdapter implements BerichtenboxAdapterInterface {
 	/**
@@ -60,7 +60,7 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) the mock simulates a send and has no opt-out list to read.
 	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function sendMessage(
 		string $bsn,
@@ -71,16 +71,31 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 		string $category = 'case-update',
 		string $caseRef = '',
 	): array {
+		return $this->simulatedSend(
+			maskedBsn: substr($bsn, 0, 4) . '*****',
+			letter: ['subject' => $subject, 'typeCode' => $typeCode, 'hasAttachment' => $attachment !== null]
+		);
+	}//end sendMessage()
+
+	/**
+	 * Log a simulated send under a fresh message id and answer as a sent message.
+	 *
+	 * @param string                                                        $maskedBsn The BSN with all but its first four digits masked.
+	 * @param array{subject: string, typeCode: string, hasAttachment: bool} $letter    What the log names of the letter.
+	 *
+	 * @return array<string, string> Mock send result with a generated messageId.
+	 */
+	private function simulatedSend(string $maskedBsn, array $letter): array {
 		$messageId = 'mock-' . bin2hex(random_bytes(8));
 
 		$this->logger->info(
 			'MockBerichtenbox: Message sent',
 			[
 				'messageId' => $messageId,
-				'bsn' => substr($bsn, 0, 4) . '*****',
-				'subject' => $subject,
-				'typeCode' => $typeCode,
-				'hasAttachment' => $attachment !== null,
+				'bsn' => $maskedBsn,
+				'subject' => $letter['subject'],
+				'typeCode' => $letter['typeCode'],
+				'hasAttachment' => $letter['hasAttachment'],
 			]
 		);
 
@@ -89,5 +104,5 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 			'status' => 'sent',
 			'sentAt' => (new DateTime())->format('c'),
 		];
-	}//end sendMessage()
+	}//end simulatedSend()
 }//end class

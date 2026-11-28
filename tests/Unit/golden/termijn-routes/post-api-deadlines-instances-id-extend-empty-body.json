@@ -1,0 +1,18 @@
+{
+    "status": 200,
+    "data": {
+        "id": "inst-1",
+        "answeredBy": "requestExtension"
+    },
+    "calls": [
+        {
+            "call": "extension::requestExtension",
+            "args": [
+                "inst-1",
+                "",
+                "",
+                ""
+            ]
+        }
+    ]
+}

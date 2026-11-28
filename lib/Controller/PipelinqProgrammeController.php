@@ -34,8 +34,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
-use OCA\Dossiq\Service\CaseAccessGuard;
-use OCA\Dossiq\Service\Pipelinq\ProgrammeConsumer;
+use OCA\Dossiq\Kernel\Contracts\CaseAccessGuardInterface;
+use OCA\Dossiq\Kernel\Contracts\ProgrammeConsumerInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,16 +58,16 @@ class PipelinqProgrammeController extends Controller {
 	 *
 	 * @param string            $appName     The app name.
 	 * @param IRequest          $request     The HTTP request.
-	 * @param ProgrammeConsumer $programmes  The programme above the case.
-	 * @param CaseAccessGuard   $access      Per-case authorization (fails closed).
+	 * @param ProgrammeConsumerInterface $programmes  The programme above the case.
+	 * @param CaseAccessGuardInterface   $access      Per-case authorization (fails closed).
 	 * @param IUserSession      $userSession The current session.
 	 * @param IL10N             $l10n        The translations.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ProgrammeConsumer $programmes,
-		private readonly CaseAccessGuard $access,
+		private readonly ProgrammeConsumerInterface $programmes,
+		private readonly CaseAccessGuardInterface $access,
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 	) {

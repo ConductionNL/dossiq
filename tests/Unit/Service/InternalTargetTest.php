@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Term\CaseTermSources;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\TermDeclarationReader;
@@ -34,9 +35,12 @@ use Psr\Log\NullLogger;
  * REQ-TERM-063: an internal target is clocked apart and never shown to the citizen.
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Service\Term\TermsByKind
  * @covers \OCA\Dossiq\Service\TermKind
+ * @covers \OCA\Dossiq\Service\Term\CaseTermSources
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
  * @uses \OCA\Dossiq\Service\Term\DayCount
+ * @uses \OCA\Dossiq\Service\CaseTermBinding
  */
 class InternalTargetTest extends TestCase {
 	use BindsTermFixtures;
@@ -87,9 +91,11 @@ class InternalTargetTest extends TestCase {
 		);
 
 		$this->service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 		);
 	}//end setUp()
@@ -123,7 +129,7 @@ class InternalTargetTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
+	 * @spec openspec/specs/termijnbewaking-schemas/spec.md#requirement-lead-times-and-the-work-queue-count-working-days-on-the-administered-calendar-req-ote-04
 	 */
 	public function testTheInternalTargetCountsWorkingDays(): void {
 		$calendar = $this->createMock(WorkingDayRoll::class);
@@ -133,9 +139,11 @@ class InternalTargetTest extends TestCase {
 		$timers = $this->createMock(TermijnTimerService::class);
 		$timers->method('rollTermEndFor')->willReturnArgument(0);
 		$service = new CaseTermsService(
-			termService: $this->termService,
-			declarations: $this->declarations,
-			timers: $timers,
+			sources: new CaseTermSources(
+				termService: $this->termService,
+				declarations: $this->declarations,
+				timers: $timers,
+			),
 			logger: new NullLogger(),
 			calendar: $calendar,
 		);

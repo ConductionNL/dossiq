@@ -14,14 +14,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\People;
 
 use DateTime;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
-use OCP\Constants;
+use OCA\Dossiq\Kernel\Contracts\FileRequestServiceInterface;
 use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
+use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
+use OCP\Files\Folder;
+use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
-use OCP\Share\IShare;
 use RuntimeException;
-use Throwable;
 
 /**
  * Asks a party of a case for a file.
@@ -34,12 +34,19 @@ use Throwable;
  *
  * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
  */
-class FileRequestService {
+class FileRequestService implements FileRequestServiceInterface {
 
 	/**
 	 * How long a request stands when the caller names no expiry.
 	 */
 	public const DEFAULT_DAYS = 14;
+
+	/**
+	 * Creates the e-mail share the party uploads through.
+	 *
+	 * @var UploadShareWrite
+	 */
+	private readonly UploadShareWrite $uploads;
 
 	/**
 	 * @param PersonLinkReader $people The people on the case.
@@ -48,17 +55,20 @@ class FileRequestService {
 	 * @param IShareManager $shares Creates the share Nextcloud mails.
 	 * @param IUserSession $userSession The handler making the request.
 	 * @param PartyRefusalReader|null $refusals Joins pipelinq's refusal to this app's own.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private readonly PersonLinkReader $people,
 		private readonly DocumentProjectionService $folders,
 		private readonly PartyIndicatorReader $indicators,
-		private readonly IShareManager $shares,
+		IShareManager $shares,
 		private readonly IUserSession $userSession,
 		// Nullable and last: pipelinq is optional, and every existing
 		// construction of this service keeps working unchanged.
 		private readonly ?PartyRefusalReader $refusals = null,
 	) {
+		$this->uploads = new UploadShareWrite(shares: $shares);
 	}//end __construct()
 
 	/**
@@ -84,14 +94,87 @@ class FileRequestService {
 			throw new RuntimeException('This person is not on this case', 404);
 		}
 
+		$request = $this->addressedRequest(person: $person, caseId: $caseId);
+		$request->expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
+		$request->note = $note;
+
+		return $this->sent(request: $request, person: $person);
+	}//end request()
+
+	/**
+	 * An upload request to the person's address, from the caller, into the case's folder.
+	 *
+	 * @param array<string, mixed> $person The party, as the case's people list holds them.
+	 * @param string               $caseId The case uuid.
+	 *
+	 * @return UploadRequest The request, without its expiry and note.
+	 *
+	 * @throws RuntimeException 403 when an indicator on the person refuses the send, 422 when they
+	 *         have no address or the case has no folder.
+	 */
+	private function addressedRequest(array $person, string $caseId): UploadRequest {
+		$request = new UploadRequest();
+		$request->email = $this->addressOf(person: $person);
+		$this->refuseWhenIndicated(person: $person);
+		$request->folder = $this->caseFolder(caseId: $caseId);
+		$request->user = $this->caller();
+
+		return $request;
+	}//end addressedRequest()
+
+	/**
+	 * Create the upload share and answer who it went to, its token and when it expires.
+	 *
+	 * @param UploadRequest        $request The complete request.
+	 * @param array<string, mixed> $person  The party.
+	 *
+	 * @return array<string, mixed> The recipient, the token and when it expires.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	private function sent(UploadRequest $request, array $person): array {
+		$token = $this->uploads->send(request: $request);
+
+		return [
+			'recipient' => $request->email,
+			'recipientName' => $this->people->nameOf(link: $person),
+			'token' => $token,
+			'expiresAt' => $request->expires->format('Y-m-d'),
+		];
+	}//end sent()
+
+	/**
+	 * The person's address, or a refusal when there is none.
+	 *
+	 * @param array<string, mixed> $person The person on the case.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When the person has no address (422).
+	 */
+	private function addressOf(array $person): string {
 		$email = $this->people->emailOf(link: $person);
 		if ($email === '') {
 			throw new RuntimeException('This person has no email address, so there is nobody to send the request to', 422);
 		}
 
-		// The refusal is evaluated HERE, where the message goes out, and not
-		// only in the dialog that lists who can be asked. A check that lives
-		// in one caller is a check the next caller does not have.
+		return $email;
+	}//end addressOf()
+
+	/**
+	 * Refuse a request the party's indicator refuses.
+	 *
+	 * The refusal is evaluated HERE, where the message goes out, and not
+	 * only in the dialog that lists who can be asked. A check that lives
+	 * in one caller is a check the next caller does not have.
+	 *
+	 * @param array<string, mixed> $person The person on the case.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException When an indicator refuses the send (403).
+	 */
+	private function refuseWhenIndicated(array $person): void {
 		$partyUuid = $this->indicators->partyUuidOf(link: $person);
 
 		$refusal = $this->refusalFor(partyUuid: $partyUuid);
@@ -103,45 +186,41 @@ class FileRequestService {
 				403
 			);
 		}
+	}//end refuseWhenIndicated()
 
+	/**
+	 * The case folder, or a refusal when the case has none yet.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return Folder
+	 *
+	 * @throws RuntimeException When there is no folder (422).
+	 */
+	private function caseFolder(string $caseId): Folder {
 		$folder = $this->folders->folderOf(objectId: $caseId);
 		if ($folder === null) {
 			throw new RuntimeException('This case has no folder yet, so there is nowhere to upload to', 422);
 		}
 
+		return $folder;
+	}//end caseFolder()
+
+	/**
+	 * The signed-in caller, or a refusal.
+	 *
+	 * @return IUser
+	 *
+	 * @throws RuntimeException When nobody is signed in (401).
+	 */
+	private function caller(): IUser {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new RuntimeException('Not authenticated', 401);
 		}
 
-		$expires = new DateTime('+' . $this->daysOf(days: $days) . ' days');
-		$share = $this->shares->newShare();
-		$share->setNode($folder);
-		$share->setShareType(IShare::TYPE_EMAIL);
-		$share->setSharedWith($email);
-		$share->setSharedBy($user->getUID());
-		$share->setShareOwner($folder->getOwner()?->getUID() ?? $user->getUID());
-		// Create and nothing else: the party may put a file in, and can
-		// neither read nor change what is already in the case folder.
-		$share->setPermissions(Constants::PERMISSION_CREATE);
-		$share->setExpirationDate($expires);
-		if ($note !== '') {
-			$share->setNote($note);
-		}
-
-		try {
-			$created = $this->shares->createShare($share);
-		} catch (Throwable $e) {
-			throw new RuntimeException('The file request could not be sent: ' . $e->getMessage(), 500, $e);
-		}
-
-		return [
-			'recipient' => $email,
-			'recipientName' => $this->people->nameOf(link: $person),
-			'token' => (string)$created->getToken(),
-			'expiresAt' => $expires->format('Y-m-d'),
-		];
-	}//end request()
+		return $user;
+	}//end caller()
 
 	/**
 	 * The indicator refusing a send to this party, or null when nothing refuses.

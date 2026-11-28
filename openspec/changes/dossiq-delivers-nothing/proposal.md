@@ -42,7 +42,7 @@ An evidence-based audit of every outbound surface in dossiq (2026-09-02, branch 
 | 6 | Shillinq invoice export (`ShillinqIntegrationService::exportInvoice`, blocking `sleep()` retry) | Live from `TenantBillingService` | **Staged** (phase 5): shillinq is an NC sibling, so per ADR-041 this becomes a typed event **to shillinq**, not integriq HTTP. The blocking sleep retires with it |
 | 7 | Cross-municipality ZGW push (`External/Zgw/LogZgwExternalAdapter` — dormant, synthetic `PUSH_DEFERRED`) | Zero production callers; production binding was always intended as an openconnector source | **Staged** (phase 4): bind to an integriq source when the feature activates; the dormant seam stays |
 | 8 | Email via `IMailer` (`CaseEmailService`, `TenantWelcomeMailer`) | NC platform mailer | **Keep, with rationale**: the Nextcloud mailer is platform infrastructure, not an integration transport — every NC app sends mail this way. `EmailPdfRetryJob` retries PDF *archival conversion* (its adapter is not wired — separate defect), not transport |
-| 9 | WOO publication → OpenCatalogi (`WooPublicationService`) | In-process OR object writes per ADR-080/gate-62, one catalog-listing read | **Keep**: in-process object writes are the sanctioned pattern, not transport |
+| 9 | WOO publication → OpenCatalogi (`OutcomePublisher`) | In-process OR object writes per ADR-080/gate-62, one catalog-listing read | **Keep**: in-process object writes are the sanctioned pattern, not transport |
 
 Confirmed negatives: **no IWMO/iJW code exists in dossiq** (every grep hit was Dutch `bijwerken`;
 integriq already owns the `iwmo-ijw-adapter`), and **no DROP/LVBB transport exists** (surface 1 is

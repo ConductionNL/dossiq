@@ -34,14 +34,15 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Zaakdossier;
 
 use InvalidArgumentException;
-use OCA\Dossiq\Woo\WooCaseDocuments;
+use OCA\Dossiq\Kernel\Contracts\CaseDocumentProvenanceInterface;
+use OCA\Dossiq\Kernel\Contracts\WooCaseDocumentsInterface;
 
 /**
  * Reads and filters the provenance of the documents on a case.
  *
  * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
  */
-class CaseDocumentProvenance {
+class CaseDocumentProvenance implements CaseDocumentProvenanceInterface {
 
 	/**
 	 * The provenance fields, in the order a reader shows them.
@@ -49,21 +50,16 @@ class CaseDocumentProvenance {
 	public const FIELDS = ['source', 'sourceSystem', 'custodian', 'location', 'terms', 'searchedAt', 'searchedBy'];
 
 	/**
-	 * The fields a selection of documents can be filtered on.
-	 */
-	public const FILTER_FIELDS = ['custodian', 'sourceSystem', 'source'];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param DocumentRecordStore $store         A document's record and its join to the case.
-	 * @param WooCaseDocuments    $caseDocuments Which documents are on the case.
+	 * @param WooCaseDocumentsInterface    $caseDocuments Which documents are on the case.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly DocumentRecordStore $store,
-		private readonly WooCaseDocuments $caseDocuments,
+		private readonly WooCaseDocumentsInterface $caseDocuments,
 	) {
 	}//end __construct()
 
@@ -83,7 +79,7 @@ class CaseDocumentProvenance {
 	 * @spec openspec/changes/woo-request-corpus-collection/specs/document-provenance/spec.md#requirement-a-collected-document-carries-its-provenance-for-any-case-type-req-dpv-001
 	 */
 	public function forDocument(string $caseId, string $documentId, ?array $record = null): array {
-		return $this->normalise(stored: $this->stored(caseId: $caseId, documentId: $documentId, record: $record));
+		return $this->normalise(stored: $this->stored(document: [$caseId, $documentId], record: $record));
 	}//end forDocument()
 
 	/**
@@ -202,10 +198,20 @@ class CaseDocumentProvenance {
 	 *     messageId: string
 	 * }
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-collected-mail-keeps-its-header-fields-req-wrr-003
 	 */
 	public function mailOf(string $caseId, string $documentId, ?array $record = null): array {
-		$stored = $this->stored(caseId: $caseId, documentId: $documentId, record: $record);
+		return $this->mailFields(stored: $this->stored(document: [$caseId, $documentId], record: $record));
+	}//end mailOf()
+
+	/**
+	 * The mail header fields of a stored provenance.
+	 *
+	 * @param array<string, mixed> $stored The provenance as stored.
+	 *
+	 * @return array<string, mixed> The fields mailOf() answers.
+	 */
+	private function mailFields(array $stored): array {
 		$mail = $stored['mail'] ?? null;
 		if (is_array($mail) === false) {
 			$mail = [];
@@ -227,7 +233,7 @@ class CaseDocumentProvenance {
 			'date' => trim($this->scalar(value: ($mail['date'] ?? ''))),
 			'messageId' => trim($this->scalar(value: ($mail['messageId'] ?? ''))),
 		];
-	}//end mailOf()
+	}//end mailFields()
 
 	/**
 	 * The mail header fields of every collected mail on the case.
@@ -239,7 +245,7 @@ class CaseDocumentProvenance {
 	 *
 	 * @return array<string, array<string, mixed>> mailOf() per document uuid.
 	 *
-	 * @spec openspec/changes/woo-review-reports/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
+	 * @spec openspec/specs/woo-review-reports/spec.md#requirement-the-collection-reported-by-sender-recipient-and-domain-req-wrr-004
 	 */
 	public function mailForCase(string $caseId): array {
 		$mails = [];
@@ -252,6 +258,68 @@ class CaseDocumentProvenance {
 
 		return $mails;
 	}//end mailForCase()
+
+	/**
+	 * The conversation a collected mail belongs to, as its provenance records it.
+	 *
+	 * @param string                    $caseId     The case uuid.
+	 * @param string                    $documentId The document uuid.
+	 * @param array<string, mixed>|null $record     The document's record when the caller already has it.
+	 *
+	 * @return array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}
+	 *         Every field empty for a document that is no collected mail.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function threadOf(string $caseId, string $documentId, ?array $record = null): array {
+		return $this->threadFields(stored: $this->stored(document: [$caseId, $documentId], record: $record));
+	}//end threadOf()
+
+	/**
+	 * The conversation fields of a stored provenance.
+	 *
+	 * @param array<string, mixed> $stored The provenance as stored.
+	 *
+	 * @return array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}
+	 */
+	private function threadFields(array $stored): array {
+		$parentIds = [];
+		foreach ((array)($stored['parentIds'] ?? []) as $parentId) {
+			$parentId = trim($this->scalar(value: $parentId));
+			if ($parentId !== '') {
+				$parentIds[] = $parentId;
+			}
+		}
+
+		return [
+			'threadId' => trim($this->scalar(value: ($stored['threadId'] ?? ''))),
+			'messageId' => trim($this->scalar(value: ($stored['messageId'] ?? ''))),
+			'parentIds' => $parentIds,
+			'sentAt' => trim($this->scalar(value: ($stored['sentAt'] ?? ''))),
+		];
+	}//end threadFields()
+
+	/**
+	 * The conversation of every collected mail on the case.
+	 *
+	 * @param string $caseId The case uuid.
+	 *
+	 * @return array<string, array{threadId: string, messageId: string, parentIds: list<string>, sentAt: string}>
+	 *         threadOf() per document uuid, only documents that carry a thread.
+	 *
+	 * @spec openspec/changes/woo-request-corpus-collection/specs/woo-case-type/spec.md#requirement-collected-e-mails-are-grouped-into-the-conversation-they-belong-to-req-wrc-006
+	 */
+	public function threadsForCase(string $caseId): array {
+		$threads = [];
+		foreach ($this->caseDocuments->idsFor(caseId: $caseId) as $documentId) {
+			$thread = $this->threadOf(caseId: $caseId, documentId: (string)$documentId);
+			if ($thread['threadId'] !== '') {
+				$threads[(string)$documentId] = $thread;
+			}
+		}
+
+		return $threads;
+	}//end threadsForCase()
 
 	/**
 	 * A list of addresses, lower-cased, from a list or a single address.
@@ -290,13 +358,13 @@ class CaseDocumentProvenance {
 	/**
 	 * The provenance as stored: on the record, else on this case's join, else [].
 	 *
-	 * @param string                    $caseId     The case uuid.
-	 * @param string                    $documentId The document uuid.
-	 * @param array<string, mixed>|null $record     The record when already read.
+	 * @param array{0: string, 1: string} $document The case uuid and the document uuid.
+	 * @param array<string, mixed>|null   $record   The record when already read.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function stored(string $caseId, string $documentId, ?array $record): array {
+	private function stored(array $document, ?array $record): array {
+		[$caseId, $documentId] = $document;
 		$record = ($record ?? $this->store->findRecord(recordId: $documentId) ?? []);
 		if (is_array($record['provenance'] ?? null) === true) {
 			return $record['provenance'];

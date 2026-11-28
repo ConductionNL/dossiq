@@ -11,7 +11,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-binding/spec.md
  */
 
 declare(strict_types=1);
@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\LegacyObjectArgs;
 
 /**
  * @covers \OCA\Dossiq\Service\Termijn\CaseDeadlineMirror
@@ -160,6 +161,29 @@ class CaseDeadlineMirrorTest extends TestCase {
 	}//end testTheRunningTermWinsOverACompletedOne()
 
 	/**
+	 * A statutory instance that carries no end date yet cannot decide a
+	 * deadline, so it is passed over for the next statutory instance that has
+	 * one, rather than deciding a case's deadline to be nothing.
+	 *
+	 * @return void
+	 */
+	public function testAStatutoryInstanceWithoutAnEndIsPassedOver(): void {
+		$rows = [
+			['id' => 'no-end', 'kind' => 'statutory', 'status' => 'verlengd'],
+			['id' => 'has-end', 'kind' => 'statutory', 'status' => 'verlengd', 'endDateCurrent' => '2026-11-20'],
+		];
+
+		self::assertSame('has-end', CaseDeadlineMirror::decidingInstance($rows)['id']);
+
+		self::assertNull(
+			CaseDeadlineMirror::decidingInstance([
+				['id' => 'only-no-end', 'kind' => 'statutory', 'status' => 'verlengd'],
+			]),
+			'A statutory term with no end decides nothing at all.'
+		);
+	}//end testAStatutoryInstanceWithoutAnEndIsPassedOver()
+
+	/**
 	 * A case the store does not hold is not invented.
 	 *
 	 * @return void
@@ -176,7 +200,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testFollowInstanceMovesTheCaseOnlyForAStatutoryTerm(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
@@ -193,7 +217,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnEmptyCaseIdHasNoDeadline(): void {
 		self::assertNull($this->mirror->deadlineFor('  '));
@@ -204,7 +228,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnUnreadableStoreLeavesTheCaseAndLogs(): void {
 		$broken = new class {
@@ -232,6 +256,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 			 * @return mixed
 			 */
 			public function find(mixed ...$args): mixed {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new \RuntimeException('database gone');
 			}
 		};
@@ -252,7 +277,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testAnUnconfiguredCaseSchemaWritesNothing(): void {
 		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
@@ -274,7 +299,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-term-engine/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
 	 */
 	public function testARefusedWriteIsLoggedAndAnsweredFalse(): void {
 		$store = new class extends FakeTermijnStore {
@@ -284,6 +309,7 @@ class CaseDeadlineMirrorTest extends TestCase {
 			 * @return never
 			 */
 			public function patchObject(mixed ...$args): never {
+				$args = LegacyObjectArgs::flatten(args: $args);
 				throw new \RuntimeException('validation failed');
 			}
 		};
@@ -302,6 +328,51 @@ class CaseDeadlineMirrorTest extends TestCase {
 		self::assertFalse($mirror->follow('case-1'));
 	}//end testARefusedWriteIsLoggedAndAnsweredFalse()
 
+
+	/**
+	 * A case schema unconfigured between the read and the write writes nothing and answers false.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/termijn-binding/spec.md#requirement-the-case-deadline-is-the-statutory-terms-current-end-req-ote-01
+	 */
+	public function testACaseSchemaGoneBeforeTheWriteWritesNothing(): void {
+		$this->objects->seed('case', ['id' => 'case-1', 'deadline' => '2026-10-01']);
+		$this->instance(id: 't1', fields: ['endDateCurrent' => '2026-11-12']);
+		$caseSchemaReads = 0;
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key) use (&$caseSchemaReads): string {
+				if ($key === 'case_schema') {
+					$caseSchemaReads++;
+					// The read sees the schema; the write that follows does not.
+					if ($caseSchemaReads === 1) {
+						return 'case';
+					}
+
+					return '';
+				}
+
+				return match ($key) {
+					'register' => 'dossiq',
+					'termijn_instance_schema' => 'deadlineInstance',
+					default => '',
+				};
+			}
+		);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects(self::never())->method('warning');
+		$mirror = new CaseDeadlineMirror(
+			settingsService: $settings,
+			store: new TermInstanceStore(settingsService: $settings, logger: $logger),
+			logger: $logger,
+		);
+
+		self::assertFalse(condition: $mirror->follow('case-1'));
+		self::assertSame(expected: 2, actual: $caseSchemaReads, message: 'The case schema is read once for the read and once for the write.');
+		self::assertArrayNotHasKey(key: CaseDeadlineMirror::FIELD, array: $this->objects->get('case', 'case-1'));
+	}//end testACaseSchemaGoneBeforeTheWriteWritesNothing()
 	/**
 	 * Settings over a given object service.
 	 *

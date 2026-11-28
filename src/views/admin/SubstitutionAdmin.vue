@@ -63,7 +63,7 @@
 					<td>{{ sub.startDate }} → {{ sub.endDate }}</td>
 					<td>{{ sub.scope }}</td>
 					<td>
-						<span :class="`status status--${sub.status}`">{{
+						<span :class="`status cn-status-badge cn-status-badge--default status--${sub.status}`">{{
 							sub.status
 						}}</span>
 					</td>
@@ -122,6 +122,7 @@ import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import { loadOnMount } from '../../mixins/loadOnMount.js'
 import {
 	fetchSubstitutionActions,
 	listSubstitutions,
@@ -139,6 +140,8 @@ export default {
 		SubstitutionFormModal,
 		BulkReassignModal,
 	},
+
+	mixins: [loadOnMount],
 
 	data() {
 		return {
@@ -165,10 +168,6 @@ export default {
 					|| (s.substitute || '').toLowerCase().includes(q),
 			)
 		},
-	},
-
-	async mounted() {
-		await this.load()
 	},
 
 	methods: {
@@ -228,17 +227,14 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../styles/_substitutionList.scss' as list;
+
 .substitution-admin {
 	padding: 20px;
 }
 
-.substitution-admin__header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 12px;
-}
+@include list.list-header(substitution-admin);
 
 .substitution-admin__actions {
 	display: flex;
@@ -258,18 +254,7 @@ export default {
 	min-width: 260px;
 }
 
-.substitution-admin__table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.9rem;
-}
-
-.substitution-admin__table th,
-.substitution-admin__table td {
-	text-align: left;
-	padding: 8px 10px;
-	border-bottom: 1px solid var(--color-border);
-}
+@include list.list-table(substitution-admin);
 
 .substitution-admin__row-actions {
 	display: flex;
@@ -282,20 +267,12 @@ export default {
 	border-top: 1px solid var(--color-border);
 }
 
-.status {
-	padding: 2px 8px;
-	border-radius: var(--border-radius-pill);
-	font-size: 0.8rem;
-}
 
 .status--active {
 	background: var(--color-success);
-	color: var(--color-primary-element-text);
+	--cn-status-badge-ink: var(--color-primary-element-text);
+	color: var(--cn-status-badge-ink);
 }
 
-.status--ended,
-.status--revoked {
-	background: var(--color-background-dark);
-	color: var(--color-text-maxcontrast);
-}
+@include list.ended-status;
 </style>

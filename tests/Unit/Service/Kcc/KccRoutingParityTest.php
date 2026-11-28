@@ -34,6 +34,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Service\Kcc\RoutingTableEvaluator
  * @covers \OCA\Dossiq\Service\Kcc\RoutingEngine
+ * @uses \OCA\Dossiq\Service\Kcc\RoutingRuleOrder
+ * @uses \OCA\Dossiq\Service\Kcc\RuleConditions
  */
 class KccRoutingParityTest extends TestCase {
 

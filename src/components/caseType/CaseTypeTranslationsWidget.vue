@@ -47,6 +47,25 @@
 			{{ t('dossiq', 'This case type has no labels that can be translated.') }}
 		</p>
 
+		<ul
+			v-else-if="summary"
+			class="case-type-translations__summary"
+			data-testid="case-type-translations-summary">
+			<li
+				v-for="chip in chips"
+				:key="chip.language"
+				class="case-type-translations__summary-row"
+				:data-language="chip.language">
+				<span class="case-type-translations__summary-text">
+					<span class="case-type-translations__summary-name">{{ chip.name }}</span>
+					<span class="case-type-translations__summary-meta">{{ chip.labels }}</span>
+				</span>
+				<span
+					class="case-type-translations__summary-pill cn-status-badge"
+					:class="chip.complete ? 'cn-status-badge--success' : 'cn-status-badge--warning'">{{ chip.state }}</span>
+			</li>
+		</ul>
+
 		<template v-else>
 			<ul
 				class="case-type-translations__chips"
@@ -54,7 +73,7 @@
 				<li
 					v-for="chip in chips"
 					:key="chip.language"
-					class="case-type-translations__chip"
+					class="case-type-translations__chip cn-status-badge cn-status-badge--default"
 					:class="{
 						'case-type-translations__chip--complete': chip.complete,
 					}"
@@ -122,6 +141,7 @@ import { getLanguage, translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { caseTypeWidget } from '../../mixins/caseTypeWidget.js'
 import {
 	caseTypeProperties,
 	caseTypeWithTranslations,
@@ -138,6 +158,20 @@ export default {
 	name: 'CaseTypeTranslationsWidget',
 
 	components: { NcButton, NcLoadingIcon, NcTextField },
+
+	mixins: [caseTypeWidget],
+
+	props: {
+		/**
+		 * The widget content. `mode: "summary"` draws one row per language
+		 * (its labels and a Complete or missing pill) instead of the editor,
+		 * for the Overview tab (DqZaaktypeOverzicht Vertalingen).
+		 */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
+	},
 
 	data() {
 		return {
@@ -157,13 +191,13 @@ export default {
 
 	computed: {
 		/**
-		 * The case type this page is bound to.
+		 * Whether the widget draws the per-language summary instead of the editor.
 		 *
-		 * @return {string} The route's id.
-		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
+		 * @return {boolean} True for `content.mode: "summary"`.
+		 * @spec openspec/specs/case-types/spec.md#requirement-the-overview-tab-summarises-the-translations
 		 */
-		caseTypeId() {
-			return String(this.$route?.params?.id ?? '')
+		summary() {
+			return this.content?.mode === 'summary'
 		},
 
 		/**
@@ -190,6 +224,12 @@ export default {
 				return {
 					language,
 					name: this.nameOf(language),
+					// TRANSLATORS: how many of a case type's labels exist in one language, on the summary row
+					labels: t('dossiq', '{translated} of {total} labels', { translated, total }),
+					state: translated === total
+						? t('dossiq', 'Fully translated')
+						// TRANSLATORS: how many of a case type's labels one language still lacks
+						: t('dossiq', '{missing} missing', { missing: total - translated }),
 					// TRANSLATORS: how many of a case type's labels exist in one language
 					count: t('dossiq', '{translated} of {total}', {
 						translated,
@@ -444,6 +484,39 @@ export default {
 </script>
 
 <style scoped>
+.case-type-translations__summary {
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.case-type-translations__summary-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.case-type-translations__summary-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.case-type-translations__summary-name {
+	font-weight: 600;
+}
+
+.case-type-translations__summary-meta {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
 .case-type-translations__chips {
 	display: flex;
 	flex-wrap: wrap;
@@ -456,15 +529,14 @@ export default {
 .case-type-translations__chip {
 	align-items: center;
 	background: var(--color-background-dark);
-	border-radius: var(--border-radius-pill);
 	display: flex;
 	gap: 6px;
-	padding: 2px 10px;
 }
 
 .case-type-translations__chip--complete {
 	background: var(--color-success, var(--color-background-dark));
-	color: var(--color-primary-text);
+	--cn-status-badge-ink: var(--color-primary-text);
+	color: var(--cn-status-badge-ink);
 }
 
 .case-type-translations__chip-count {

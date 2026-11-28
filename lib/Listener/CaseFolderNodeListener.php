@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\DocumentProjectionServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Events\Node\NodeCreatedEvent;
@@ -46,19 +46,19 @@ use Throwable;
  * folder.
  *
  * @spec openspec/specs/document-projection/spec.md
- * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+ * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
  *
  * @template-implements IEventListener<Event>
  */
 class CaseFolderNodeListener implements IEventListener {
 
 	/**
-	 * @param DocumentProjectionService $projection The service that owns the record.
+	 * @param DocumentProjectionServiceInterface $projection The service that owns the record.
 	 * @param LoggerInterface $logger Where a failed projection is reported.
 	 * @param IUserSession|null $userSession Who wrote the file; nobody means the system.
 	 */
 	public function __construct(
-		private readonly DocumentProjectionService $projection,
+		private readonly DocumentProjectionServiceInterface $projection,
 		private readonly LoggerInterface $logger,
 		private readonly ?IUserSession $userSession = null,
 	) {
@@ -71,7 +71,7 @@ class CaseFolderNodeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	private function asWriter(callable $operation): void {
 		if ($this->userSession === null || $this->userSession->getUser() !== null) {
@@ -97,7 +97,7 @@ class CaseFolderNodeListener implements IEventListener {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq documents: the projection of a file event failed: ' . $e->getMessage(),
-				['app' => Application::APP_ID, 'exception' => $e],
+				['app' => AppIdentity::APP_ID, 'exception' => $e],
 			);
 		}
 	}//end handle()

@@ -586,7 +586,7 @@ describe('The access tab is wired, not orphaned', () => {
 		// renders an empty panel, and the warning goes to a console nobody reads.
 		expect(registrySource).toContain('CaseAccessTab: {')
 		expect(registrySource).toContain(
-			"import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'",
+			"const CaseAccessTab = lazyComponent(() => import('./views/cases/components/CaseAccessTab.vue'), 'CaseAccessTab')",
 		)
 	})
 

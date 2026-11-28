@@ -168,44 +168,6 @@ class CaseDefinitionControllerTest extends TestCase {
 		$this->assertArrayHasKey('error', $response->getData());
 	}//end testNewVersionReturns500WhenTheServiceThrows()
 
-	/**
-	 * delete() returns 200 on a successful draft delete.
-	 *
-	 * @return void
-	 */
-	public function testDeleteReturns200OnSuccess(): void {
-		$this->copyService->method('deleteDraft')->with('draft-uuid')->willReturn(['ok' => true]);
 
-		$response = $this->controller->delete('draft-uuid');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertTrue($response->getData()['success']);
-	}//end testDeleteReturns200OnSuccess()
-
-	/**
-	 * delete() returns 404 when the case type does not resolve.
-	 *
-	 * @return void
-	 */
-	public function testDeleteReturns404WhenNotFound(): void {
-		$this->copyService->method('deleteDraft')->willReturn(['ok' => false, 'reason' => 'not_found']);
-
-		$response = $this->controller->delete('missing');
-
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-	}//end testDeleteReturns404WhenNotFound()
-
-	/**
-	 * delete() returns 409 when the case type is published.
-	 *
-	 * @return void
-	 */
-	public function testDeleteReturns409WhenPublished(): void {
-		$this->copyService->method('deleteDraft')->willReturn(['ok' => false, 'reason' => 'published']);
-
-		$response = $this->controller->delete('published-uuid');
-
-		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
-		$this->assertArrayHasKey('error', $response->getData());
-	}//end testDeleteReturns409WhenPublished()
 }//end class

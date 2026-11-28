@@ -52,31 +52,16 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	public function rulesBesluitenUpdate(array $body, ?array $existingObject = null): array {
-		$result = $this->isValid(body: $body);
-
-		$result = $this->checkDecisionTypeImmutability(
-			result: $result,
-			existingObject: $existingObject
-		);
-		if ($result['valid'] === false) {
-			return $result;
-		}
-
-		$result = $this->checkDecisionFieldImmutability(
-			result: $result,
-			existingObject: $existingObject
-		);
+		$result = $this->rulesBesluitenPatch(body: $body, existingObject: $existingObject);
 		if ($result['valid'] === false) {
 			return $result;
 		}
 
 		// Preserve immutable fields from existing object when omitted in PUT body.
-		$result = $this->preserveImmutableDecisionFields(
+		return $this->preserveImmutableDecisionFields(
 			result: $result,
 			existingObject: $existingObject
 		);
-
-		return $result;
 	}//end rulesBesluitenUpdate()
 
 	/**
@@ -194,6 +179,23 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 
 		$body = $result['enrichedBody'];
 
+		$body = $this->withIdentificatie(body: $body, existingObject: $existingObject);
+		$body = $this->withResponsibleOrganisation(body: $body, existingObject: $existingObject);
+
+		$result['enrichedBody'] = $body;
+
+		return $result;
+	}//end preserveImmutableDecisionFields()
+
+	/**
+	 * Keep the stored identificatie when the body leaves it out or empty.
+	 *
+	 * @param array $body           The enriched besluit body.
+	 * @param array $existingObject The stored besluit.
+	 *
+	 * @return array The body.
+	 */
+	private function withIdentificatie(array $body, array $existingObject): array {
 		if (isset($body['identificatie']) === false || $body['identificatie'] === '') {
 			$existingId = $existingObject['title'] ?? $existingObject['identifier'] ?? '';
 			if ($existingId === '') {
@@ -205,6 +207,18 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 			}
 		}
 
+		return $body;
+	}//end withIdentificatie()
+
+	/**
+	 * Keep the stored verantwoordelijkeOrganisatie when the body leaves it out or empty.
+	 *
+	 * @param array $body           The enriched besluit body.
+	 * @param array $existingObject The stored besluit.
+	 *
+	 * @return array The body.
+	 */
+	private function withResponsibleOrganisation(array $body, array $existingObject): array {
 		if (isset($body['verantwoordelijkeOrganisatie']) === false
 			|| $body['verantwoordelijkeOrganisatie'] === ''
 		) {
@@ -216,8 +230,6 @@ class BrcImmutabilityRules extends ZgwRulesBase {
 			}
 		}
 
-		$result['enrichedBody'] = $body;
-
-		return $result;
-	}//end preserveImmutableDecisionFields()
+		return $body;
+	}//end withResponsibleOrganisation()
 }//end class

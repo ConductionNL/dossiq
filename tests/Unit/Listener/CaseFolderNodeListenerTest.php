@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
-use OCA\Dossiq\AppInfo\Registrar\ObjectListenerRegistrar;
+use OCA\Dossiq\Listener\Registrar\ObjectListenerRegistrar;
 use OCA\Dossiq\Listener\CaseFolderNodeListener;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -240,7 +240,7 @@ class CaseFolderNodeListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	public function testAFileWrittenWithoutAUserIsProjectedAsTheSystem(): void {
 		$or = $this->objectService();
@@ -263,7 +263,7 @@ class CaseFolderNodeListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	public function testAFileAUserWritesIsProjectedAsThatUser(): void {
 		$or = $this->objectService();
@@ -283,7 +283,7 @@ class CaseFolderNodeListenerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
+	 * @spec openspec/changes/archive/2026-11-25-a-file-written-without-a-user-is-projected-as-the-system/specs/document-projection/spec.md#requirement-a-file-written-without-a-signed-in-user-is-projected-as-the-system-req-dpr-006
 	 */
 	public function testAFileOutsideTheTreeIsNeverElevated(): void {
 		$or = $this->objectService();

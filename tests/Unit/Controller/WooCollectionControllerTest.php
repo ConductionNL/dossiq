@@ -60,6 +60,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Woo\WooSearchPlans
  * @uses   \OCA\Dossiq\Woo\WooCorpusRefused
  * @uses   \OCA\Dossiq\Service\WOODocumentAssessmentService
+ * @uses   \OCA\Dossiq\Service\AssessmentBatchTarget
+ * @uses   \OCA\Dossiq\Service\Assessment\PartlyPublicRows
  * @uses   \OCA\Dossiq\Woo\WooRefusalGrounds
  * @uses   \OCA\Dossiq\Woo\WooCaseDocuments
  * @uses   \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
@@ -71,6 +73,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Dossiq\Service\Access\CaseRecordLookup
  * @uses   \OCA\Dossiq\Service\Access\CaseReviewerAccess
  * @uses   \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\Custody\DossierRegister
+ * @uses \OCA\Dossiq\Service\WooAssessmentLocation
  */
 class WooCollectionControllerTest extends TestCase {
 

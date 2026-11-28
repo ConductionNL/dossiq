@@ -23,32 +23,24 @@ namespace OCA\Dossiq\Tests\Unit\Dashboard;
 
 use OCA\Dossiq\Dashboard\CasesOverviewWidget;
 use OCA\Dossiq\Dashboard\DeadlineAlertsWidget;
-use OCA\Dossiq\Dashboard\MyTasksWidget;
-use OCA\Dossiq\Dashboard\OverdueCasesWidget;
-use OCA\Dossiq\Dashboard\QueueWidgetItems;
-use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
 use OCA\Dossiq\Dashboard\StalledCasesWidget;
 use OCA\Dossiq\Dashboard\TaskRemindersWidget;
 use OCP\IL10N;
+use OCA\Dossiq\Service\Dashboard\WidgetAudience;
 use OCP\IURLGenerator;
-use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
  * Unit tests for the signalering dashboard widgets.
  *
  * @covers \OCA\Dossiq\Dashboard\CasesOverviewWidget
  * @covers \OCA\Dossiq\Dashboard\DeadlineAlertsWidget
- * @covers \OCA\Dossiq\Dashboard\OverdueCasesWidget
  * @covers \OCA\Dossiq\Dashboard\StalledCasesWidget
- * @covers \OCA\Dossiq\Dashboard\MyTasksWidget
  * @covers \OCA\Dossiq\Dashboard\TaskRemindersWidget
- * @uses   \OCA\Dossiq\Dashboard\QueueWidgetItems
- * @uses   \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses   \OCA\Dossiq\Dashboard\DashboardPageWidget
  */
 class SignaleringWidgetsTest extends TestCase {
-	use MakesCaseDateNormaliser;
 
 
 	/**
@@ -66,6 +58,20 @@ class SignaleringWidgetsTest extends TestCase {
 	private IURLGenerator $url;
 
 	/**
+	 * The widget audience, which admits everybody here.
+	 *
+	 * @var WidgetAudience
+	 */
+	private WidgetAudience $audience;
+
+	/**
+	 * The signed-in user's session.
+	 *
+	 * @var IUserSession
+	 */
+	private IUserSession $session;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -73,6 +79,8 @@ class SignaleringWidgetsTest extends TestCase {
 	protected function setUp(): void {
 		$this->l10n = $this->createMock(IL10N::class);
 		$this->url = $this->createMock(IURLGenerator::class);
+		$this->audience = $this->createMock(originalClassName: WidgetAudience::class);
+		$this->session = $this->createMock(originalClassName: IUserSession::class);
 
 		$this->l10n->method('t')->willReturnArgument(0);
 		$this->url->method('linkToRouteAbsolute')->willReturn('https://example.com/apps/dossiq/dashboard');
@@ -85,7 +93,7 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCasesOverviewWidgetId(): void {
-		$widget = new CasesOverviewWidget($this->l10n, $this->url);
+		$widget = new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$this->assertSame('procest_cases_overview_widget', $widget->getId());
 
 	}//end testCasesOverviewWidgetId()
@@ -96,7 +104,7 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCasesOverviewWidgetTitle(): void {
-		$widget = new CasesOverviewWidget($this->l10n, $this->url);
+		$widget = new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$this->assertNotEmpty($widget->getTitle());
 
 	}//end testCasesOverviewWidgetTitle()
@@ -107,7 +115,7 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testCasesOverviewWidgetUrl(): void {
-		$widget = new CasesOverviewWidget($this->l10n, $this->url);
+		$widget = new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$url = $widget->getUrl();
 		$this->assertNotNull($url);
 		$this->assertStringContainsString('dossiq', $url);
@@ -120,7 +128,7 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeadlineAlertsWidgetId(): void {
-		$widget = new DeadlineAlertsWidget($this->l10n, $this->url);
+		$widget = new DeadlineAlertsWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$this->assertSame('procest_deadline_alerts_widget', $widget->getId());
 
 	}//end testDeadlineAlertsWidgetId()
@@ -131,8 +139,8 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeadlineAlertsWidgetOrder(): void {
-		$casesWidget = new CasesOverviewWidget($this->l10n, $this->url);
-		$deadlineWidget = new DeadlineAlertsWidget($this->l10n, $this->url);
+		$casesWidget = new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
+		$deadlineWidget = new DeadlineAlertsWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 
 		$this->assertGreaterThan($casesWidget->getOrder(), $deadlineWidget->getOrder());
 
@@ -144,21 +152,10 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testDeadlineAlertsWidgetIconClass(): void {
-		$widget = new DeadlineAlertsWidget($this->l10n, $this->url);
+		$widget = new DeadlineAlertsWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$this->assertNotEmpty($widget->getIconClass());
 
 	}//end testDeadlineAlertsWidgetIconClass()
-
-	/**
-	 * Test OverdueCasesWidget returns the correct widget ID.
-	 *
-	 * @return void
-	 */
-	public function testOverdueCasesWidgetId(): void {
-		$widget = new OverdueCasesWidget($this->l10n, $this->url);
-		$this->assertSame('procest_overdue_cases_widget', $widget->getId());
-
-	}//end testOverdueCasesWidgetId()
 
 	/**
 	 * Test StalledCasesWidget returns the correct widget ID.
@@ -166,7 +163,7 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testStalledCasesWidgetId(): void {
-		$widget = new StalledCasesWidget($this->l10n, $this->url);
+		$widget = new StalledCasesWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$this->assertSame('procest_stalled_cases_widget', $widget->getId());
 
 	}//end testStalledCasesWidgetId()
@@ -177,7 +174,7 @@ class SignaleringWidgetsTest extends TestCase {
 	 * @return void
 	 */
 	public function testTaskRemindersWidgetId(): void {
-		$widget = new TaskRemindersWidget($this->l10n, $this->url);
+		$widget = new TaskRemindersWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session);
 		$this->assertSame('procest_task_reminders_widget', $widget->getId());
 
 	}//end testTaskRemindersWidgetId()
@@ -189,12 +186,10 @@ class SignaleringWidgetsTest extends TestCase {
 	 */
 	public function testAllWidgetsLinkToDashboard(): void {
 		$widgets = [
-			new CasesOverviewWidget($this->l10n, $this->url),
-			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
-			new StalledCasesWidget($this->l10n, $this->url),
-			new TaskRemindersWidget($this->l10n, $this->url),
-			$this->myTasksWidget(),
+			new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new DeadlineAlertsWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new StalledCasesWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new TaskRemindersWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
 		];
 
 		foreach ($widgets as $widget) {
@@ -211,12 +206,10 @@ class SignaleringWidgetsTest extends TestCase {
 	 */
 	public function testAllWidgetsHaveUniqueIds(): void {
 		$widgets = [
-			new CasesOverviewWidget($this->l10n, $this->url),
-			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
-			new StalledCasesWidget($this->l10n, $this->url),
-			new TaskRemindersWidget($this->l10n, $this->url),
-			$this->myTasksWidget(),
+			new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new DeadlineAlertsWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new StalledCasesWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new TaskRemindersWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
 		];
 
 		$ids = array_map(
@@ -237,12 +230,10 @@ class SignaleringWidgetsTest extends TestCase {
 	 */
 	public function testAllWidgetsHaveNonEmptyTitles(): void {
 		$widgets = [
-			new CasesOverviewWidget($this->l10n, $this->url),
-			new DeadlineAlertsWidget($this->l10n, $this->url),
-			new OverdueCasesWidget($this->l10n, $this->url),
-			new StalledCasesWidget($this->l10n, $this->url),
-			new TaskRemindersWidget($this->l10n, $this->url),
-			$this->myTasksWidget(),
+			new CasesOverviewWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new DeadlineAlertsWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new StalledCasesWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
+			new TaskRemindersWidget(l10n: $this->l10n, url: $this->url, audience: $this->audience, userSession: $this->session),
 		];
 
 		foreach ($widgets as $widget) {
@@ -250,20 +241,4 @@ class SignaleringWidgetsTest extends TestCase {
 		}
 
 	}//end testAllWidgetsHaveNonEmptyTitles()
-
-	/**
-	 * The My tasks widget with its item-API collaborators doubled.
-	 *
-	 * @return MyTasksWidget The widget.
-	 */
-	private function myTasksWidget(): MyTasksWidget {
-		return new MyTasksWidget(
-			$this->l10n,
-			$this->url,
-			$this->createMock(EngineTaskSource::class),
-			new QueueWidgetItems(url: $this->url, l10n: $this->l10n, dates: $this->caseDates()),
-			$this->createMock(LoggerInterface::class)
-		);
-
-	}//end myTasksWidget()
 }//end class

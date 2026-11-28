@@ -45,12 +45,13 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
-use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\Task\EngineTaskInbox;
-use OCP\App\IAppManager;
+use OCA\Dossiq\Kernel\AppIdentity;
+use OCA\Dossiq\Kernel\Contracts\KpiAggregationServiceInterface;
+use OCA\Dossiq\Service\Queue\QueueOldestNote;
+use OCA\Dossiq\Service\Support\NormalisesObjectRows;
+use OCA\Dossiq\Service\Zgw\SchemaFilter;
 use OCP\IAppConfig;
 use OCP\IL10N;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -58,7 +59,9 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
-class KpiAggregationService {
+class KpiAggregationService implements KpiAggregationServiceInterface {
+	use NormalisesObjectRows;
+
 	/**
 	 * Upper bound on rows pulled for the metrics that must fold rows rather than
 	 * count them (the two breakdowns, and the processing-time average).
@@ -86,7 +89,7 @@ class KpiAggregationService {
 	 * belongs in no working list, count or report. A concept-zaak counted as
 	 * open work is a number a manager acts on for a case nobody has accepted.
 	 *
-	 * 🔴 0 AND NOT `false`. `countObjects()` documents it: a PHP bool reaches
+	 * 🔴 0 AND NOT `false`. `countCases()` documents it: a PHP bool reaches
 	 * PostgreSQL as a type it will not compare against the stored JSON and the
 	 * query throws.
 	 *
@@ -96,7 +99,7 @@ class KpiAggregationService {
 	 *
 	 * @var array<string, int>
 	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
+	 * @spec openspec/specs/case-status-machinery/spec.md
 	 */
 	private const OPEN_WORK = ['isFinalStatus' => 0, 'statusHiddenInLists' => 0, 'isDraft' => 0];
 
@@ -104,19 +107,19 @@ class KpiAggregationService {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig The app configuration service.
-	 * @param ContainerInterface $container The DI container.
-	 * @param IAppManager $appManager Used to establish that OpenRegister is present.
-	 * @param EngineTaskInbox $engineTasks The engine's task counter.
+	 * @param KpiOpenRegisterServices $openRegister OpenRegister's object and language services, when it is installed.
+	 * @param KpiSources $sources The engine task inbox, the queue figures, the translatable text reader and the day count.
 	 * @param IL10N $l10n The app's translator, for the month names.
 	 * @param LoggerInterface $logger The logger interface.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		private IAppConfig $appConfig,
-		private ContainerInterface $container,
-		private IAppManager $appManager,
-		private EngineTaskInbox $engineTasks,
+		private readonly KpiOpenRegisterServices $openRegister,
+		private readonly KpiSources $sources,
 		private IL10N $l10n,
 		private LoggerInterface $logger,
 	) {
@@ -141,53 +144,155 @@ class KpiAggregationService {
 			return $this->emptyKpis();
 		}
 
-		$now = new DateTimeImmutable('today');
-		$today = $now->format('Y-m-d');
-		$monthStart = $now->format('Y-m-01');
-		$monthEnd = $now->format('Y-m-t');
-
-		$closed = $this->closedThisMonth(ids: $ids, monthStart: $monthStart, monthEnd: $monthEnd);
-		$openCases = $this->rows(
-			ids: $ids,
-			schema: $ids['case'],
-			filters: self::OPEN_WORK
+		$run = $this->kpiRun(ids: $ids, userId: $userId);
+		$queue = $this->sources->queueFigures->foldFor(
+			userId: $userId,
+			openCases: $run->openCases,
+			today: $run->now,
+			typeTitles: $this->caseTypeTitles(ids: $ids)
+		);
+		$oldestNote = (new QueueOldestNote(l10n: $this->l10n))->line(
+			type: (string)$queue['queueOldestType'],
+			dueDays: $queue['queueOldestDueDays']
 		);
 
-		return [
-			'openCount' => $this->countCases(ids: $ids, filters: self::OPEN_WORK),
-			'newToday' => $this->countCases(ids: $ids, filters: (self::OPEN_WORK + ['startDate' => $today])),
-			'overdueCount' => $this->countCases(
-				ids: $ids,
-				filters: (self::OPEN_WORK + ['deadline' => ['lt' => $today]])
-			),
-			'completedCount' => count($closed),
-			// The reader's OWN closed cases, this month and last, for the My
-			// work tile "Closed in <month>" and its "<last month>: n" line.
-			'myCompletedCount' => $this->myClosed(ids: $ids, userId: $userId, from: $monthStart, to: $monthEnd),
-			'myCompletedLastMonth' => $this->myClosed(
-				ids: $ids,
-				userId: $userId,
-				from: $now->modify('first day of last month')->format('Y-m-d'),
-				to: $now->modify('last day of last month')->format('Y-m-d')
-			),
-			'thisMonthName' => $this->monthName(date: $now),
-			'lastMonthName' => $this->monthName(date: $now->modify('first day of last month')),
-			// The ENGINE counts, and it counts server-side. Both tiles used
-			// to be object counts over `caseTask`; the terminality split and
-			// the due window are now predicates the engine understands, so
-			// dossiq neither derives overdue-ness nor counts a page.
-			'taskCount' => $this->engineTasks->countOpenForAssignee(actor: $userId),
-			'tasksDueToday' => $this->engineTasks->countOpenForAssignee(
-				actor: $userId,
-				dueAfter: ($today . 'T00:00:00+00:00'),
-				dueBefore: ($today . 'T23:59:59+00:00')
-			),
-			'statusBreakdown' => $this->breakdown(rows: $openCases, field: 'status', label: 'status'),
-			'typeBreakdown' => $this->breakdown(rows: $openCases, field: 'caseType', label: 'type'),
-			'avgProcessingDays' => $this->averageProcessingDays(closed: $closed),
-			'slaCompliance' => $this->slaCompliance(closed: $closed),
-		];
+		return ($queue + ['queueOldestNote' => $oldestNote]
+			+ $this->caseCounts(run: $run)
+			+ $this->myClosedCounts(run: $run)
+			+ $this->taskCounts(run: $run)
+			+ $this->openWorkShape(run: $run));
 	}//end computeKpis()
+
+	/**
+	 * Today's dates, and the closed and open cases, read once.
+	 *
+	 * @param array<string, mixed> $ids    The register and schema ids.
+	 * @param string               $userId The reader.
+	 *
+	 * @return KpiRun
+	 */
+	private function kpiRun(array $ids, string $userId): KpiRun {
+		$run = new KpiRun();
+		$run->ids = $ids;
+		$run->userId = $userId;
+		$run->now = new DateTimeImmutable('today');
+		$run->today = $run->now->format('Y-m-d');
+		$run->monthStart = $run->now->format('Y-m-01');
+		$run->monthEnd = $run->now->format('Y-m-t');
+		$run->closed = $this->closedThisMonth(run: $run);
+		$run->openCases = $this->rows(
+			ids: $ids,
+			query: new SchemaFilter(schema: $ids['case'], filters: self::OPEN_WORK)
+		);
+
+		return $run;
+	}//end kpiRun()
+
+	/**
+	 * The case counts: open, new today, overdue and closed this month.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, int>
+	 */
+	private function caseCounts(KpiRun $run): array {
+		return [
+			'openCount' => $this->countCases(ids: $run->ids, filters: self::OPEN_WORK),
+			'newToday' => $this->countCases(ids: $run->ids, filters: (self::OPEN_WORK + ['startDate' => $run->today])),
+			'overdueCount' => $this->countCases(
+				ids: $run->ids,
+				filters: (self::OPEN_WORK + ['deadline' => ['lt' => $run->today]])
+			),
+			'completedCount' => count($run->closed),
+		];
+	}//end caseCounts()
+
+	/**
+	 * The reader's OWN closed cases, this month and last, for the My work tile
+	 * "Closed in <month>" and its "<last month>: n" line.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, int|string>
+	 */
+	private function myClosedCounts(KpiRun $run): array {
+		$lastMonth = $run->now->modify('first day of last month');
+
+		return [
+			'myCompletedCount' => $this->myClosed(run: $run, from: $run->monthStart, to: $run->monthEnd),
+			'myCompletedLastMonth' => $this->myClosed(
+				run: $run,
+				from: $lastMonth->format('Y-m-d'),
+				to: $run->now->modify('last day of last month')->format('Y-m-d')
+			),
+			'thisMonthName' => $this->monthName(date: $run->now),
+			'lastMonthName' => $this->monthName(date: $lastMonth),
+		];
+	}//end myClosedCounts()
+
+	/**
+	 * The reader's open engine tasks, and those due today.
+	 *
+	 * The ENGINE counts, and it counts server-side. Both tiles used to be
+	 * object counts over `caseTask`; the terminality split and the due window
+	 * are now predicates the engine understands, so dossiq neither derives
+	 * overdue-ness nor counts a page.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, int>
+	 */
+	private function taskCounts(KpiRun $run): array {
+		return [
+			'taskCount' => $this->sources->engineTasks->countOpenForAssignee(actor: $run->userId),
+			'tasksDueToday' => $this->sources->engineTasks->countOpenForAssignee(
+				actor: $run->userId,
+				dueAfter: ($run->today . 'T00:00:00+00:00'),
+				dueBefore: ($run->today . 'T23:59:59+00:00')
+			),
+		];
+	}//end taskCounts()
+
+	/**
+	 * The shape of the open work and of this month's closed cases.
+	 *
+	 * @param KpiRun $run The computation.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function openWorkShape(KpiRun $run): array {
+		return [
+			'statusBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'status'), label: 'status'),
+			'typeBreakdown' => self::labelled(counts: self::countsBy(rows: $run->openCases, field: 'caseType'), label: 'type'),
+			'avgProcessingDays' => $this->sources->measures->averageProcessingDays(closed: $run->closed),
+			'slaCompliance' => $this->sources->measures->slaCompliance(closed: $run->closed),
+		];
+	}//end openWorkShape()
+
+	/**
+	 * Every case type's title, by id.
+	 *
+	 * @param array<string, string> $ids The register and schema ids.
+	 *
+	 * @return array<string, string> The titles; empty when the case type schema is not configured.
+	 */
+	private function caseTypeTitles(array $ids): array {
+		$schema = $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_type_schema', '');
+		if ($schema === '') {
+			return [];
+		}
+
+		$titles = [];
+		$rows   = $this->withAllTranslations(read: fn (): array => $this->rows(ids: $ids, query: new SchemaFilter(schema: $schema, filters: [])));
+		foreach ($rows as $row) {
+			$id = (string)($row['id'] ?? ($row['@self']['id'] ?? ''));
+			if ($id !== '') {
+				$titles[$id] = $this->sources->text->textOr(value: ($row['title'] ?? ''), fallback: $id, language: $this->l10n->getLanguageCode());
+			}
+		}
+
+		return $titles;
+	}//end caseTypeTitles()
 
 	/**
 	 * The shape returned when the app is not configured against a register.
@@ -214,24 +319,19 @@ class KpiAggregationService {
 			'typeBreakdown' => [],
 			'avgProcessingDays' => null,
 			'slaCompliance' => null,
+			'queueCount' => 0,
+			'queueNewToday' => 0,
+			'queueDueSoon' => 0,
+			'queueOldestDays' => 0,
+			'queueOldestType' => '',
+			'queueOldestDueDays' => null,
+			'queueOldestNote' => (new QueueOldestNote(l10n: $this->l10n))->line(type: '', dueDays: null),
+			'queueByType' => [],
 		];
 	}//end emptyKpis()
 
 	/**
-	 * Count cases matching a filter.
-	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param array $filters The filter criteria.
-	 *
-	 * @return int The count.
-	 */
-	private function countCases(array $ids, array $filters): int {
-		return $this->countObjects(ids: $ids, schema: $ids['case'], filters: $filters);
-	}//end countCases()
-
-
-	/**
-	 * Count objects of one schema, server-side.
+	 * Count cases matching a filter, server-side.
 	 *
 	 * 🔴 THE REGISTER AND SCHEMA GO INSIDE `filters`, NOT VIA setRegister(). With
 	 * only setRegister()/setSchema() the count IGNORES the filters entirely, and
@@ -242,14 +342,16 @@ class KpiAggregationService {
 	 * 🔴 BOOLEANS MUST BE 0/1, NOT true/false. A PHP bool reaches PostgreSQL as a
 	 * type it will not compare against the stored JSON and the query throws.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $schema The schema id to count within.
+	 * @param array<string, string> $ids The register and schema ids; the cases are counted within `case`.
 	 * @param array $filters The filter criteria.
 	 *
 	 * @return int The count, or 0 when OpenRegister cannot answer.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function countObjects(array $ids, string $schema, array $filters): int {
-		$objectService = $this->objectService();
+	private function countCases(array $ids, array $filters): int {
+		$schema = $ids['case'];
+		$objectService = $this->openRegister->objectService();
 		if ($objectService === null) {
 			return 0;
 		}
@@ -276,38 +378,45 @@ class KpiAggregationService {
 			);
 			return 0;
 		}
-	}//end countObjects()
+	}//end countCases()
 
 	/**
 	 * Fetch rows of one schema, bounded.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $schema The schema id to read.
-	 * @param array $filters The filter criteria.
+	 * @param array<string, string> $ids   The register and schema ids.
+	 * @param SchemaFilter          $query The schema id to read and the filter criteria.
 	 *
 	 * @return array<int, array> The rows, as plain arrays.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function rows(array $ids, string $schema, array $filters): array {
-		$objectService = $this->objectService();
+	private function rows(array $ids, SchemaFilter $query): array {
+		$schema = $query->schema;
+		$filters = $query->filters;
+		$objectService = $this->openRegister->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
 		try {
-			$results = $objectService->findAll(
-				[
-					'filters' => (['register' => $ids['register'], 'schema' => $schema] + $filters),
-					'limit' => self::FOLD_LIMIT,
-				]
-			);
+			$results = $objectService->findAll(['filters' => (['register' => $ids['register'], 'schema' => $schema] + $filters), 'limit' => self::FOLD_LIMIT]);
 		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'[KpiAggregationService] Read failed, reporting an empty set for this metric',
-				['schema' => $schema, 'exception' => $e->getMessage()]
-			);
+			$this->logger->warning('[KpiAggregationService] Read failed, reporting an empty set for this metric',
+				['schema' => $schema, 'exception' => $e->getMessage()]);
 			return [];
 		}
 
+		return $this->plainRows(results: $results);
+	}//end rows()
+
+	/**
+	 * The rows of a findAll answer, as plain arrays.
+	 *
+	 * @param mixed $results The findAll answer.
+	 *
+	 * @return array<int, array> The rows, as plain arrays.
+	 */
+	private function plainRows(mixed $results): array {
 		$found = ($results['results'] ?? $results);
 		if (is_array($found) === false) {
 			return [];
@@ -319,23 +428,22 @@ class KpiAggregationService {
 		}
 
 		return $rows;
-	}//end rows()
+	}//end plainRows()
 
 	/**
 	 * How many cases this user closed between two days, both included.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $userId The assignee.
+	 * @param KpiRun $run  The computation: the register and schema ids, and the assignee.
 	 * @param string $from The first day, Y-m-d.
-	 * @param string $to The last day, Y-m-d.
+	 * @param string $to   The last day, Y-m-d.
 	 *
 	 * @return int The count.
 	 */
-	private function myClosed(array $ids, string $userId, string $from, string $to): int {
+	private function myClosed(KpiRun $run, string $from, string $to): int {
 		return $this->countCases(
-			ids: $ids,
+			ids: $run->ids,
 			filters: [
-				'assignee' => $userId,
+				'assignee' => $run->userId,
 				'isFinalStatus' => 1,
 				'endDate' => ['gte' => $from, 'lte' => $to],
 			]
@@ -346,11 +454,13 @@ class KpiAggregationService {
 	 * The month's name in the reader's language, through the app catalogue.
 	 *
 	 * The English names are the catalogue keys, so a language without them
-	 * reads English rather than a blank.
+	 * reads English rather than a blank. The case is the language's own: the
+	 * catalogue writes "oktober" in Dutch and "October" in English, and the
+	 * tile's caption starts with the name ("October: 0").
 	 *
 	 * @param DateTimeImmutable $date Any day of the month.
 	 *
-	 * @return string The month name, lower case.
+	 * @return string The month name.
 	 */
 	private function monthName(DateTimeImmutable $date): string {
 		$names = [
@@ -368,36 +478,35 @@ class KpiAggregationService {
 			12 => 'December',
 		];
 
-		return mb_strtolower($this->l10n->t($names[(int)$date->format('n')]));
+		return $this->l10n->t($names[(int)$date->format('n')]);
 	}//end monthName()
 
 	/**
 	 * The cases that reached a final status during the current calendar month.
 	 *
-	 * @param array<string, string> $ids The register and schema ids.
-	 * @param string $monthStart First day of this month, as Y-m-d.
-	 * @param string $monthEnd Last day of this month, as Y-m-d.
+	 * @param KpiRun $run The computation: the register and schema ids, and this month's first and last day.
 	 *
 	 * @return array<int, array> The closed cases.
 	 */
-	private function closedThisMonth(array $ids, string $monthStart, string $monthEnd): array {
+	private function closedThisMonth(KpiRun $run): array {
 		return $this->rows(
-			ids: $ids,
-			schema: $ids['case'],
-			filters: ['endDate' => ['gte' => $monthStart, 'lte' => $monthEnd]]
+			ids: $run->ids,
+			query: new SchemaFilter(
+				schema: $run->ids['case'],
+				filters: ['endDate' => ['gte' => $run->monthStart, 'lte' => $run->monthEnd]]
+			)
 		);
 	}//end closedThisMonth()
 
 	/**
-	 * Group rows by one field, most frequent first.
+	 * How many rows carry each value of a field, most first; a row without it is not counted.
 	 *
-	 * @param array<int, array> $rows The rows to fold.
-	 * @param string $field The field to group on.
-	 * @param string $label The key the caller expects the value under.
+	 * @param array<int, array<string, mixed>> $rows  The rows.
+	 * @param string                           $field The field.
 	 *
-	 * @return array<int, array{count: integer}> The breakdown.
+	 * @return array<string, int> The count per value.
 	 */
-	private function breakdown(array $rows, string $field, string $label): array {
+	private static function countsBy(array $rows, string $field): array {
 		$counts = [];
 		foreach ($rows as $row) {
 			$value = (string)($row[$field] ?? '');
@@ -410,127 +519,25 @@ class KpiAggregationService {
 
 		arsort($counts);
 
+		return $counts;
+	}//end countsBy()
+
+	/**
+	 * The counts as rows, each value under the label.
+	 *
+	 * @param array<string, int> $counts The count per value.
+	 * @param string             $label  The key the value is given.
+	 *
+	 * @return array<int, array<string, mixed>> The breakdown.
+	 */
+	private static function labelled(array $counts, string $label): array {
 		$out = [];
 		foreach ($counts as $value => $count) {
 			$out[] = [$label => (string)$value, 'count' => $count];
 		}
 
 		return $out;
-	}//end breakdown()
-
-	/**
-	 * Mean days from start to end across the closed cases.
-	 *
-	 * @param array<int, array> $closed The cases closed this month.
-	 *
-	 * @return float|null The average, or null when nothing closed.
-	 */
-	private function averageProcessingDays(array $closed): ?float {
-		$total = 0;
-		$counted = 0;
-
-		foreach ($closed as $row) {
-			$days = $this->daysBetween(from: ($row['startDate'] ?? null), to: ($row['endDate'] ?? null));
-			if ($days === null) {
-				continue;
-			}
-
-			$total += $days;
-			$counted++;
-		}
-
-		if ($counted === 0) {
-			return null;
-		}
-
-		return round(($total / $counted), 1);
-	}//end averageProcessingDays()
-
-	/**
-	 * Share of the closed cases that met their deadline, as a percentage.
-	 *
-	 * A case with no deadline is not counted either way: it had no target to
-	 * meet, so including it would flatter or punish the figure arbitrarily.
-	 *
-	 * @param array<int, array> $closed The cases closed this month.
-	 *
-	 * @return float|null The percentage, or null when nothing measurable closed.
-	 */
-	private function slaCompliance(array $closed): ?float {
-		$within = 0;
-		$measurable = 0;
-
-		foreach ($closed as $row) {
-			$deadline = substr((string)($row['deadline'] ?? ''), 0, 10);
-			$end = substr((string)($row['endDate'] ?? ''), 0, 10);
-			if ($deadline === '' || $end === '') {
-				continue;
-			}
-
-			$measurable++;
-			if ($end <= $deadline) {
-				$within++;
-			}
-		}
-
-		if ($measurable === 0) {
-			return null;
-		}
-
-		return round((($within / $measurable) * 100), 0);
-	}//end slaCompliance()
-
-	/**
-	 * Whole days between two dates.
-	 *
-	 * @param mixed $from The earlier date.
-	 * @param mixed $to The later date.
-	 *
-	 * @return int|null The difference in days, or null when either is unusable.
-	 */
-	private function daysBetween(mixed $from, mixed $to): ?int {
-		$fromDate = substr((string)$from, 0, 10);
-		$toDate = substr((string)$to, 0, 10);
-		if ($fromDate === '' || $toDate === '') {
-			return null;
-		}
-
-		try {
-			$start = new DateTimeImmutable($fromDate);
-			$end = new DateTimeImmutable($toDate);
-		} catch (\Exception $e) {
-			return null;
-		}
-
-		return (int)$start->diff($end)->format('%r%a');
-	}//end daysBetween()
-
-	/**
-	 * Normalise an OpenRegister object to a plain array.
-	 *
-	 * @param mixed $object The object entity or array.
-	 *
-	 * @return array The object's data.
-	 */
-	private function toArray(mixed $object): array {
-		if (is_array($object) === true) {
-			return $object;
-		}
-
-		if (is_object($object) === false) {
-			return [];
-		}
-
-		if (method_exists($object, 'getObject') === true) {
-			return (array)$object->getObject();
-		}
-
-		if (method_exists($object, 'jsonSerialize') === true) {
-			return (array)$object->jsonSerialize();
-		}
-
-		return [];
-	}//end toArray()
+	}//end labelled()
 
 	/**
 	 * The register and schema ids these metrics read.
@@ -544,8 +551,8 @@ class KpiAggregationService {
 	 */
 	private function ids(): ?array {
 		$ids = [
-			'register' => $this->appConfig->getValueString(Application::APP_ID, 'register', ''),
-			'case' => $this->appConfig->getValueString(Application::APP_ID, 'case_schema', ''),
+			'register' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'register', ''),
+			'case' => $this->appConfig->getValueString(AppIdentity::APP_ID, 'case_schema', ''),
 		];
 
 		if (in_array('', $ids, true) === true) {
@@ -556,30 +563,32 @@ class KpiAggregationService {
 	}//end ids()
 
 	/**
-	 * OpenRegister's ObjectService, or null when the app is absent.
+	 * Run a read with OpenRegister answering every language of a translatable
+	 * property, so a title reaches the reader's language through textOr()
+	 * rather than OpenRegister's default language. An internal read has no
+	 * request language of its own: OpenRegister's language middleware runs on
+	 * its own routes only.
 	 *
-	 * A runtime lookup guarded by isInstalled(), per ADR-083: naming the class in
-	 * a constructor property would make PHP resolve it on every construction, so
-	 * an instance without OpenRegister would fail with an error about a class
-	 * nobody mentioned.
+	 * @param callable(): array $read The read.
 	 *
-	 * @return object|null The ObjectService.
+	 * @return array The read's rows.
 	 *
-	 * @psalm-return \OCA\OpenRegister\Service\ObjectService|null
+	 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
-	private function objectService(): ?object {
-		if ($this->appManager->isInstalled('openregister') === false) {
-			return null;
+	private function withAllTranslations(callable $read): array {
+		$language = $this->openRegister->languageService();
+		if ($language === null) {
+			return $read();
 		}
 
+		$before = (bool)$language->shouldReturnAllTranslations();
+		$language->setReturnAllTranslations(true);
 		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'[KpiAggregationService] OpenRegister is installed but its ObjectService did not resolve',
-				['exception' => $e->getMessage()]
-			);
-			return null;
+			return $read();
+		} finally {
+			$language->setReturnAllTranslations($before);
 		}
-	}//end objectService()
+	}//end withAllTranslations()
 }//end class
