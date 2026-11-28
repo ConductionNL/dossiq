@@ -29,20 +29,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AdminCaller;
+use OCA\Dossiq\Controller\Support\CaseStepReroute;
 use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Kernel\Contracts\CaseRouterInterface;
-use OCA\Dossiq\Kernel\Contracts\RoleResolverServiceInterface;
-use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\ObjectArray;
 use OCA\Dossiq\Service\Support\RowList;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -61,21 +58,17 @@ class RoutingController extends Controller {
 	 *
 	 * @param string $appName App name
 	 * @param IRequest $request Request
-	 * @param RoleResolverServiceInterface $resolver Resolver service
+	 * @param CaseStepReroute $reroute Reads a case's workflow steps and resolves each step's rule
 	 * @param CaseRouterInterface $router Routes a case to one person and arms its take-back window
-	 * @param SettingsServiceInterface $settingsService Settings bridge
-	 * @param IUserSession $userSession User session
-	 * @param IGroupManager $groupManager Group manager
+	 * @param AdminCaller $caller The signed-in user, and whether they are an administrator
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly RoleResolverServiceInterface $resolver,
+		private readonly CaseStepReroute $reroute,
 		private readonly CaseRouterInterface $router,
-		private readonly SettingsServiceInterface $settingsService,
-		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groupManager,
+		private readonly AdminCaller $caller,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -141,15 +134,14 @@ class RoutingController extends Controller {
 	 * @return JSONResponse|null The refusal, or null for an admin.
 	 */
 	private function adminRefusal(): ?JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(
 				['error' => 'Authenticatie vereist'],
 				Http::STATUS_UNAUTHORIZED,
 			);
 		}
 
-		if ($this->groupManager->isAdmin($user->getUID()) === false) {
+		if ($this->caller->isAdmin() === false) {
 			return new JSONResponse(
 				['error' => 'Admin-rechten op de zaak vereist'],
 				Http::STATUS_FORBIDDEN,
@@ -170,53 +162,20 @@ class RoutingController extends Controller {
 	 * @throws Throwable When the case or its workflow cannot be read.
 	 */
 	private function rerouteCase(string $id): JSONResponse {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$affected = $this->reroute->affectedSteps(
+			caseId: $id,
+			toArray: $this->toArray(...),
+			decodeSteps: $this->decodeSteps(...)
+		);
+		if ($affected === null) {
 			return new JSONResponse(
 				['error' => 'OpenRegister is niet beschikbaar'],
 				Http::STATUS_SERVICE_UNAVAILABLE,
 			);
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		$workflowSlug = $this->settingsService->getConfigValue('workflow_template_schema');
-
-		$case = $this->toArray(value: $objectService->find($id, new ObjectFindOptions(register: $register, schema: $caseSchema)));
-
-		return new JSONResponse(
-			[
-				'caseId' => $id,
-				'affectedSteps' => $this->resolveSteps(
-					steps: $this->workflowStepsOf(objectService: $objectService, case: $case, register: $register, workflowSlug: $workflowSlug),
-					case: $case
-				),
-			],
-		);
+		return new JSONResponse(['caseId' => $id, 'affectedSteps' => $affected]);
 	}//end rerouteCase()
-
-	/**
-	 * The steps of the workflow a case runs on, [] when it has none.
-	 *
-	 * @param object $objectService The object service.
-	 * @param array<string, mixed> $case The case.
-	 * @param string $register The register.
-	 * @param string $workflowSlug The workflow template schema.
-	 *
-	 * @return array<int, array<string, mixed>> The workflow's steps.
-	 *
-	 * @throws Throwable When the workflow cannot be read.
-	 */
-	private function workflowStepsOf(object $objectService, array $case, string $register, string $workflowSlug): array {
-		$workflowId = (string)($case['workflowTemplate'] ?? '');
-		$steps = [];
-		if ($workflowId !== '' && $workflowSlug !== '') {
-			$workflow = $this->toArray(value: $objectService->find($workflowId, new ObjectFindOptions(register: $register, schema: $workflowSlug)));
-			$steps = $this->decodeSteps(value: $workflow['steps'] ?? '[]');
-		}
-
-		return $steps;
-	}//end workflowStepsOf()
 
 	/**
 	 * Route the case to one person by a routing rule.
@@ -258,39 +217,6 @@ class RoutingController extends Controller {
 			return new JSONResponse(['error' => 'Routeren mislukt'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}//end route()
-
-	/**
-	 * Resolve every routable step on a case to its assignees.
-	 *
-	 * Lifted out of {@see self::reroute()}, which had grown a step loop, a
-	 * rule guard and three exception arms in one method.
-	 *
-	 * @param array<int, array<string, mixed>> $steps The workflow's steps.
-	 * @param array<string, mixed>             $case  The case the rules resolve against.
-	 *
-	 * @return array<int, array<string, mixed>> One entry per step that carries a rule.
-	 *
-	 * @throws RefusedException When a case's roles could not be read at all.
-	 *
-	 * @spec openspec/changes/archive/2026-05-11-role-based-step-routing/tasks.md#T05
-	 */
-	private function resolveSteps(array $steps, array $case): array {
-		$affected = [];
-		foreach ($steps as $step) {
-			$rule = $this->resolver->normaliseRule($step);
-			if ($rule === null) {
-				continue;
-			}
-
-			$affected[] = [
-				'stepId' => (string)($step['id'] ?? ''),
-				'order' => (int)($step['order'] ?? 0),
-				'assignees' => $this->resolver->resolve($rule, $case),
-			];
-		}
-
-		return $affected;
-	}//end resolveSteps()
 
 	/**
 	 * Decode a JSON-encoded steps payload into an array.
