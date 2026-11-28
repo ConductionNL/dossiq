@@ -1,7 +1,7 @@
 # stuf-integration (delta)
 
 @e2e exclude Pure SOAP and event integration with no browser surface; covered by PHPUnit
-(StufProviderQueryListenerTest, StufControllerProviderForwardTest, StufIntegriqBridgeTest).
+(StufProviderQueryListenerTest, StufWireBelongsToIntegriqTest, StufIntegriqBridgeTest).
 
 ## ADDED Requirements
 
@@ -26,25 +26,25 @@ When the case store cannot be read the event SHALL stay unanswered, never answer
 - WHEN the event arrives
 - THEN dossiq leaves it unanswered
 
-### Requirement: Provider requests on the old URLs reach integriq
+### Requirement: Provider requests go to integriq only
 
-For one release `/api/stuf/cases`, `/api/stuf/persons`, `/api/stuf/zaken` and `/api/stuf/personen`
-SHALL forward the raw envelope to integriq with `StufProviderRequestReceivedEvent`, naming the
-integriq source of the endpoint whose `recipientApplication` is the envelope's zender applicatie,
-and return integriq's status and body. Integriq not answering SHALL be a 503.
+Integriq SHALL receive StUF provider requests on its own `/api/stuf-zkn/provider/{sourceId}/cases`
+and `/persons`. Dossiq kept `/api/stuf/cases`, `/api/stuf/persons`, `/api/stuf/zaken` and
+`/api/stuf/personen` as forwarders for one release; from the release after that one dossiq SHALL
+serve none of them and SHALL hold no provider forwarder.
 
-#### Scenario: The Dutch cases URL
+#### Scenario: The Dutch cases URL is not dossiq's
 
-- GIVEN a zaaksysteem posts a zakLv01 to `/api/stuf/zaken`
-- WHEN the controller handles it
-- THEN integriq receives the unchanged envelope for service `cases`
+- GIVEN the release after the forwarding release is installed
+- WHEN the route table is read
+- THEN none of /api/stuf/cases, /api/stuf/persons, /api/stuf/zaken and /api/stuf/personen is routed
 
 ## REMOVED Requirements
 
 ### REQ-001: Inbound StUF SOAP routing + message-type dispatch
 
-**Reason:** integriq parses the envelope and dispatches by message type (decision 199). Dossiq's
-routes only forward, for one release.
+**Reason:** integriq parses the envelope and dispatches by message type (decision 199). Dossiq
+serves no StUF wire URL.
 
 ### REQ-002: StUF-ZKN case handlers (zakLk01, zakLv01, edcLk01)
 

@@ -349,33 +349,13 @@ $extra = [
     ['name' => 'woz#object', 'url' => '/api/external/woz/value/{wozobjectnummer}', 'verb' => 'GET'],
 
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
-        // Inbound SOAP endpoints accept raw XML POST.
-    ['name' => 'stuf#cases',   'url' => '/api/stuf/cases',   'verb' => 'POST'],
-    ['name' => 'stuf#persons', 'url' => '/api/stuf/persons', 'verb' => 'POST'],
-        // DEPRECATED ALIASES — same reasoning as /api/stuf/inkomend below: the
-        // URL lives in the SENDING zaaksysteem's configuration, so renaming it
-        // alone turns a working SOAP receiver into a silent 404 on somebody
-        // else's schedule. Each needs its OWN method name because AppHost
-        // Routes::standard() rejects duplicates by `name` and ignores `postfix`.
-        // Remove once every configured sender posts to the English paths.
-    ['name' => 'stuf#casesLegacyPath',   'url' => '/api/stuf/zaken',    'verb' => 'POST'],
-    ['name' => 'stuf#personsLegacyPath', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
-        // Outbound StUF-ZKN gateway (admin REST) + async confirmation receiver.
+        // Admin REST for the outbound StUF-ZKN gateway. Integriq owns the wire:
+        // a zaaksysteem posts provider requests to integriq's
+        // /api/stuf-zkn/provider/{sourceId}/cases and /persons, and confirmations
+        // to integriq's /api/stuf-zkn/confirmations.
     ['name' => 'stuf#endpoints', 'url' => '/api/stuf/endpoints', 'verb' => 'GET'],
     ['name' => 'stuf#messages',  'url' => '/api/stuf/messages',  'verb' => 'GET'],
     ['name' => 'stuf#outbound',  'url' => '/api/stuf/outbound',  'verb' => 'POST'],
-    ['name' => 'stuf#inbound',   'url' => '/api/stuf/inbound',   'verb' => 'POST'],
-        // DEPRECATED ALIAS — remove once every configured zaaksysteem posts to
-        // /api/stuf/inbound. This URL is a WIRE CONTRACT: it is written into the
-        // upstream system's configuration, not into ours, so renaming it alone
-        // turns a working webhook into a silent 404 on somebody else's schedule.
-        //
-        // It routes to its OWN method rather than reusing 'stuf#inbound' with a
-        // postfix: openregister's AppHost Routes::standard() rejects duplicate
-        // names by `name` alone and never looks at `postfix`, so the two-entries-
-        // one-name form throws "Duplicate route name" at boot and takes the whole
-        // app's routing down with it.
-    ['name' => 'stuf#inboundLegacyPath', 'url' => '/api/stuf/inkomend', 'verb' => 'POST'],
 
         // Doorlooptijd (throughput-time) dashboard metrics.
     ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
