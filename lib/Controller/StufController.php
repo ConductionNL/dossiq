@@ -32,8 +32,8 @@
  *
  * @spec openspec/specs/stuf-integration/spec.md
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
- * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-go-to-integriq-only
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-go-to-integriq-only
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
  */
 
 declare(strict_types=1);
@@ -59,8 +59,8 @@ use OCP\IRequest;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/archive/2026-05-31-retrofit-2026-05-24-case-management/tasks.md
- * @spec openspec/changes/stuf-onto-integriq/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-go-to-integriq-only
- * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-confirmations-go-to-integriq-only
+ * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
  */
 class StufController extends Controller {
 

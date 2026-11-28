@@ -116,7 +116,7 @@ class StufRegisterContractTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/stuf-provider-through-integriq/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
+	 * @spec openspec/specs/stuf-integration/spec.md#requirement-provider-requests-go-to-integriq-only
 	 */
 	private function driveEveryRegisterPath(): void {
 		$this->register->seed(
