@@ -21,17 +21,19 @@ reported as unavailable (503), never as sent.
 - WHEN an administrator sends a vrij bericht
 - THEN the answer is 503 INTEGRIQ_UNAVAILABLE
 
-### Requirement: Confirmations on the old URL reach integriq
+### Requirement: Confirmations go to integriq only
 
-For one release `/api/stuf/inbound` and `/api/stuf/inkomend` SHALL forward the raw confirmation to
-integriq with `StufZdsConfirmationReceivedEvent` and answer with integriq's status and body. With
-integriq away the answer SHALL be 503 so the zaaksysteem retries.
+Integriq SHALL receive the zaaksysteem's asynchronous confirmations on its own
+`/api/stuf-zkn/confirmations`. Dossiq kept `/api/stuf/inbound` and `/api/stuf/inkomend` as
+forwarders for one release; from the release after that one dossiq SHALL serve neither URL and
+SHALL hold no confirmation forwarder.
 
-#### Scenario: A refusal stays a refusal
+#### Scenario: The old confirmation URL is not dossiq's
 
-- GIVEN integriq answers 422 with a Fo03
-- WHEN a confirmation arrives on /api/stuf/inbound
-- THEN dossiq answers 422 with that Fo03
+- GIVEN the release after the forwarding release is installed
+- WHEN the route table is read
+- THEN neither /api/stuf/inbound nor /api/stuf/inkomend is routed, and the admin REST routes
+  /api/stuf/endpoints, /api/stuf/messages and /api/stuf/outbound remain
 
 ### Requirement: A failed message still reaches the administrators
 

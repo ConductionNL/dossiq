@@ -10,4 +10,7 @@
       constants to `StufNamespaces`.
 - [x] Provider routes `/api/stuf/cases|persons|zaken|personen`: resolved by decision 199, see change
       `stuf-provider-through-integriq`.
-- [ ] Next release: remove the `/api/stuf/inbound` and `/api/stuf/inkomend` forwarders.
+- [x] Next release: remove the `/api/stuf/inbound` and `/api/stuf/inkomend` forwarders.
+  - Removed after beta v0.4.53 (15 Oct 2026) shipped them: routes, `StufController::inbound()`,
+    `inboundLegacyPath()`, `StufIntegriqBridge::forwardConfirmation()` and their tests.
+    `tests/Unit/Architecture/StufWireBelongsToIntegriqTest.php` keeps them gone.
