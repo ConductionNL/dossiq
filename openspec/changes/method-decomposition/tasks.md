@@ -2328,6 +2328,60 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         `ObjectArrayCopiesTest` and `RowListCopiesTest`. Own test:
         `tests/Unit/Controller/Support/CaseStepRerouteTest` (2); resolving a step without a rule turns both suites red
         (checked).
+  - [x] 8es `Service/WOODocumentAssessmentService` (1, unsuppressed: CouplingBetweenObjects 16 against 13). Storing a
+        batch of assessments on one case (validating, stamping, update-or-create and marking the judged documents in
+        scope) moved to `Service/Assessment/AssessmentBatchWriter::write()`, which also holds the validator (`validate()`).
+        Where the assessments are stored and who may change them moved to `Service/Assessment/AssessmentRecords`: the
+        batch's storage target (`batchTarget()`), the stored row read past the caller (`storedOf()`), the reviewer rule
+        (`refusalOn()`, `reconcileAfterCreate()`), finding a stored assessment, reading the partly public ones (scoped)
+        and tallying those without a redacted copy (unscoped), and changing fields of an existing one (`find()`,
+        `partlyPublic()`, `partlyPublicWithoutCopy()`, `update()`). The writer reads through the records, so it takes
+        four parameters (gate-122). Bodies moved unchanged. The service keeps its public methods, the outstanding list, the bulk-upsert
+        log line and the redaction-proposal log line, and builds both helpers in its constructor, so its constructor,
+        interface and container are unchanged. Coupling 16 to 13 (writer 10, records 8); phpmd: zero findings on the
+        three files under both rulesets.
+        Characterisation, green before and after: `WOODocumentAssessmentServiceTest` (35), `WooAssessmentForgedIdTest`,
+        `DocumentAssessmentGuardRedactedTest`, `DocumentRedactionServiceTest` and the assessment controller suites.
+        Own tests: `tests/Unit/Service/Assessment/AssessmentBatchWriterTest` (6) and `AssessmentRecordsTest` (6); keeping
+        the caller's identity keys turns `AssessmentBatchWriterTest` and `WooAssessmentForgedIdTest` red (checked).
+  - [x] 8et `Service/WOODecisionService` (1, unsuppressed: CouplingBetweenObjects 18 against 13). Raising the decision
+        in decidiq and failing closed (the subject, the context, the logged refusal) moved to
+        `Service/DecisionDocument/DecisionRaiser::raise()`. The decision as recorded on the case moved to
+        `Service/DecisionDocument/LocalDecisionRecord`: `compose()` (OpenRegister and the decision schema required, then the
+        case title and the assessment tally) and `record()` (the besluit saved under the decision schema with the override
+        data merged and no identity kept, the case marked ready to publish, the assembled line logged; it answers the saved
+        uuid). The line a resident reads under the decision's title is worked out once by the service and travels on
+        `WooDecisionSubject::$label` (new, optional), so neither new class makes a static call. `DECISION_TYPE_ID` now lives
+        on the record and the service's constant points at it. Bodies otherwise moved unchanged. The service keeps both
+        guards, the subject, the actor and the answer with its drafts, and builds both helpers in its constructor, so its
+        constructor, interface and container are unchanged. Coupling 18 to 13 (raiser 7, record 11); phpmd: zero findings on
+        the four files under both rulesets.
+        Characterisation, green before and after: `WOODecisionServiceTest` (all of it, including the raise, the refused
+        raise, the missing seam, the forged id and the readable summary), `WooWritesMatchTheRealSchemasTest`,
+        `WooPublicationSummaryTest` and the assessment controller suites. Own tests:
+        `tests/Unit/Service/DecisionDocument/DecisionRaiserTest` (3) and `LocalDecisionRecordTest` (3), and the label in
+        `WooDecisionSubjectTest`; saving the besluit without its label turns `LocalDecisionRecordTest` and
+        `WOODecisionServiceTest` red (checked). The besluit write moved, so its `ALLOWED_DECISION_WRITERS` entry in
+        `LocalDecisionAuthoringTest` moved with it, from the service to `LocalDecisionRecord`, with the same reason.
+  - [x] 8eu `Service/ZaakdossierService` (1, unsuppressed: CouplingBetweenObjects 19 against 13). Every read and write
+        of the register moved out, so the service no longer uses `SearchesObjects`. `Service/Zaakdossier/DossierRecords`
+        holds the dossier as stored: the register (`context()`, private), where the informatieobject records go
+        (`informatieobjects()`), linking without a second join and unlinking only the joins (`link()`, `unlink()`), the
+        documents a case's joins resolve to (`documentsOf()`), one record read and patched (`find()`, `patch()`), a type's
+        default classification and an upload's (`defaultClassification()`, `uploadClassification()`, only ever tighter),
+        and the uuid of a saved object (`savedUuid()`). `Service/Zaakdossier/UploadedDocumentWriter::write()` builds the
+        upload, requires its type, resolves its classification through the records, stores the file on the case, merges
+        into the record the file already has or creates one, and answers the id, the summary and the correspondents; it
+        takes four parameters (gate-122). Bodies moved unchanged. The service keeps the public surface, the status
+        delegations, the correspondent naming of a listing and of an edit, the grouping, and joining an upload to its case
+        with its dispatches and its log line; it builds both helpers in its constructor, so its constructor, interface and
+        container are unchanged. Coupling 19 to 13 (records 10, writer 11); phpmd: zero findings on the three files under
+        both rulesets.
+        Characterisation, green before and after: the `tests/Unit/Service/Zaakdossier/` suite (including
+        `DocumentCorrespondentsWriteTest`, which builds the real service), `OneDateWritePathTest` and the dossier
+        controller suites. `ZaakdossierRegisterContextTest` now reads the register through `DossierRecords::context()`,
+        where the reading moved. Own tests: `DossierRecordsTest` (7) and `UploadedDocumentWriterTest` (3); saving the
+        upload without the record the file already has turns `UploadedDocumentWriterTest` red (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was

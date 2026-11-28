@@ -1,7 +1,7 @@
 <?php
 
 /**
- * The case a WOO decision is raised on: its id, its register and the composed record.
+ * The case a WOO decision is raised on: its id, its register, the composed record and the line it is named by.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -34,11 +34,15 @@ final class WooDecisionSubject {
 	 * @param string $caseId The case UUID
 	 * @param string $register The register the case lives in
 	 * @param array<string, mixed> $record The composed case title and assessment tally
+	 * @param string $label The line a resident reads under the decision's title
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
 	 */
 	public function __construct(
 		public readonly string $caseId,
 		public readonly string $register,
 		public readonly array $record,
+		public readonly string $label = '',
 	) {
 	}//end __construct()
 }//end class
