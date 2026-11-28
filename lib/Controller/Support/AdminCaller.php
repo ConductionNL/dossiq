@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller\Support;
 
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -62,4 +63,15 @@ final class AdminCaller {
 		$user = $this->userSession->getUser();
 		return $user !== null && $this->groupManager->isAdmin($user->getUID());
 	}//end isAdmin()
+
+	/**
+	 * The signed-in user, or null when nobody is signed in.
+	 *
+	 * @return IUser|null The session's user.
+	 *
+	 * @spec openspec/changes/method-decomposition/tasks.md
+	 */
+	public function getUser(): ?IUser {
+		return $this->userSession->getUser();
+	}//end getUser()
 }//end class

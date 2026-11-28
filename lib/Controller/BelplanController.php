@@ -28,25 +28,19 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\AdminCaller;
+use OCA\Dossiq\Controller\Support\SchemaObjectCalls;
 use OCA\Dossiq\Kernel\Contracts\BelplanRoutingServiceInterface;
 use OCA\Dossiq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Dossiq\Service\Support\CastArray;
-use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Settings\AdminSettings;
-use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
-use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
-use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUserSession;
 use RuntimeException;
-use Throwable;
 
 /**
  * REST API for belplannen and datagedreven routing.
@@ -54,7 +48,12 @@ use Throwable;
  * @spec openspec/changes/archive/2026-06-13-kcc-werkplek-zaaksysteem-bridge/tasks.md#T12
  */
 class BelplanController extends Controller {
-	use SearchesObjects;
+	/**
+	 * Creates, patches and lists belplannen, answering each failure.
+	 *
+	 * @var SchemaObjectCalls
+	 */
+	private readonly SchemaObjectCalls $objects;
 
 	/**
 	 * Constructor.
@@ -63,18 +62,17 @@ class BelplanController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param BelplanRoutingServiceInterface $routingService The belplan routing service.
 	 * @param SettingsServiceInterface $settingsService The settings service.
-	 * @param IUserSession $userSession The user session.
-	 * @param IGroupManager $groupManager The group manager.
+	 * @param AdminCaller $caller The signed-in user, and whether they are an administrator.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly BelplanRoutingServiceInterface $routingService,
 		private readonly SettingsServiceInterface $settingsService,
-		private readonly IUserSession $userSession,
-		private readonly IGroupManager $groupManager,
+		private readonly AdminCaller $caller,
 	) {
 		parent::__construct(appName: $appName, request: $request);
+		$this->objects = new SchemaObjectCalls(createFailure: 'Could not create belplan', patchFailure: 'Could not update belplan');
 	}//end __construct()
 
 	/**
@@ -83,12 +81,7 @@ class BelplanController extends Controller {
 	 * @return bool True when the current user is an admin.
 	 */
 	private function isAdmin(): bool {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return false;
-		}
-
-		return $this->groupManager->isAdmin($user->getUID());
+		return $this->caller->isAdmin();
 	}//end isAdmin()
 
 	/**
@@ -100,7 +93,7 @@ class BelplanController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -178,29 +171,11 @@ class BelplanController extends Controller {
 	 * @return JSONResponse
 	 */
 	private function saveBelplan(array $store, array $record): JSONResponse {
-		[$objectService, $register, $schema] = $store;
-
-		try {
-			$created = $objectService->saveObject(
-				object: $record,
-				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema))
-			);
-		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
-			// The same shape TaskChecklistController carries: a payload
-			// OpenRegister's schema refuses came back as a 500, so an admin who
-			// typed a bad routing step was told the server had broken. The
-			// exception's message already names the offending property, and
-			// this arm was returning a fixed sentence that named nothing, so
-			// there was no way to find out from the response either.
-			//
-			// Narrow on purpose; the Throwable arm below still answers 500 for
-			// a genuine fault.
-			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-		} catch (Throwable $e) {
-			return new JSONResponse(['error' => 'Could not create belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->toArray(result: $created));
+		return $this->objects->created(
+			store: $store,
+			record: $record,
+			answer: fn (mixed $created): JSONResponse => new JSONResponse($this->toArray(result: $created))
+		);
 	}//end saveBelplan()
 
 	/**
@@ -225,14 +200,12 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$patch = $this->requestedPatch();
-		try {
-			$updated = $this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id, changes: $patch);
-		} catch (Throwable $e) {
-			return new JSONResponse(['error' => 'Could not update belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->toArray(result: $updated));
+		return $this->objects->patched(
+			store: [$objectService, $register, $schema],
+			id: $id,
+			changes: $this->requestedPatch(),
+			answer: fn (mixed $updated): JSONResponse => new JSONResponse($this->toArray(result: $updated))
+		);
 	}//end update()
 
 	/**
@@ -274,7 +247,7 @@ class BelplanController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function route(): JSONResponse {
-		if ($this->userSession->getUser() === null) {
+		if ($this->caller->getUser() === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
@@ -303,11 +276,7 @@ class BelplanController extends Controller {
 			return [];
 		}
 
-		try {
-			$results = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['_limit' => 200]);
-		} catch (Throwable $e) {
-			return [];
-		}
+		$results = $this->objects->listed(store: [$objectService, $register, $schema], filters: ['_limit' => 200]);
 
 		$records = [];
 		foreach ((array)$results as $result) {

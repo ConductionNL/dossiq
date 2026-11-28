@@ -99,4 +99,18 @@ final class AdminCallerTest extends TestCase {
 
 		$this->assertFalse(condition: $caller->isAdmin());
 	}//end testASignedInUserWhoIsNoAdministratorIsNoAdmin()
+
+	/**
+	 * The user is the session's, whatever the groups; no session is no user.
+	 *
+	 * @return void
+	 */
+	public function testTheUserIsTheSessions(): void {
+		$groups = $this->createMock(originalClassName: IGroupManager::class);
+		$groups->expects($this->never())->method('isAdmin');
+
+		$signedIn = (new AdminCaller(userSession: $this->session(uid: 'behandelaar'), groupManager: $groups))->getUser();
+		$this->assertSame(expected: 'behandelaar', actual: $signedIn?->getUID());
+		$this->assertNull(actual: (new AdminCaller(userSession: $this->session(uid: null), groupManager: $groups))->getUser());
+	}//end testTheUserIsTheSessions()
 }//end class

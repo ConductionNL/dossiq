@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\BelplanController;
+use OCA\Dossiq\Controller\Support\AdminCaller;
 use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
@@ -32,6 +33,8 @@ use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * @covers \OCA\Dossiq\Controller\BelplanController
+ * @uses   \OCA\Dossiq\Controller\Support\AdminCaller
+ * @uses   \OCA\Dossiq\Controller\Support\SchemaObjectCalls
  * @uses   \OCA\Dossiq\Service\Support\CastArray
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  */
@@ -94,8 +97,7 @@ class BelplanControllerAdminTest extends TestCase {
 			request: $request,
 			routingService: $this->createMock(BelplanRoutingService::class),
 			settingsService: $this->settings,
-			userSession: $this->session,
-			groupManager: $this->groups,
+			caller: new AdminCaller(userSession: $this->session, groupManager: $this->groups),
 		);
 
 	}//end setUp()

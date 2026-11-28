@@ -2295,6 +2295,21 @@ characterisation test with a mapped ObjectService is a sufficient safety net; th
         and the complaint controller suites. Own tests: `tests/Unit/Service/Support/ConfiguredSchemaStoreTest` (5) and
         `tests/Unit/Service/Term/FirstResponseDaysTest` (2); dropping the identity-key removal turns
         `ConfiguredSchemaStoreTest` and `CreatesIgnoreCallerIdentityTest` red (checked).
+  - [x] 8eq `Controller/BelplanController` (1, unsuppressed: CouplingBetweenObjects 17 against 13). The calls into the
+        object service with their failure answers moved to the generic `Controller/Support/SchemaObjectCalls`: `created()`
+        (OpenRegister's two validation refusals a 400 with their message, any other failure a 500 with the caller's
+        sentence), `patched()` (any failure a 500) and `listed()` (a failed read is empty); bodies and comments moved
+        unchanged, the success turned into the response by the controller's closure, so `CastArray` stays where it was.
+        Whether the caller is signed in and an administrator is `AdminCaller` (8da), which gains `getUser()`; the
+        controller takes it in place of `IUserSession` and `IGroupManager` (the container autowires it, and only the two
+        controller tests build the controller by hand). The controller keeps the guards, the configured-schema checks,
+        the request fields and the routing call. Coupling 17 to 13; phpmd: the coupling finding gone and nothing new on
+        the three files under both rulesets (the inherited `CastArray` StaticAccess stays on its untouched line).
+        Characterisation, green before and after: `BelplanControllerAdminTest` (10) and `BelplanControllerContractTest`
+        (5, including the 400 naming the property and the 500 for a genuine fault), unchanged but for the constructor
+        and two `@uses` lines, `AdminCallerTest` and `BespokeServiceRegistrarTest`. Own tests:
+        `tests/Unit/Controller/Support/SchemaObjectCallsTest` (4) and `AdminCallerTest::testTheUserIsTheSessions`;
+        answering the validation refusal as a 500 turns `SchemaObjectCallsTest` red (checked).
   - [ ] 8dt The ten `ShortMethodName` findings (static `of()` on `CastArray`, `ObjectArray`, `ReferenceId`,
         `EventObjectPayload`, `SerialisedObject` and `ObjectAuditEvents`; instance `of()`/`is()` on `CreatedCaseRecord`,
         `IntakeObligationKinds`, `StatusDisplayName` and `ZgwRuleCall`). A rename was built and its unit suite was
